@@ -9,7 +9,7 @@
 Sin cuentas. Sin nubes en las que tengas que confiar. Sin instalar nada.<br>
 Funciona en Windows, macOS, Linux, iPhone y Android.
 
-[**Abrir la app web**](https://jcordon5.github.io/panel/) ·
+[**Abrir la app web**](https://panel.yous.dev) ·
 [Descargar para Windows](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip) ·
 [macOS / Linux](#versión-de-escritorio) ·
 [English](README.md)
@@ -76,7 +76,7 @@ de plugins. Panel es más pequeño a propósito: un espacio de trabajo diario y 
 
 ### App web — sin instalar nada
 
-Abre **[jcordon5.github.io/panel](https://jcordon5.github.io/panel/)** y elige dónde vive tu bóveda:
+Abre **[panel.yous.dev](https://panel.yous.dev)** y elige dónde vive tu bóveda:
 
 - **Una carpeta de tu ordenador** (Chrome, Edge o Brave en el ordenador). Tus archivos no salen del equipo. Usa *Instalar app* en el menú
   del navegador para tener el icono de Panel en el escritorio o el dock.

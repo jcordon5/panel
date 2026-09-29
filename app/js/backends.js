@@ -283,7 +283,7 @@ export class GitHubBackend {
   }
   constructor({ owner, repo, token, branch }) {
     Object.assign(this, { owner, repo, token, branch: branch || null });
-    this.kind = "github"; this.pollMs = 30000; this.saveDelay = 2500;
+    this.kind = "github"; this.pollMs = 30000; this.saveDelay = 45000; // editor autosave: one commit every ~45 s of typing, not every pause
     this.features = { calendar: false, updates: false, migrate: false, serverSettings: false };
     this.entries = new Map(); this.dirSet = new Set(); this.headSha = null; this.treeSha = null;
     this.q = queue(); this.urls = new Map();

@@ -9,7 +9,7 @@
 No account. No cloud you have to trust. No install required.<br>
 Works on Windows, macOS, Linux, iPhone and Android.
 
-[**Open the web app**](https://jcordon5.github.io/panel/) ·
+[**Open the web app**](https://panel.yous.dev) ·
 [Download for Windows](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip) ·
 [macOS / Linux](#desktop-version) ·
 [Español](README.es.md)
@@ -75,7 +75,7 @@ smaller: a fast daily/weekly workspace that keeps your files compatible with bot
 
 ### Web app — nothing to install
 
-Open **[jcordon5.github.io/panel](https://jcordon5.github.io/panel/)** and choose where your vault lives:
+Open **[panel.yous.dev](https://panel.yous.dev)** and choose where your vault lives:
 
 - **A folder on this computer** (Chrome, Edge or Brave on desktop). Your files never leave the machine. Use *Install app* in the browser
   menu to get a Panel icon on your desktop or dock.
