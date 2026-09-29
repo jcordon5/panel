@@ -3,7 +3,8 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/jcordon5/panel/main/install.sh | sh
 #
-# Installs (or updates) Panel in ~/Panel (or $PANEL_HOME), adds a launcher and starts it.
+# Installs (or updates) Panel in ~/Panel (or $PANEL_HOME), adds a launcher and starts it
+# (set PANEL_NO_START=1 to skip starting it).
 # Your data (vault, settings, backups) is never touched when you run it again.
 set -e
 
@@ -89,4 +90,5 @@ echo ""
 echo "  Panel is installed. Open it any time from $WHERE"
 echo "  Your notes will live in: $DEST/vault"
 echo ""
+[ -n "$PANEL_NO_START" ] && exit 0
 if [ -n "$LAUNCH" ]; then eval "$LAUNCH"; else (cd "$DEST" && nohup ./panel.sh >/dev/null 2>&1 &) ; fi
