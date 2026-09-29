@@ -40,7 +40,8 @@ def _get(url, timeout=15):
 
 def latest_release(repo):
     data = json.loads(_get("https://api.github.com/repos/%s/releases/latest" % repo).decode("utf-8"))
-    assets = [a for a in data.get("assets", []) if a.get("name", "").endswith(".zip")]
+    assets = [a for a in data.get("assets", []) if a.get("name", "") == "panel.zip"] or \
+        [a for a in data.get("assets", []) if a.get("name", "").endswith(".zip") and "windows" not in a["name"].lower()]
     return {
         "version": (data.get("tag_name") or "").lstrip("v"),
         "notes": data.get("body") or "",
@@ -66,6 +67,28 @@ def check(current, repo, force=False):
             "notes": rel["notes"], "url": rel["url"]}
 
 
+KEEP_BACKUPS = {"before-update": 5, "manual": 10}
+KEEP_OLD_CODE = 2
+
+
+def prune_backups(backups_dir):
+    """Old backups are removed automatically: only the most recent ones are kept."""
+    if not os.path.isdir(backups_dir):
+        return
+    names = sorted(os.listdir(backups_dir))  # timestamps in the names sort chronologically
+    for kind, keep in KEEP_BACKUPS.items():
+        zips = [n for n in names if n.startswith("vault-") and n.endswith(".zip") and kind in n]
+        for n in zips[:-keep]:
+            try:
+                os.remove(os.path.join(backups_dir, n))
+            except OSError:
+                pass
+    code = [n for n in names if n.startswith("app-") and os.path.isdir(os.path.join(backups_dir, n))]
+    code.sort(key=lambda n: os.path.getmtime(os.path.join(backups_dir, n)))
+    for n in code[:-KEEP_OLD_CODE]:
+        shutil.rmtree(os.path.join(backups_dir, n), ignore_errors=True)
+
+
 def backup_vault(vault, backups_dir, label):
     os.makedirs(backups_dir, exist_ok=True)
     name = "vault-%s-%s.zip" % (datetime.now().strftime("%Y%m%d-%H%M%S"), re.sub(r"[^\w.-]+", "-", label))
@@ -78,6 +101,7 @@ def backup_vault(vault, backups_dir, label):
                     continue
                 full = os.path.join(dp, f)
                 z.write(full, os.path.relpath(full, vault))
+    prune_backups(backups_dir)
     return path
 
 
@@ -155,4 +179,5 @@ def apply(root, vault, current, repo):
                     os.chmod(d, 0o755)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    prune_backups(backups)
     return {"version": rel["version"], "backup": backup, "method": "zip"}

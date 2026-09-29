@@ -173,6 +173,24 @@ class UpdaterTest(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_backups_are_pruned(self):
+        import updater
+        tmp = tempfile.mkdtemp(prefix="panel-bk-")
+        try:
+            vault = os.path.join(tmp, "vault")
+            os.makedirs(vault)
+            open(os.path.join(vault, "a.md"), "w").write("x")
+            b = os.path.join(tmp, "backups")
+            os.makedirs(b)
+            for i in range(8):
+                open(os.path.join(b, "vault-2026010%d-000000-before-update-from-2.%d.0.zip" % (i + 1, i)), "w").write("z")
+            updater.backup_vault(vault, b, "before-update-from-2.9.0")
+            left = sorted(n for n in os.listdir(b) if "before-update" in n)
+            self.assertEqual(len(left), 5)
+            self.assertTrue(any("2.9.0" in n for n in left))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_versions(self):
         import updater
         self.assertGreater(updater.parse_version("v2.10.0"), updater.parse_version("2.9.9"))

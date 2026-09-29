@@ -1,0 +1,44 @@
+# Attaches the download packages to every published release:
+#   panel.zip           the app (macOS, Linux, updates)
+#   Panel-Windows.zip   the app + a private copy of Python: unzip and double-click panel.bat
+name: Release packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to (re)build
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_EMBED: "3.12.10"
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Test
+        run: |
+          node --test tests/*.test.js
+          python3 -m unittest discover -s tests
+      - name: Build packages
+        run: |
+          set -e
+          git archive --prefix=panel/ -o panel.zip HEAD
+          mkdir win && cd win
+          unzip -q ../panel.zip && mv panel Panel
+          curl -fsSL -o py.zip "https://www.python.org/ftp/python/${PYTHON_EMBED}/python-${PYTHON_EMBED}-embed-amd64.zip"
+          mkdir Panel/python && unzip -q py.zip -d Panel/python && rm py.zip
+          zip -qr ../Panel-Windows.zip Panel
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name || inputs.tag }}" panel.zip Panel-Windows.zip --clobber

@@ -41,6 +41,8 @@ globalThis.fetch = async (url, init = {}) => {
   }
 };
 
+const backends = await import("../app/js/backends.js");
+backends.setBackend(new backends.ServerBackend());
 const { parseDoc, setFm } = await import("../app/js/frontmatter.js");
 const ops = await import("../app/js/ops.js");
 const model = await import("../app/js/model.js");

@@ -34,7 +34,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
-VERSION = "2.2.0"
+VERSION = "2.3.0"
 APP_NAME = "panel"
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_DIR = os.path.join(ROOT_DIR, "app")
@@ -53,6 +53,7 @@ mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("image/svg+xml", ".svg")
 mimetypes.add_type("image/webp", ".webp")
 mimetypes.add_type("text/markdown", ".md")
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 
 WRITE_LOCK = threading.Lock()
 VAULT = ""  # absolute, real path; set in main()
@@ -450,7 +451,7 @@ GET_ROUTES = {
 
 APP_CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-    "img-src 'self' data: blob: https: http:; connect-src 'self'; font-src 'self' data:; "
+    "img-src 'self' data: blob: https: http:; connect-src 'self' blob:; font-src 'self' data:; "
     "object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 )
 

@@ -5,6 +5,7 @@
 import { Marked } from "../vendor/marked.esm.js";
 import { esc, dirname, joinPath } from "./util.js";
 import { resolveLink, projectBySlug, TASK_RE } from "./model.js";
+import { backend } from "./backends.js";
 
 const IMG_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
 const SAFE_HTML = /^<\/?(br|kbd|sub|sup|u|mark|s|small|b|i|em|strong|hr)\s*\/?>$/i;
@@ -18,8 +19,11 @@ function safeUrl(href) {
 }
 const isExternal = (href) => /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("//");
 
-function vaultUrl(path) {
-  return "/vault/" + path.split("/").map(encodeURIComponent).join("/");
+/** src/href attributes for a vault file: a URL (local server) or a data-asset hook filled in later. */
+function assetAttr(path, attr) {
+  const url = backend && backend.assetUrl(path);
+  if (url) return `${attr}="${esc(url)}"`;
+  return `${attr}="${attr === "src" ? "data:," : "#"}" data-asset="${esc(path)}"`;
 }
 
 function resolveRelative(href) {
@@ -40,7 +44,7 @@ const wikilink = {
     const path = resolveLink(tok.target);
     if (tok.embed && (IMG_EXT.test(tok.target) || (path && IMG_EXT.test(path)))) {
       const width = /^\d+$/.test(tok.alias) ? ` width="${tok.alias}"` : "";
-      return path ? `<img src="${vaultUrl(path)}" alt="${esc(tok.target)}"${width} loading="lazy">` : `<span class="wikilink missing">${esc(tok.target)}</span>`;
+      return path ? `<img ${assetAttr(path, "src")} alt="${esc(tok.target)}"${width} loading="lazy">` : `<span class="wikilink missing">${esc(tok.target)}</span>`;
     }
     const label = tok.alias || tok.target.split("/").pop() + (tok.heading || "");
     const cls = path ? "wikilink" : "wikilink missing";
@@ -98,18 +102,17 @@ const renderer = {
     if (isExternal(href)) return `<a href="${esc(href)}"${tt} target="_blank" rel="noopener noreferrer">${text}</a>`;
     if (href.startsWith("#")) return `<a href="${esc(href)}"${tt}>${text}</a>`;
     const path = resolveRelative(href);
-    if (path && !/\.md$/i.test(path)) return `<a href="${vaultUrl(path)}" target="_blank"${tt}>${text}</a>`;
+    if (path && !/\.md$/i.test(path)) return `<a ${assetAttr(path, "href")} target="_blank"${tt}>${text}</a>`;
     return `<a href="#" class="wikilink${path ? "" : " missing"}" data-link="${esc(path || "")}" data-target="${esc(href)}"${tt}>${text}</a>`;
   },
   image({ href, title, text }) {
     href = safeUrl(href);
-    let src = href;
+    const tt = title ? ` title="${esc(title)}"` : "";
     if (!isExternal(href) && !href.startsWith("data:")) {
       const path = resolveRelative(href);
-      src = path ? vaultUrl(path) : href;
+      if (path) return `<img ${assetAttr(path, "src")} alt="${esc(text)}"${tt} loading="lazy">`;
     }
-    const tt = title ? ` title="${esc(title)}"` : "";
-    return `<img src="${esc(src)}" alt="${esc(text)}"${tt} loading="lazy">`;
+    return `<img src="${esc(href)}" alt="${esc(text)}"${tt} loading="lazy">`;
   },
   code({ text, lang }) {
     const l = (lang || "").split(/\s/)[0];

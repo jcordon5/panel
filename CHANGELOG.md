@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.3.0 — 2026-09-29
+
+- **Web app** at https://jcordon5.github.io/panel/ — nothing to install. Keep the vault in a folder on your computer (Chrome/Edge/Brave)
+  or in a private GitHub repository (every device, phones included, full history). Installable as an app (PWA), works offline.
+- "Try it with sample data" demo mode (in memory).
+- Downloads: `Panel-Windows.zip` includes Python — unzip and double-click `panel.bat`. `panel.zip` for macOS/Linux. Built automatically for every release.
+- Backups clean themselves up (last 5 automatic, 10 manual, 2 previous app versions).
+- Export the vault as .zip from the browser too.
+- README rewritten: why Panel, use cases, comparison, privacy.
+
 ## 2.2.0 — 2026-09-29
 
 - Calendar: Outlook desktop (Windows, via COM) and any .ics link/file (Outlook web, Google, iCloud…), with recurring events, exceptions and time zones. Events show up in Today/Week/Calendar; one click creates the meeting note and places it in the day plan.

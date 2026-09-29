@@ -2,6 +2,7 @@
 // cached for a few minutes; views call wantEvents() and re-render when they arrive.
 
 import { apiGet } from "./store.js";
+import { backend } from "./backends.js";
 import { vault } from "./model.js";
 import { fold } from "./util.js";
 import { requestRender } from "./state.js";
@@ -12,6 +13,7 @@ let configured = null;     // unknown until the first answer
 export let lastErrors = [];
 
 export function wantEvents(from, to, force = false) {
+  if (!backend || !backend.features.calendar) return;
   if (configured === false && !force) return;
   const key = from + "|" + to;
   const r = ranges.get(key);

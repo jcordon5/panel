@@ -88,7 +88,8 @@ function makeDoc(path, file) {
     path, name, dir: dirname(path), kind, fm, title, date, project,
     time: typeof fm.time === "string" ? fm.time : "",
     body: parsed.body, bodyLine: parsed.bodyLine,
-    mtime: file.mtime || 0,
+    // GitHub has no cheap per-file modification time: fall back to the `updated` field
+    mtime: file.mtime || (typeof fm.updated === "string" && Date.parse(fm.updated)) || (typeof fm.created === "string" && Date.parse(fm.created)) || 0,
     pinned: fm.pinned === true || fm.pinned === "true",
     tags: toList(fm.tags),
     attendees: toList(fm.attendees),

@@ -8,6 +8,7 @@ import { vault, P } from "../model.js";
 import { parseDoc, setFm } from "../frontmatter.js";
 import { renderMarkdown } from "../markdown.js";
 import { store, write, upload, onChange, content } from "../store.js";
+import { backend } from "../backends.js";
 import { crumbs } from "./doc.js";
 import { propertiesDialog } from "./dialogs.js";
 import { go, route } from "../nav.js";
@@ -197,7 +198,7 @@ export function render(root, r) {
       errorToast(e);
     }
   }
-  const autosave = debounce(save, 700);
+  const autosave = debounce(save, backend.saveDelay || 700);
 
   let titleDirty = false;
   titleInput.addEventListener("input", () => {

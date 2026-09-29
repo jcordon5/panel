@@ -32,7 +32,7 @@ trap 'rm -rf "$TMP"' EXIT
 URL=$(curl -fsSL -H "User-Agent: panel-installer" "https://api.github.com/repos/$REPO/releases/latest" | "$PY" -c "
 import json, sys
 d = json.load(sys.stdin)
-z = [a['browser_download_url'] for a in d.get('assets', []) if a['name'].endswith('.zip')]
+z = [a['browser_download_url'] for a in d.get('assets', []) if a['name'] == 'panel.zip']
 print(z[0] if z else d['zipball_url'])")
 curl -fsSL "$URL" -o "$TMP/panel.zip"
 

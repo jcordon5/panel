@@ -23,7 +23,7 @@ New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
     # 1. latest release
     $rel = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest" -Headers @{ 'User-Agent' = 'panel-installer' }
-    $asset = $rel.assets | Where-Object { $_.name -like '*.zip' } | Select-Object -First 1
+    $asset = $rel.assets | Where-Object { $_.name -eq 'panel.zip' } | Select-Object -First 1
     $url = if ($asset) { $asset.browser_download_url } else { $rel.zipball_url }
     Write-Host "  Downloading Panel $($rel.tag_name)..."
     Invoke-WebRequest $url -OutFile "$tmp\panel.zip" -UseBasicParsing

@@ -1,9 +1,13 @@
-// Vault cache + server API. Every .md file is kept in memory, so views render
-// synchronously. Writes use etags: if a file changed on disk (Obsidian, an AI
-// agent, another tab...) the server answers 409 and we re-apply the change on
-// top of the fresh content instead of overwriting it.
+// Vault cache on top of the current backend (local server, folder or GitHub).
+// Every .md file is kept in memory, so views render synchronously. Writes use
+// etags: if a file changed elsewhere (Obsidian, an AI agent, another device...)
+// the backend answers 409 and we re-apply the change on top of the fresh content
+// instead of overwriting it.
 
 import { t } from "./i18n.js";
+import { backend, ApiError } from "./backends.js";
+
+export { ApiError };
 
 export const store = {
   info: null,
@@ -21,26 +25,19 @@ function changed(paths) {
   for (const fn of listeners) { try { fn(paths); } catch (e) { console.error(e); } }
 }
 
-export class ApiError extends Error {
-  constructor(msg, status, data) { super(msg); this.status = status; this.data = data || {}; }
-}
-
-async function api(path, body) {
-  let res;
+/** Call the backend, keeping track of connectivity. */
+async function call(fn) {
   try {
-    res = await fetch(path, body === undefined
-      ? { headers: { "X-Panel": "1" } }
-      : { method: "POST", headers: { "Content-Type": "application/json", "X-Panel": "1" }, body: JSON.stringify(body) });
+    const r = await fn();
+    setOnline(true);
+    return r;
   } catch (e) {
-    setOnline(false);
-    throw new ApiError(t("err.offline"), 0);
+    if (e.status === 0 || (e.data && e.data.offline)) { setOnline(false); throw new ApiError(t(backend && backend.kind === "server" ? "err.offline" : "err.offlineWeb"), 0, e.data); }
+    throw e;
   }
-  setOnline(true);
-  let data = {};
-  try { data = await res.json(); } catch (e) { /* empty */ }
-  if (!res.ok || data.ok === false) throw new ApiError(data.error || res.statusText, res.status, data);
-  return data;
 }
+// server-only endpoints (settings, calendar, updates...)
+const api = (path, body) => call(() => backend.api(path, body));
 
 function setOnline(v) {
   if (store.online !== v) { store.online = v; changed([]); }
@@ -65,7 +62,7 @@ export async function waitForServerAndReload(prevVersion) {
 }
 
 export async function loadInfo() {
-  store.info = await api("/api/info");
+  store.info = await call(() => backend.info());
   return store.info;
 }
 
@@ -73,7 +70,7 @@ const isMd = (p) => /\.md$/i.test(p);
 
 /** Fetch the file list; (re)read markdown files that are new or changed. */
 export async function sync() {
-  const list = await api("/api/files");
+  const list = await call(() => backend.files());
   const seen = new Set();
   const toRead = [];
   const others = new Map();
@@ -81,7 +78,7 @@ export async function sync() {
     if (!isMd(f.path)) { others.set(f.path, f); continue; }
     seen.add(f.path);
     const c = store.files.get(f.path);
-    if (!c || c.mtime !== f.mtime || c.size !== f.size) toRead.push(f.path);
+    if (!c || (f.etag ? c.etag !== f.etag : c.mtime !== f.mtime || c.size !== f.size)) toRead.push(f.path);
   }
   const removed = [...store.files.keys()].filter((p) => !seen.has(p));
   for (const p of removed) store.files.delete(p);
@@ -91,8 +88,8 @@ export async function sync() {
   const changedPaths = [...removed];
   for (let i = 0; i < toRead.length; i += 200) {
     const chunk = toRead.slice(i, i + 200);
-    const res = await api("/api/read", { paths: chunk });
-    for (const [p, f] of Object.entries(res.files)) {
+    const res = await call(() => backend.read(chunk));
+    for (const [p, f] of Object.entries(res)) {
       if (!f) continue;
       const c = store.files.get(p);
       if (c && c.etag === f.etag) { c.mtime = f.mtime; c.size = f.size; continue; }
@@ -111,10 +108,7 @@ export function content(path) {
 export function exists(path) { return store.files.has(path) || store.others.has(path) || store.dirs.includes(path); }
 
 async function writeRaw(path, text, opts = {}) {
-  const body = { path, content: text };
-  if ("etag" in opts) body.etag = opts.etag;
-  if (opts.create) body.create = true;
-  const res = await api("/api/write", body);
+  const res = await call(() => backend.write(path, text, opts));
   store.files.set(res.path, { content: text.replace(/\r\n/g, "\n"), etag: res.etag, mtime: res.mtime, size: res.size });
   store.version++; // derived indexes must be rebuilt (listeners are notified by transactions)
   const dir = res.path.split("/").slice(0, -1);
@@ -175,13 +169,13 @@ export async function remove(path) {
   if (currentTx) {
     for (const p of store.files.keys()) if (p === path || p.startsWith(path + "/")) await snapshot(p);
   }
-  await api("/api/delete", { path });
+  await call(() => backend.remove(path));
   for (const p of [...store.files.keys()]) if (p === path || p.startsWith(path + "/")) store.files.delete(p);
   store.dirs = store.dirs.filter((d) => d !== path && !d.startsWith(path + "/"));
 }
 
 export async function move(from, to) {
-  const res = await api("/api/move", { from, to });
+  const res = await call(() => backend.move(from, to));
   const moved = [];
   for (const [p, f] of [...store.files.entries()]) {
     if (p === from || p.startsWith(from + "/")) {
@@ -197,18 +191,12 @@ export async function move(from, to) {
 }
 
 export async function upload(file) {
-  const data = await new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(",")[1] || "");
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-  const res = await api("/api/upload", { name: file.name || "image.png", data });
+  const res = await call(() => backend.upload(file.name || "image.png", file));
   store.others.set(res.path, { path: res.path, mtime: Date.now(), size: file.size });
   return res.path;
 }
 
-export async function migrate(lang) { return api("/api/migrate", { lang }); }
+export async function migrate(lang) { return call(() => backend.migrate(lang)); }
 
 /**
  * Run `fn` as one undoable step. Returns fn's result. Notifies listeners once.
@@ -239,11 +227,11 @@ export async function undo() {
   if (!tx) return null;
   // moves first (reverse order), then contents
   for (const [from, to] of [...tx.moves].reverse()) {
-    try { await api("/api/move", { from: to, to: from }); } catch (e) { console.warn(e); }
+    try { await call(() => backend.move(to, from)); } catch (e) { console.warn(e); }
   }
   for (const [path, prev] of [...tx.snaps.entries()].reverse()) {
     try {
-      if (prev === null) { if (store.files.has(path)) await api("/api/delete", { path }); store.files.delete(path); }
+      if (prev === null) { if (store.files.has(path)) await call(() => backend.remove(path)); store.files.delete(path); }
       else await writeRaw(path, prev);
     } catch (e) { console.warn(e); }
   }
@@ -256,7 +244,7 @@ export function notify() { changed([]); }
 
 /* ------------------------------------------------------------ polling */
 let pollTimer = null;
-export function startPolling(ms = 3000) {
+export function startPolling(ms = backend.pollMs || 3000) {
   const tick = async () => {
     if (document.visibilityState === "visible" && !currentTx) {
       try { await sync(); } catch (e) { /* offline: flag already set */ }
