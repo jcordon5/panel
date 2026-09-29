@@ -1,0 +1,5 @@
+{
+  "vault": "vault",
+  "port": 8765,
+  "open_browser": true
+}

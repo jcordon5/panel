@@ -1,0 +1,15 @@
+# your data never goes to git
+/vault/
+/boveda/
+panel.config.json
+backups/
+python/
+.restart
+_old_v1/
+
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.tmp-*
+server.log
