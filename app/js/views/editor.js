@@ -361,7 +361,7 @@ export function render(root, r) {
     imgInput);
 
   const panes = h("div", { class: "editor-panes mode-" + mode() }, h("div", { class: "editor-write" }, ta), preview);
-  const modeBtn = (m, ic, label) => h("button", { class: "seg-btn" + (mode() === m ? " active" : ""), type: "button", title: label, "aria-label": label, onclick: (e) => {
+  const modeBtn = (m, ic, label) => h("button", { class: "seg-btn" + (mode() === m ? " active" : ""), type: "button", "data-mode": m, title: label, "aria-label": label, onclick: (e) => {
     state.prefs.editorMode = m; savePrefs();
     panes.className = "editor-panes mode-" + m;
     e.currentTarget.parentElement.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b === e.currentTarget));

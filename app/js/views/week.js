@@ -14,6 +14,7 @@ import { state, savePrefs, requestRender } from "../state.js";
 import { menu } from "../ui.js";
 
 let currentStart = null;
+let lastHash = null;
 
 export const title = (r) => t("week.word") + " " + isoWeek(startFrom(r)).week;
 export const keys = {
@@ -24,6 +25,8 @@ export const keys = {
 function startFrom(r) {
   return weekStart(r.arg) || mondayOf(r.arg && /^\d{4}-\d{2}-\d{2}$/.test(r.arg) ? r.arg : today());
 }
+
+export function leave() { lastHash = null; }
 
 export function render(root, r) {
   const start = startFrom(r);
@@ -110,9 +113,13 @@ export function render(root, r) {
   root.append(board);
   root.append(h("p", { class: "muted small hint-line" }, icon("grip", 13), t("week.hint")));
 
-  // bring today's column into view on narrow screens
-  if (isCurrent) requestAnimationFrame(() => {
+  // bring today's column into view: sideways on medium screens, down the page on phones
+  const fresh = location.hash !== lastHash; // first render of this route, not a re-render
+  lastHash = location.hash;
+  if (isCurrent && fresh) setTimeout(() => {
     const col = board.querySelector(".is-today");
-    if (col && board.scrollWidth > board.clientWidth && board.scrollLeft === 0) board.scrollLeft = Math.max(0, col.offsetLeft - 16);
+    if (!col) return;
+    if (innerWidth <= 760) col.scrollIntoView({ block: "start" }); // phones: columns are stacked
+    else if (board.scrollWidth > board.clientWidth && board.scrollLeft === 0) board.scrollLeft = Math.max(0, col.offsetLeft - 16);
   });
 }

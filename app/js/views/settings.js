@@ -81,7 +81,7 @@ const PANES = {
       const hasOutlook = cfg.calendars.some((c) => c.toLowerCase() === "outlook");
       const outlook = h("input", { type: "checkbox", checked: hasOutlook, disabled: !isWin && !hasOutlook });
       const attendees = h("input", { type: "checkbox", checked: cfg.outlookAttendees });
-      const urls = h("textarea", { class: "input", rows: "3", placeholder: "https://outlook.office365.com/owa/calendar/…/calendar.ics" });
+      const urls = h("textarea", { class: "input mono", rows: "3", placeholder: "https://outlook.office365.com/owa/calendar/…/calendar.ics" });
       urls.value = cfg.calendars.filter((c) => c.toLowerCase() !== "outlook").join("\n");
       const status = h("div", { class: "muted small" });
       const save = async (test) => {
