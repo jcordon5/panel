@@ -6,7 +6,7 @@ import { t, lang, setLang } from "./i18n.js";
 import { store, loadInfo, sync, onChange, startPolling, apiGet } from "./store.js";
 import { vault, dayTasks, overdueTasks } from "./model.js";
 import { state, requestRender, applyTheme } from "./state.js";
-import { parseRoute, route, go } from "./nav.js";
+import { parseRoute, route, go, trackNavigation, setNavTitle, navBack, navForward } from "./nav.js";
 import { toast, errorToast, isModalOpen, closeMenus } from "./ui.js";
 import { quickAdd, dropZone, run, doUndo } from "./tasks.js";
 import * as A from "./actions.js";
@@ -87,6 +87,17 @@ function renderSidebar(r) {
 
 /* ------------------------------------------------------------ render */
 
+function paintNavButtons() {
+  const back = navBack(), fwd = navForward();
+  const b = $("#nav-back"), f = $("#nav-fwd");
+  b.disabled = !back; f.disabled = !fwd;
+  b.querySelector(".nav-btn-label").textContent = back ? back.title : "";
+  b.title = back ? t("nav.back", { to: back.title }) : "";
+  f.title = fwd ? t("nav.forward", { to: fwd.title }) : "";
+  b.setAttribute("aria-label", b.title || t("nav.backShort"));
+  f.setAttribute("aria-label", f.title || t("nav.forwardShort"));
+}
+
 function render() {
   const r = parseRoute();
   const view = VIEWS[r.name] || today_;
@@ -115,7 +126,10 @@ function render() {
     const el = root.querySelector(`[data-focus-key="${CSS.escape(focus)}"]`);
     if (el) el.focus({ preventScroll: true });
   }
-  document.title = (view.title?.(r) ? view.title(r) + " · " : "") + "Panel";
+  const name = view.title?.(r) || "";
+  document.title = (name ? name + " · " : "") + "Panel";
+  setNavTitle(name || t("nav.today"));
+  paintNavButtons();
   document.body.classList.remove("sb-open");
 }
 state.render = render;
@@ -123,7 +137,9 @@ state.render = render;
 /* ------------------------------------------------------------ events */
 
 function bindGlobal() {
-  window.addEventListener("hashchange", () => { closeMenus(); render(); $("#view").scrollTop = 0; });
+  window.addEventListener("hashchange", () => { closeMenus(); trackNavigation(); render(); $("#view").scrollTop = 0; });
+  $("#nav-back").addEventListener("click", () => history.back());
+  $("#nav-fwd").addEventListener("click", () => history.forward());
   onChange(() => requestRender());
 
   document.addEventListener("click", (e) => {
@@ -198,6 +214,7 @@ async function boot() {
 
 async function start() {
   document.body.classList.remove("bare");
+  trackNavigation();
   try {
     await loadInfo();
   } catch (e) {

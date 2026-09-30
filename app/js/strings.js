@@ -3,6 +3,7 @@
 
 export const STRINGS = {
   es: {
+    "nav.back": "Volver a {to} (Alt+←)", "nav.forward": "Ir a {to} (Alt+→)", "nav.backShort": "Atrás", "nav.forwardShort": "Adelante",
     "connect.demo": "Probar con datos de ejemplo (sin guardar nada)", "demo.title": "Modo demo", "demo.text": "Los cambios no se guardan.", "demo.connect": "Usar mi bóveda",
     "err.offlineWeb": "Sin conexión con tu bóveda. Revisa tu conexión a internet o el permiso de la carpeta.", "err.backend": "No se puede abrir tu bóveda",
     "storage.github": "Repositorio de GitHub", "storage.folder": "Carpeta de este ordenador", "storage.disconnect": "Desconectar",
@@ -198,6 +199,7 @@ export const STRINGS = {
   },
 
   en: {
+    "nav.back": "Back to {to} (Alt+←)", "nav.forward": "Forward to {to} (Alt+→)", "nav.backShort": "Back", "nav.forwardShort": "Forward",
     "connect.demo": "Try it with sample data (nothing is saved)", "demo.title": "Demo mode", "demo.text": "Changes are not saved.", "demo.connect": "Use my vault",
     "err.offlineWeb": "Cannot reach your vault. Check your internet connection or the folder permission.", "err.backend": "Your vault cannot be opened",
     "storage.github": "GitHub repository", "storage.folder": "Folder on this computer", "storage.disconnect": "Disconnect",

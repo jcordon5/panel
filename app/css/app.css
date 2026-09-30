@@ -104,7 +104,14 @@ kbd {
 .app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 100vh; height: 100dvh; }
 .main { min-width: 0; min-height: 0; display: flex; flex-direction: column; height: 100%; }
 .view { flex: 1; min-height: 0; overflow: auto; scroll-behavior: auto; }
-.topbar { display: none; }
+.topbar { display: flex; align-items: center; gap: 8px; padding: 8px 24px 0; min-height: 40px; }
+.topbar #menu-btn { display: none; }
+.navbtns { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.nav-btn { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px; border: none; border-radius: var(--radius-sm); background: transparent; color: var(--text-2); font-size: 13px; font-weight: 550; max-width: 260px; }
+.nav-btn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-btn:disabled .nav-btn-label { display: none; }
 .page { max-width: 1180px; margin: 0 auto; padding: 30px 36px 96px; }
 .page-week { max-width: none; }
 .page-doc { max-width: 880px; }
@@ -698,8 +705,9 @@ input.md-task:disabled { cursor: default; opacity: 0.8; }
   body.sb-open .sidebar { transform: none; }
   body.sb-open .sb-backdrop { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3); z-index: 35; }
   .sidebar .sb-close { display: inline-grid; }
-  .topbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); }
-  .topbar-brand { font-weight: 650; }
+  .topbar { padding: 6px 8px; border-bottom: 1px solid var(--border); background: var(--bg-sidebar); }
+  .topbar #menu-btn { display: inline-grid; }
+  .nav-btn { max-width: 55vw; }
   .page { padding: 18px 16px 80px; }
   .page-title { font-size: 23px; }
   .doc-title { font-size: 26px; }

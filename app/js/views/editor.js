@@ -11,7 +11,7 @@ import { store, write, upload, onChange, content } from "../store.js";
 import { backend } from "../backends.js";
 import { crumbs } from "./doc.js";
 import { propertiesDialog } from "./dialogs.js";
-import { go, route } from "../nav.js";
+import { go, route, goReplace } from "../nav.js";
 import { state, savePrefs } from "../state.js";
 import { toast, errorToast, emptyState } from "../ui.js";
 
@@ -370,7 +370,7 @@ export function render(root, r) {
 
   function done() {
     autosave.flush();
-    go(route.doc(path));
+    goReplace(route.doc(path)); // going back from the document skips the editor
   }
 
   root.append(
