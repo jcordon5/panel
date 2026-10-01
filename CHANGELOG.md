@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.1 — 2026-10-01
+
+- Back and forward buttons at the top (desktop and phone) that say where they take you, like a browser inside the app; also Alt+←/→.
+  Leaving the editor with "Done" doesn't add an extra step.
+- Web app moved to https://panel.yous.dev.
+- Phones: the start screen fits, no zoom when typing, the week opens on today.
+- GitHub vaults: the editor saves every ~45 s instead of on every pause (fewer commits).
+- The web app's offline cache always fetches fresh files past CDN caches.
+
 ## 2.3.0 — 2026-09-29
 
 - **Web app** at https://jcordon5.github.io/panel/ — nothing to install. Keep the vault in a folder on your computer (Chrome/Edge/Brave)
