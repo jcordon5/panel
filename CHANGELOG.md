@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.2 — 2026-10-04
+
+- Updates and calendar links work behind company proxies: if Python can't connect (HTTPS inspection, unreachable certificate
+  revocation server) Panel retries with the system's `curl`, which uses the operating system's certificates.
+- If a network blocks GitHub release downloads, the update is downloaded from the release tag's source archive on github.com
+  (the same code).
+
 ## 2.3.1 — 2026-10-01
 
 - Back and forward buttons at the top (desktop and phone) that say where they take you, like a browser inside the app; also Alt+←/→.

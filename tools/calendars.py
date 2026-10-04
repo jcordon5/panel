@@ -17,8 +17,9 @@ import re
 import subprocess
 import sys
 import time
-import urllib.request
 from datetime import date, datetime, timedelta, timezone
+
+import net
 
 try:
     from zoneinfo import ZoneInfo  # Python 3.9+
@@ -291,9 +292,7 @@ def _event(ev, s, e, source, uid_suffix=""):
 def _fetch(src):
     if re.match(r"^(https?|webcal)://", src, re.I):
         url = re.sub(r"^webcal://", "https://", src, flags=re.I)
-        req = urllib.request.Request(url, headers={"User-Agent": "Panel calendar"})
-        with urllib.request.urlopen(req, timeout=20) as r:
-            return r.read().decode("utf-8", errors="replace")
+        return net.get(url, {"User-Agent": "Panel calendar"}, timeout=20).decode("utf-8", errors="replace")
     with open(src, encoding="utf-8-sig", errors="replace") as f:
         return f.read()
 

@@ -127,7 +127,69 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(st, 400)
 
 
+class NetTest(unittest.TestCase):
+    """Behind proxies Python's urllib can fail where the system curl works."""
+
+    def test_falls_back_to_curl_and_keeps_http_errors(self):
+        import http.server
+        import threading
+        import urllib.error
+        import urllib.request
+        import net
+        if not shutil.which("curl"):
+            self.skipTest("no curl")
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                ok = self.path == "/ok" and self.headers.get("User-Agent") == "panel-test"
+                self.send_response(200 if ok else 404)
+                self.end_headers()
+                self.wfile.write(b"hola" if ok else b"no")
+
+            def log_message(self, *a):
+                pass
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        base = "http://127.0.0.1:%d" % srv.server_port
+        orig = urllib.request.urlopen
+
+        def broken(*a, **k):
+            raise urllib.error.URLError("CERTIFICATE_VERIFY_FAILED")
+
+        urllib.request.urlopen = broken
+        try:
+            self.assertEqual(net.get(base + "/ok", {"User-Agent": "panel-test"}), b"hola")
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                net.get(base + "/missing", {"User-Agent": "panel-test"})
+            self.assertEqual(cm.exception.code, 404)
+        finally:
+            urllib.request.urlopen = orig
+            srv.shutdown()
+
+
 class UpdaterTest(unittest.TestCase):
+    def test_release_download_blocked_uses_tag_archive(self):
+        import urllib.error
+        import updater
+        calls = []
+
+        def fake(url, timeout=15):
+            calls.append(url)
+            if "releases/download" in url:
+                raise urllib.error.HTTPError(url, 403, "Forbidden", None, None)
+            return b"zip"
+
+        orig = updater._get
+        updater._get = fake
+        try:
+            rel = {"zip": "https://github.com/x/y/releases/download/v9.0.0/panel.zip",
+                   "archive": "https://github.com/x/y/archive/refs/tags/v9.0.0.zip"}
+            self.assertEqual(updater._download(rel), b"zip")
+        finally:
+            updater._get = orig
+        self.assertEqual(calls, [rel["zip"], rel["archive"]])
+
     def test_update_keeps_user_data(self):
         import io
         import zipfile

@@ -15,9 +15,10 @@ import subprocess
 import tempfile
 import time
 import urllib.error
-import urllib.request
 import zipfile
 from datetime import datetime
+
+import net
 
 DEFAULT_REPO = "jcordon5/panel"
 # Top-level names that belong to the user and must survive an update
@@ -33,20 +34,21 @@ def parse_version(v):
 
 
 def _get(url, timeout=15):
-    req = urllib.request.Request(url, headers={"User-Agent": "panel-updater", "Accept": "application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+    return net.get(url, {"User-Agent": "panel-updater", "Accept": "application/vnd.github+json"}, timeout)
 
 
 def latest_release(repo):
     data = json.loads(_get("https://api.github.com/repos/%s/releases/latest" % repo).decode("utf-8"))
     assets = [a for a in data.get("assets", []) if a.get("name", "") == "panel.zip"] or \
         [a for a in data.get("assets", []) if a.get("name", "").endswith(".zip") and "windows" not in a["name"].lower()]
+    tag = data.get("tag_name") or ""
     return {
-        "version": (data.get("tag_name") or "").lstrip("v"),
+        "version": tag.lstrip("v"),
         "notes": data.get("body") or "",
         "url": data.get("html_url") or "https://github.com/%s/releases" % repo,
         "zip": assets[0]["browser_download_url"] if assets else data.get("zipball_url"),
+        # same code as panel.zip, served from github.com (some company networks block release downloads)
+        "archive": "https://github.com/%s/archive/refs/tags/%s.zip" % (repo, tag) if tag else None,
         "published": data.get("published_at") or "",
     }
 
@@ -123,6 +125,15 @@ def _inside(path, parent):
     return path == parent or path.startswith(parent + os.sep)
 
 
+def _download(rel):
+    try:
+        return _get(rel["zip"], timeout=120)
+    except Exception:
+        if not rel.get("archive") or rel["archive"] == rel["zip"]:
+            raise
+        return _get(rel["archive"], timeout=120)
+
+
 def apply(root, vault, current, repo):
     """Install the latest release over `root`. Returns {version, backup, method}."""
     backups = os.path.join(root, "backups")
@@ -137,7 +148,7 @@ def apply(root, vault, current, repo):
     rel = latest_release(repo)
     if parse_version(rel["version"]) <= parse_version(current):
         return {"version": current, "backup": backup, "method": "none"}
-    data = _get(rel["zip"], timeout=120)
+    data = _download(rel)
     tmp = tempfile.mkdtemp(prefix="panel-update-")
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as z:
