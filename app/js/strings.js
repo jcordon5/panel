@@ -87,7 +87,7 @@ export const STRINGS = {
     "week.bringOverdue_one": "1 atrasada → hoy", "week.bringOverdue_other": "{n} atrasadas → hoy",
     "week.hideWeekend": "Ocultar fin de semana", "week.showWeekend": "Mostrar fin de semana",
     "week.hideInbox": "Ocultar columna Bandeja", "week.showInbox": "Mostrar columna Bandeja",
-    "week.hint": "Arrastra las tareas para moverlas entre días o reordenarlas. Clic en el texto para editar.",
+    "week.hint": "Arrastra las tareas (también las acciones de reuniones) para moverlas entre días o reordenarlas. Clic en el texto para editar.",
 
     "cal.prev": "Mes anterior", "cal.next": "Mes siguiente", "cal.more": "+{n} más", "cal.openWeek": "Ver semana",
     "cal.noMeetings": "Sin reuniones este día.", "cal.tasksTitle": "{open} pendientes de {total}",
@@ -97,6 +97,8 @@ export const STRINGS = {
     "task.edit": "Editar tarea", "task.editHint": "Enter guarda · Shift+Enter nueva línea (detalle) · Tab sangra · Esc cancela",
     "task.moveTo": "Mover a", "task.move": "Mover", "task.moved": "Tarea movida", "task.pickDate": "Elegir fecha…",
     "task.duplicate": "Duplicar", "task.openFile": "Abrir su archivo", "task.deleted": "Tarea eliminada", "task.clickText": "clic en el texto",
+    "task.planFor": "Planificar para", "task.planned": "Planificada para {date}", "task.unplan": "Quitar del plan",
+    "task.unplanHint": "sigue en la reunión", "task.unplanned": "Quitada del plan", "task.actionGone": "acción no encontrada",
 
     "quick.title": "Nueva tarea", "quick.placeholder": "¿Qué hay que hacer?", "quick.add": "Añadir",
     "quick.hint": "Una tarea por línea. Añade #etiquetas o una hora al principio (10:30 …).",
@@ -177,7 +179,7 @@ export const STRINGS = {
     "sc.link": "Enlazar otra nota (editor)",
 
     "undo.add": "añadir tarea", "undo.toggle": "marcar tarea", "undo.edit": "editar", "undo.delete": "eliminar",
-    "undo.move": "mover", "undo.create": "crear", "undo.done": "Deshecho: {what}", "undo.nothing": "Nada que deshacer",
+    "undo.move": "mover", "undo.plan": "planificar", "undo.unplan": "quitar del plan", "undo.create": "crear", "undo.done": "Deshecho: {what}", "undo.nothing": "Nada que deshacer",
 
     "tpl.notes": "Notas", "tpl.decisions": "Acuerdos", "tpl.next": "Próximos pasos", "tpl.goals": "Objetivos", "tpl.links": "Enlaces",
 
@@ -283,7 +285,7 @@ export const STRINGS = {
     "week.bringOverdue_one": "1 overdue → today", "week.bringOverdue_other": "{n} overdue → today",
     "week.hideWeekend": "Hide weekend", "week.showWeekend": "Show weekend",
     "week.hideInbox": "Hide Inbox column", "week.showInbox": "Show Inbox column",
-    "week.hint": "Drag tasks to move them between days or reorder them. Click the text to edit.",
+    "week.hint": "Drag tasks (meeting actions too) to move them between days or reorder them. Click the text to edit.",
 
     "cal.prev": "Previous month", "cal.next": "Next month", "cal.more": "+{n} more", "cal.openWeek": "Open week",
     "cal.noMeetings": "No meetings this day.", "cal.tasksTitle": "{open} open of {total}",
@@ -293,6 +295,8 @@ export const STRINGS = {
     "task.edit": "Edit task", "task.editHint": "Enter saves · Shift+Enter new line (details) · Tab indents · Esc cancels",
     "task.moveTo": "Move to", "task.move": "Move", "task.moved": "Task moved", "task.pickDate": "Pick a date…",
     "task.duplicate": "Duplicate", "task.openFile": "Open its file", "task.deleted": "Task deleted", "task.clickText": "click the text",
+    "task.planFor": "Plan for", "task.planned": "Planned for {date}", "task.unplan": "Remove from plan",
+    "task.unplanHint": "it stays in the meeting", "task.unplanned": "Removed from the plan", "task.actionGone": "action not found",
 
     "quick.title": "New task", "quick.placeholder": "What needs to be done?", "quick.add": "Add",
     "quick.hint": "One task per line. Add #tags or a leading time (10:30 …).",
@@ -373,7 +377,7 @@ export const STRINGS = {
     "sc.link": "Link another note (editor)",
 
     "undo.add": "add task", "undo.toggle": "check task", "undo.edit": "edit", "undo.delete": "delete",
-    "undo.move": "move", "undo.create": "create", "undo.done": "Undone: {what}", "undo.nothing": "Nothing to undo",
+    "undo.move": "move", "undo.plan": "plan", "undo.unplan": "remove from plan", "undo.create": "create", "undo.done": "Undone: {what}", "undo.nothing": "Nothing to undo",
 
     "tpl.notes": "Notes", "tpl.decisions": "Decisions", "tpl.next": "Next steps", "tpl.goals": "Goals", "tpl.links": "Links",
 

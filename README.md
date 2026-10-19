@@ -117,7 +117,8 @@ The desktop version opens in your browser at `http://127.0.0.1:8765` and keeps a
 - **Week board** — one column per day plus your inbox. Drag tasks between days and reorder them; click to edit; bring overdue tasks to today in one click.
 - **Day plan with meetings in it** — meetings sit among your tasks, in the order things happen. Drag a meeting to another day to reschedule it.
 - **Today** — the day in order, overdue work, upcoming days and open action items from recent meetings.
-- **Meetings** — press <kbd>M</kbd> and start writing. Editable templates (retro, 1:1, interview…). `- [ ]` lines become action items.
+- **Meetings** — press <kbd>M</kbd> and start writing. Editable templates (retro, 1:1, interview…). `- [ ]` lines become action items:
+  drag them onto a day (or *Plan for → Today*) and they show up in your plan while staying in the meeting notes — check them in either place.
 - **Projects** — overview, meetings, tasks (`#project` tags plus open items in its documents) and documents. Paused and done projects stay one click away.
 - **Calendar** — month view; your Outlook/Google/iCloud meetings appear on their own (desktop version); one click creates the note.
 - **Notes board** — pinned and recent notes as cards.
@@ -181,11 +182,12 @@ start: 2026-09-28
 - [[2026-09-29-sync-with-vendor]]   ← the meeting, where it happens
 - [ ] Send the minutes #cloud-migration
   - details are indented under their task
+- [[2026-09-28-retro#^k3x9pa]]      ← an action item of another meeting, planned here
 ```
 
 Conventions: YAML frontmatter (`type`, `title`, `date`, `time`, `project`, `attendees`, `tags`, `created`, `updated`; unknown keys are
 kept) · tasks are `- [ ]` / `- [x]` · a leading `HH:MM` is the task time · `#project-folder` links a task to a project · the ISO date
-in the day heading is what counts · templates in `templates/` (`meeting.md` is the default, `meeting-<name>.md` are alternatives) use
+in the day heading is what counts · `[[meeting#^id]]` in a day plans that meeting's task ending in ` ^id` (Obsidian block id) · templates in `templates/` (`meeting.md` is the default, `meeting-<name>.md` are alternatives) use
 `{{title}}`, `{{date}}`, `{{time}}`, `{{project}}`, `{{attendees}}`, `{{today}}`. Fully compatible with Obsidian.
 
 **Coming from Panel v1 (`boveda/`)?** Put your `boveda` folder next to `server.py` of the desktop version before the first start and

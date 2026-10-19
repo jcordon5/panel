@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.0 — 2026-10-19
+
+- Plan meeting action items: drag them from *Meeting actions* (Today, or under the inbox in Week) onto a day, or use
+  *Plan for → Today / Tomorrow / Next week / Pick a date* in their menu. The task stays in the meeting notes and the day
+  links to it (`- [[meeting#^id]]`, Obsidian block links): checking it in either place is the same checkbox, and it can
+  be moved between days like any task, or taken out of the plan.
+- Editing a task no longer drops its time (`09:30 …`).
+- Agent skill: `plan` command, and planned actions show up in `day`, `week`, `overdue` and `actions`.
+
 ## 2.3.2 — 2026-10-04
 
 - Updates and calendar links work behind company proxies: if Python can't connect (HTTPS inspection, unreachable certificate

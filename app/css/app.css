@@ -246,6 +246,7 @@ button.chip:hover, a.chip:hover { background: var(--active); color: var(--text);
 .chip-project .dot { width: 7px; height: 7px; }
 .chip-text { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .chip-project { max-width: 190px; }
+.chip-source { max-width: 100%; min-width: 0; }
 .pill { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-3); color: var(--text-2); }
 .pill-accent { background: var(--accent); color: var(--accent-contrast); }
 .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--warn); background: var(--warn-soft); padding: 2px 8px; border-radius: 999px; }
@@ -762,6 +763,10 @@ input.md-task:disabled { cursor: default; opacity: 0.8; }
 .ref-icon { color: color-mix(in srgb, var(--pc, var(--accent)) 80%, var(--text)); display: grid; place-items: center; width: 18px; flex-shrink: 0; }
 .task.compact.ref-row .ref-icon { width: 16px; }
 .ref-row.missing { opacity: 0.6; border-left-color: var(--text-3); }
+/* a meeting's action item planned on a day: a normal task with a thin accent edge */
+.task.is-action { box-shadow: inset 2px 0 0 var(--accent); }
+.col-actions { margin-top: 14px; }
+.col-actions .task-divider { padding-top: 4px; }
 .ref-row:hover { border-color: color-mix(in srgb, var(--pc, var(--accent)) 55%, var(--border)); }
 .task.compact.ref-row .task-more { background: transparent; box-shadow: none; }
 .meeting-pill[draggable="true"] { cursor: grab; }

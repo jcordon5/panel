@@ -323,3 +323,54 @@ test("flow: a meeting goes right after the last thing that happens before it", a
   await A.createMeeting({ title: "Tarde", date: "2026-09-28", time: "10:30" });
   assert.match(disk.get("weeks/2026-W40.md"), /- \[ \] 09:00 a\n  - detalle a\n- \[\[2026-09-28-tarde\]\]\n- \[x\] b/);
 });
+
+test("flow: a meeting's action item is planned on a day without leaving the meeting", async () => {
+  const MEET = "---\ntype: meeting\ntitle: Sync\ndate: 2026-09-28\n---\n\n## Próximos pasos\n\n- [ ] Enviar acta\n  - a todos\n- [ ] Otra\n";
+  await reset({ "weeks/2026-W40.md": WEEK, "meetings/2026-09-28-sync.md": MEET });
+  const mp = "meetings/2026-09-28-sync.md";
+  let action = model.vault().docTasks.find((x) => x.text === "Enviar acta");
+  assert.equal(model.pendingActions("2026-09-01").length, 2);
+  await A.planAction(action, { kind: "day", date: "2026-09-29" });
+  const id = /- \[ \] Enviar acta \^([a-z0-9]+)\n  - a todos/.exec(disk.get(mp))[1];
+  assert.match(disk.get("weeks/2026-W40.md"), new RegExp(`## Martes · 2026-09-29\\n\\n- \\[\\[2026-09-28-sync#\\^${id}\\]\\]\\n`));
+  // the day shows it as a task (counted, overdue-able); the meeting is still unplaced on its own day
+  let ref = model.dayTasks("2026-09-29")[0];
+  assert.equal(ref.action.text, "Enviar acta");
+  assert.equal(model.unplacedMeetings("2026-09-28").length, 1);
+  assert.deepEqual(model.pendingActions("2026-09-01").map((x) => x.text), ["Otra"]);
+  assert.equal(model.overdueTasks("2026-10-01").filter((x) => x.action).length, 1);
+  // checking it from the day checks it in the meeting
+  await A.toggleTask(ref.action, true);
+  assert.match(disk.get(mp), new RegExp(`- \\[x\\] Enviar acta \\^${id}`));
+  assert.equal(model.dayTasks("2026-09-29")[0].done, true);
+  // planning again moves the link; editing keeps the block id
+  action = model.vault().docTasks.find((x) => x.text === "Enviar acta");
+  await A.planAction(action, { kind: "day", date: "2026-09-30" }, 0);
+  assert.equal(model.dayTasks("2026-09-29").length, 0);
+  ref = model.dayItems("2026-09-30").find((x) => x.anchor);
+  assert.equal(ref.anchor, id);
+  await A.updateTask(ref.action, ops.blockText(ref.action).replace("Enviar acta", "Enviar acta final"));
+  assert.match(disk.get(mp), new RegExp(`- \\[x\\] Enviar acta final \\^${id}\\n  - a todos`));
+  // renaming the meeting renames the link, which stays on its day
+  const np = await A.setProps(mp, { title: "Revisión", date: "2026-09-28" });
+  assert.equal(np, "meetings/2026-09-28-revision.md");
+  assert.match(disk.get("weeks/2026-W40.md"), new RegExp(`### Mañana\\n- \\[\\[2026-09-28-revision#\\^${id}\\]\\]`));
+  assert.ok(model.dayItems("2026-09-30").find((x) => x.anchor).action);
+  // out of the plan: the task stays in the meeting; deleting the task removes its links
+  await A.unplanAction(model.dayItems("2026-09-30").find((x) => x.anchor));
+  assert.ok(!disk.get("weeks/2026-W40.md").includes("#^"));
+  assert.match(disk.get(np), /Enviar acta final/);
+  await A.planAction(model.vault().docTasks.find((x) => x.blockId === id), { kind: "day", date: "2026-10-01" });
+  await A.deleteTask(model.vault().docTasks.find((x) => x.blockId === id));
+  assert.ok(!disk.get("weeks/2026-W40.md").includes("#^"));
+  assert.ok(!disk.get(np).includes("Enviar acta"));
+  assert.ok(!md.renderMarkdown("- [ ] x ^ab12", { path: np }).includes("^ab12"));
+});
+
+test("flow: editing a task keeps its time", async () => {
+  await reset({ "weeks/2026-W40.md": WEEK.replace("- [ ] a\n", "- [ ] 09:30 a\n") });
+  const tk = model.dayTasks("2026-09-28")[0];
+  assert.equal(ops.blockText(tk).split("\n")[0], "09:30 a");
+  await A.updateTask(tk, "09:30 a cambiada");
+  assert.match(disk.get("weeks/2026-W40.md"), /- \[ \] 09:30 a cambiada\n/);
+});

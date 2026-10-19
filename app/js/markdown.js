@@ -4,7 +4,7 @@
 
 import { Marked } from "../vendor/marked.esm.js";
 import { esc, dirname, joinPath } from "./util.js";
-import { resolveLink, projectBySlug, TASK_RE } from "./model.js";
+import { resolveLink, projectBySlug, TASK_RE, BLOCK_ID_RE } from "./model.js";
 import { backend } from "./backends.js";
 
 const IMG_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
@@ -46,7 +46,7 @@ const wikilink = {
       const width = /^\d+$/.test(tok.alias) ? ` width="${tok.alias}"` : "";
       return path ? `<img ${assetAttr(path, "src")} alt="${esc(tok.target)}"${width} loading="lazy">` : `<span class="wikilink missing">${esc(tok.target)}</span>`;
     }
-    const label = tok.alias || tok.target.split("/").pop() + (tok.heading || "");
+    const label = tok.alias || tok.target.split("/").pop() + (tok.heading && !tok.heading.startsWith("#^") ? tok.heading : "");
     const cls = path ? "wikilink" : "wikilink missing";
     return `<a href="#" class="${cls}" data-link="${esc(path || "")}" data-target="${esc(tok.target)}">${esc(label)}</a>`;
   },
@@ -163,6 +163,17 @@ function taskLines(src) {
   return out;
 }
 
+/** " ^a1b2c3" block ids (links from day plans) are not shown, like in Obsidian. Same line count. */
+function hideBlockIds(src) {
+  if (!src.includes("^")) return src;
+  let fence = null;
+  return src.split("\n").map((l) => {
+    const f = /^\s*(```|~~~)/.exec(l);
+    if (f) { if (!fence) fence = f[1]; else if (f[1] === fence) fence = null; return l; }
+    return fence ? l : l.replace(BLOCK_ID_RE, "");
+  }).join("\n");
+}
+
 /**
  * Render Markdown to HTML.
  * opts.path: file the source belongs to (links, images, checkboxes)
@@ -170,10 +181,11 @@ function taskLines(src) {
  */
 export function renderMarkdown(src, opts = {}) {
   ctx = { dir: opts.path ? dirname(opts.path) : "", n: 0 };
+  src = hideBlockIds(src || "");
   let html;
-  try { html = md.parse(src || ""); } catch (e) { return `<pre>${esc(src)}</pre>`; }
+  try { html = md.parse(src); } catch (e) { return `<pre>${esc(src)}</pre>`; }
   if (!opts.path || opts.interactive === false) return html.replace(/class="md-task"/g, 'class="md-task" disabled');
-  const lines = taskLines(src || "");
+  const lines = taskLines(src);
   const off = opts.lineOffset || 0;
   let ok = lines.length === ctx.n;
   return html.replace(/<input type="checkbox" class="md-task" data-task="(\d+)"( checked)?>/g, (all, n, checked) => {
@@ -193,6 +205,7 @@ export function renderInline(src) {
 export function excerpt(src, max = 220) {
   return (src || "")
     .replace(/^---[\s\S]*?\n---\n/, "")
+    .replace(/[ \t]+\^[A-Za-z0-9-]+[ \t]*$/gm, "")
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/!\[\[[^\]]*\]\]|!\[[^\]]*\]\([^)]*\)/g, " ")
     .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")

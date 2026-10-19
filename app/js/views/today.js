@@ -3,7 +3,7 @@
 import { h, today, addDays } from "../util.js";
 import { icon } from "../icons.js";
 import { t, fmtDate, cap, relDay, relTime } from "../i18n.js";
-import { vault, dayItems, dayTasks, overdueTasks, meetingsOn, unplacedMeetings } from "../model.js";
+import { vault, dayItems, dayTasks, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask } from "../model.js";
 import { taskList, run, quickAdd, meetingPill, eventPill } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
@@ -37,7 +37,7 @@ export function render(root) {
   wantEvents(d, addDays(d, 6));
   const v = vault();
   const items = dayItems(d);
-  const tasks = items.filter((x) => x.type === "task");
+  const tasks = items.filter(isTask);
   const done = tasks.filter((x) => x.done).length;
   const overdue = overdueTasks(d);
   const meetings = meetingsOn(d);
@@ -81,14 +81,13 @@ export function render(root) {
   }
   aside.append(section(t("today.upcoming"), upcoming.childElementCount ? upcoming : h("div", { class: "muted small pad" }, t("today.upcomingEmpty")), { icon: "calendar" }));
 
-  const cutoff = addDays(d, -30);
-  const actions = v.docTasks.filter((x) => !x.done && x.docKind === "meeting" && (!x.date || x.date >= cutoff))
-    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  // not planned yet: drag them into the day, or use their menu
+  const actions = pendingActions(addDays(d, -30));
   if (actions.length) {
     aside.append(section(t("today.meetingActions"), taskList(actions.slice(0, 12), { compact: true, showSource: true }), { icon: "list-checks", count: actions.length }));
   }
 
-  const inboxOpen = v.inbox.items.filter((x) => x.type === "task" && !x.done);
+  const inboxOpen = v.inbox.items.filter((x) => isTask(x) && !x.done);
   if (inboxOpen.length) {
     aside.append(section(t("nav.inbox"), taskList(inboxOpen.slice(0, 8), { compact: true }), {
       icon: "inbox", count: inboxOpen.length,

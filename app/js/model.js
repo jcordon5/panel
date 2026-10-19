@@ -25,7 +25,10 @@ const WEEKDAYS = [
 
 export const TASK_RE = /^(\s*)(?:[-*+]|\d+[.)])\s+\[([ xX])\]\s+(\S.*)$/;
 // A list item that is only a [[link]]: in a day it places a meeting (or note) among the tasks
-export const REF_RE = /^(\s*)[-*+]\s+\[\[([^\]|#\n]+)(?:#[^\]|\n]*)?(?:\|[^\]\n]*)?\]\]\s*$/;
+// "- [[meeting#^id]]" places one action item (a task with a ^id block id) of a meeting or note in a day
+export const REF_RE = /^(\s*)[-*+]\s+\[\[([^\]|#\n]+)(#[^\]|\n]*)?(?:\|[^\]\n]*)?\]\]\s*$/;
+// Obsidian block id at the end of a line: "- [ ] Send the minutes ^a1b2c3"
+export const BLOCK_ID_RE = /[ \t]+\^([A-Za-z0-9-]+)[ \t]*$/;
 export const TAG_RE = /(^|[\s(])#([\p{L}\p{N}_\-/]*[\p{L}_][\p{L}\p{N}_\-/]*)/gu;
 const TIME_RE = /^(\d{1,2}[:.]\d{2})(?:\s*[-–]\s*(\d{1,2}(?:[:.]\d{2})?))?\s+/;
 
@@ -124,12 +127,16 @@ export function blockEnd(lines, i, limit = lines.length) {
 }
 
 export function parseTaskText(text) {
+  let blockId = null;
+  const bm = BLOCK_ID_RE.exec(text);
+  if (bm) { blockId = bm[1]; text = text.slice(0, bm.index); }
+  const source = text; // what the user edits: time and text, without the block id
   let time = null, timeEnd = null;
   const tm = TIME_RE.exec(text);
   if (tm) { time = tm[1].replace(".", ":"); timeEnd = tm[2] ? tm[2].replace(".", ":") : null; text = text.slice(tm[0].length); }
   const tags = [];
   text.replace(TAG_RE, (_, _p, tag) => { tags.push(tag); return _; });
-  return { time, timeEnd, text, tags };
+  return { time, timeEnd, text, tags, blockId, source };
 }
 
 function makeTask(lines, i, end, extra) {
@@ -163,7 +170,8 @@ export function containerItems(lines, start, end, extra, dividerMin = 3) {
     const rm = REF_RE.exec(l);
     if (rm) {
       const e = blockEnd(lines, i, end);
-      items.push({ type: "ref", line: i, end: e, raw: l, indent: indentOf(l), target: rm[2].trim(), details: lines.slice(i + 1, e), text: rm[2].trim(), tags: [], ...extra });
+      const anchor = rm[3] && rm[3].startsWith("#^") ? rm[3].slice(2).trim() : "";
+      items.push({ type: "ref", line: i, end: e, raw: l, indent: indentOf(l), target: rm[2].trim(), anchor, details: lines.slice(i + 1, e), text: rm[2].trim(), tags: [], ...extra });
       i = e;
       continue;
     }
@@ -322,6 +330,17 @@ function build() {
     }
   }
 
+  // "- [[doc#^id]]" in a day or the inbox: that task of the doc, planned there
+  const byBlock = new Map(docTasks.filter((tk) => tk.blockId).map((tk) => [tk.path + "#" + tk.blockId, tk]));
+  const containers = [...[...days.values()].map((d) => d.items), inbox.items];
+  for (const items of containers) for (const it of items) {
+    if (it.type !== "ref" || !it.anchor) continue;
+    const tk = it.doc ? byBlock.get(it.doc.path + "#" + it.anchor) : null;
+    it.action = tk || null;
+    it.done = tk ? tk.done : false;
+    if (tk) (tk.planned = tk.planned || []).push(it);
+  }
+
   // project membership of week/inbox tasks by #tag
   const slugByFold = new Map([...projects.keys()].map((s) => [fold(s), s]));
   for (const tk of tasks) {
@@ -369,11 +388,13 @@ export function dayItems(date) {
   const d = vault().days.get(date);
   return d ? d.items : [];
 }
-export function dayTasks(date) { return dayItems(date).filter((i) => i.type === "task"); }
+/** Real tasks and planned action items (both have a checkbox). */
+export const isTask = (it) => it.type === "task" || !!it.action;
+export function dayTasks(date) { return dayItems(date).filter(isTask); }
 
 /** Meetings of a date that are not placed ([[ref]]) in that day's list. */
 export function unplacedMeetings(date) {
-  const placed = new Set(dayItems(date).filter((i) => i.type === "ref" && i.doc).map((i) => i.doc.path));
+  const placed = new Set(dayItems(date).filter((i) => i.type === "ref" && i.doc && !i.anchor).map((i) => i.doc.path));
   return meetingsOn(date).filter((m) => !placed.has(m.path));
 }
 
@@ -381,8 +402,16 @@ export function meetingsOn(date) {
   return vault().meetings.filter((m) => m.date === date).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
 }
 
+/** Open action items of meetings since `since` that are not planned on a day yet. */
+export function pendingActions(since) {
+  return vault().docTasks.filter((x) => !x.done && !x.planned && x.docKind === "meeting" && (!x.date || x.date >= since))
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+}
+
 export function overdueTasks(before) {
-  return vault().tasks.filter((t) => t.kind === "day" && !t.done && t.date < before)
+  const v = vault();
+  const actions = [...v.days.values()].flatMap((d) => d.items).filter((it) => it.action && !it.done);
+  return [...v.tasks, ...actions].filter((t) => t.kind === "day" && !t.done && t.date < before)
     .sort((a, b) => a.date.localeCompare(b.date) || a.line - b.line);
 }
 

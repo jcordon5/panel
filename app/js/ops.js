@@ -58,7 +58,7 @@ export function blockText(task) {
   const min = nonEmpty.length ? Math.min(...nonEmpty.map(indentOf)) : 0;
   const det = task.details.map((l) => dedent(l, min));
   while (det.length && !det[det.length - 1].trim()) det.pop();
-  return [task.text, ...det].join("\n");
+  return [task.source ?? task.text, ...det].join("\n");
 }
 
 export function touch(text) {

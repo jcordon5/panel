@@ -4,7 +4,7 @@ import { h, $, today } from "./util.js";
 import { icon } from "./icons.js";
 import { t, lang, setLang } from "./i18n.js";
 import { store, loadInfo, sync, onChange, startPolling, apiGet } from "./store.js";
-import { vault, dayTasks, overdueTasks } from "./model.js";
+import { vault, dayTasks, overdueTasks, isTask } from "./model.js";
 import { state, requestRender, applyTheme } from "./state.js";
 import { parseRoute, route, go, trackNavigation, setNavTitle, navBack, navForward } from "./nav.js";
 import { toast, errorToast, isModalOpen, closeMenus } from "./ui.js";
@@ -46,7 +46,7 @@ function renderSidebar(r) {
   const sb = $("#sidebar");
   const openToday = dayTasks(today()).filter((x) => !x.done).length;
   const overdue = overdueTasks(today()).length;
-  const inboxOpen = v.inbox.items.filter((x) => x.type === "task" && !x.done).length;
+  const inboxOpen = v.inbox.items.filter((x) => isTask(x) && !x.done).length;
   const is = (n) => r.name === n;
   const activeProjects = [...v.projects.values()].filter((p) => p.status !== "done" && p.status !== "archived").sort((a, b) => a.title.localeCompare(b.title));
   const closedProjects = v.projects.size - activeProjects.length;

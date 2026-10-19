@@ -36,14 +36,19 @@ A day in a week file is the **plan of that day, in order**. It holds tasks and, 
 - [[2026-09-29-sync-con-el-proveedor-cloud]]
 - [ ] Enviar acta #migracion-cloud
   - detail lines are indented under their task and move with it
+- [[2026-09-28-retro#^k3x9pa]]       ← an action item of another meeting, planned for this day
 ```
+
+`- [[meeting#^id]]` is an action item **planned** on that day: the task itself stays in the meeting
+(`- [ ] Pedir presupuesto ^k3x9pa`, an Obsidian block id) and the day only links to it, so checking it in either
+place is the same checkbox. The script shows these as tasks (`(action of: …)`) and handles them for you.
 
 Conventions worth knowing (the app relies on them):
 - Every file starts with YAML frontmatter: `type` (week, meeting, project, note, inbox), `title`, `date`, `time`, `project`, `attendees`, `tags`, `created`, `updated`. Unknown keys must be kept.
 - The ISO date in the day heading is what counts; the weekday word is decoration (can be Spanish or English — match the existing files).
 - Tasks are `- [ ]` / `- [x]`. A leading `HH:MM` is the task time. `#<project-slug>` links a task to a project.
 - A meeting's date comes from its `date` field (or the `YYYY-MM-DD-` file prefix). Open `- [ ]` lines inside meetings are **action items**.
-- Links are `[[file-name]]` (without `.md`).
+- Links are `[[file-name]]` (without `.md`). A ` ^abc123` at the end of a task line is a block id that day plans link to — keep it when editing that line.
 
 ## Use the helper script
 
@@ -60,6 +65,7 @@ python3 scripts/panel_vault.py --vault PATH project SLUG
 python3 scripts/panel_vault.py --vault PATH add-task "Text #slug" --date tomorrow   # or --inbox
 python3 scripts/panel_vault.py --vault PATH done "part of the task text" [--date D] [--reopen]
 python3 scripts/panel_vault.py --vault PATH move "part of the text" --to 2026-10-06   # or --to-inbox
+python3 scripts/panel_vault.py --vault PATH plan "part of a meeting action" --date tomorrow   # schedule an action item
 python3 scripts/panel_vault.py --vault PATH new-meeting --title "Retro" --date D --time 09:00 \
         [--project SLUG] [--attendees "Ana, Luis"] [--template retro] [--notes "..."]
 ```
@@ -83,6 +89,6 @@ Quote file names when it helps the user find things. Don't invent tasks, dates o
 - Keep the frontmatter intact and set `updated: <today>` on files you change.
 - New tasks go at the end of their day (or into `inbox.md` when undated) unless the user says where. Keep a task's indented details with it when moving it.
 - New meetings: `meetings/YYYY-MM-DD-slug.md` or `projects/<slug>/meetings/…`, filled from `templates/meeting*.md`, and placed in the day plan as `- [[file-name]]`. The script does all of that.
-- Turning meeting next steps into tasks: add them as tasks on the chosen day and mention the source, e.g. `- [ ] Pedir presupuesto #migracion-cloud (de [[2026-09-29-sync-con-el-proveedor-cloud]])`. Leave the original action items in the meeting untouched unless asked.
+- Turning meeting next steps into tasks: **plan** them (`plan "text" --date D`), which links the action item from the day without copying it, so the meeting keeps its record and there is a single checkbox. `move` on a planned action moves its link; `done` checks it in the meeting.
 - Don't delete files; if the user wants something removed, move it to `.trash/` or ask.
 - After changing things, tell the user briefly what you changed and where.

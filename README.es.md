@@ -114,7 +114,8 @@ La versión de escritorio se abre en el navegador en `http://127.0.0.1:8765` y d
 - **Tablero semanal** — una columna por día más la bandeja. Arrastra tareas entre días y reordénalas; clic para editar; trae lo atrasado a hoy con un clic.
 - **Plan del día con las reuniones dentro** — las reuniones van entre tus tareas, en el orden en que ocurren. Arrastra una reunión a otro día para cambiarla de fecha.
 - **Hoy** — el día en orden, lo atrasado, los próximos días y las acciones pendientes de tus reuniones recientes.
-- **Reuniones** — pulsa <kbd>M</kbd> y empieza a escribir. Plantillas editables (retro, 1:1, entrevista…). Las líneas `- [ ]` son acciones.
+- **Reuniones** — pulsa <kbd>M</kbd> y empieza a escribir. Plantillas editables (retro, 1:1, entrevista…). Las líneas `- [ ]` son acciones:
+  arrástralas a un día (o *Planificar para → Hoy*) y aparecen en tu plan sin salir del acta; márcalas en cualquiera de los dos sitios.
 - **Proyectos** — resumen, reuniones, tareas (etiquetas `#proyecto` y pendientes de sus documentos) y documentos. Los pausados y terminados siguen a un clic.
 - **Calendario** — vista mensual; tus reuniones de Outlook/Google/iCloud aparecen solas (versión de escritorio); un clic crea la nota.
 - **Tablón** — notas fijadas y recientes en tarjetas.
@@ -178,11 +179,13 @@ start: 2026-09-28
 - [[2026-09-29-sync-con-el-proveedor]]  ← la reunión, donde ocurre
 - [ ] Enviar el acta #migracion-cloud
   - el detalle va indentado bajo su tarea
+- [[2026-09-28-retro#^k3x9pa]]          ← una acción de otra reunión, planificada aquí
 ```
 
 Convenciones: cabecera YAML (`type`, `title`, `date`, `time`, `project`, `attendees`, `tags`, `created`, `updated`; las claves desconocidas se
 respetan) · tareas `- [ ]` / `- [x]` · una hora `HH:MM` al principio es la hora de la tarea · `#carpeta-del-proyecto` asocia la tarea a un
-proyecto · lo que cuenta es la fecha ISO del título del día · plantillas en `templates/` (`meeting.md` por defecto, `meeting-<nombre>.md`
+proyecto · lo que cuenta es la fecha ISO del título del día · `[[reunión#^id]]` en un día planifica la tarea de esa reunión que termina en
+` ^id` (id de bloque de Obsidian) · plantillas en `templates/` (`meeting.md` por defecto, `meeting-<nombre>.md`
 alternativas) con `{{title}}`, `{{date}}`, `{{time}}`, `{{project}}`, `{{attendees}}`, `{{today}}`. 100 % compatible con Obsidian.
 
 **¿Vienes de Panel v1 (`boveda/`)?** Pon tu carpeta `boveda` junto a `server.py` de la versión de escritorio antes de arrancarla la primera vez

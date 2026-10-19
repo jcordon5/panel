@@ -28,13 +28,16 @@ DATE accepts YYYY-MM-DD, "today", "tomorrow", "yesterday" or +N / -N days.
 """
 import argparse
 import os
+import random
 import re
 import sys
 import unicodedata
 from datetime import date, timedelta
 
 TASK_RE = re.compile(r"^(\s*)(?:[-*+]|\d+[.)])\s+\[([ xX])\]\s+(\S.*)$")
-REF_RE = re.compile(r"^(\s*)[-*+]\s+\[\[([^\]|#\n]+)(?:#[^\]|\n]*)?(?:\|[^\]\n]*)?\]\]\s*$")
+REF_RE = re.compile(r"^(\s*)[-*+]\s+\[\[([^\]|#\n]+)(#[^\]|\n]*)?(?:\|[^\]\n]*)?\]\]\s*$")
+# "- [ ] Send the minutes ^a1b2c3": a block id, so a day can link to that task with [[meeting#^a1b2c3]]
+BLOCK_RE = re.compile(r"[ \t]+\^([A-Za-z0-9-]+)[ \t]*$")
 TIME_RE = re.compile(r"^(\d{1,2}[:.]\d{2})")
 FM_RE = re.compile(r"^---[ \t]*\n(.*?)\n(?:---|\.\.\.)[ \t]*(?:\n|$)", re.S)
 DAYS = {"es": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
@@ -268,9 +271,20 @@ def items_in(lines, a, b, path, v, day=None):
         tm, rm = TASK_RE.match(l), REF_RE.match(l)
         if tm:
             e = block_end(lines, i, b)
-            out.append({"type": "task", "path": path, "line": i, "done": tm.group(2) != " ", "text": tm.group(3),
+            out.append({"type": "task", "path": path, "line": i, "done": tm.group(2) != " ", "text": BLOCK_RE.sub("", tm.group(3)),
                         "details": [x for x in lines[i + 1:e] if x.strip()], "date": day})
             i = e
+            continue
+        if rm and (rm.group(3) or "").startswith("#^"):
+            # an action item of a meeting/note planned here: it is that task (checking it checks it in the meeting)
+            target = resolve(v, rm.group(2))
+            act = find_block(v, target, rm.group(3)[2:].strip()) if target else None
+            if act:
+                act.update({"date": day, "ref_path": path, "ref_line": i})
+                out.append(act)
+            else:
+                out.append({"type": "ref", "path": path, "line": i, "target": rm.group(2) + rm.group(3), "meeting": None, "date": day})
+            i += 1
             continue
         if rm:
             target = resolve(v, rm.group(2))
@@ -283,6 +297,19 @@ def items_in(lines, a, b, path, v, day=None):
             out.append({"type": "heading", "text": hm.group(1)})
         i += 1
     return out
+
+
+def find_block(v, rel, block_id):
+    """The task of `rel` whose line ends with ^block_id."""
+    text = v.read(rel) or ""
+    lines = text.split("\n")
+    for i, l in enumerate(lines):
+        m, b = TASK_RE.match(l), BLOCK_RE.search(l)
+        if m and b and b.group(1) == block_id:
+            e = block_end(lines, i)
+            return {"type": "task", "path": rel, "line": i, "done": m.group(2) != " ", "text": BLOCK_RE.sub("", m.group(3)),
+                    "details": [x for x in lines[i + 1:e] if x.strip()], "block": block_id, "via": meeting_info(v, rel)["title"]}
+    return None
 
 
 def week_files(v):
@@ -328,6 +355,8 @@ def fmt_task(t, show_date=False):
     box = "[x]" if t["done"] else "[ ]"
     where = "%s:%d" % (t["path"], t["line"] + 1)
     extra = (" (%s)" % t["date"].isoformat()) if show_date and t.get("date") else ""
+    if t.get("via"):
+        extra += " (action of: %s)" % t["via"]
     out = "- %s %s%s   <%s>" % (box, t["text"], extra, where)
     for d in t.get("details", []):
         out += "\n      " + d.strip()
@@ -433,15 +462,29 @@ def doc_actions(v, project=None, since=None):
         for i in range(body, len(lines)):
             m = TASK_RE.match(lines[i])
             if m and m.group(2) == " ":
-                out.append({"path": rel, "line": i, "text": m.group(3), "source": info["title"], "date": info["date"]})
+                b = BLOCK_RE.search(lines[i])
+                out.append({"path": rel, "line": i, "text": BLOCK_RE.sub("", m.group(3)), "source": info["title"], "date": info["date"],
+                            "block": b.group(1) if b else None})
+    return out
+
+
+def planned_blocks(v):
+    """{(path, block id): date or 'inbox'} of every [[doc#^id]] in the day plans and the inbox."""
+    out = {}
+    for t in all_day_tasks(v) + [x for x in inbox_items(v) if x["type"] == "task"]:
+        if t.get("block"):
+            out[(t["path"], t["block"])] = t["date"].isoformat() if t.get("date") else "inbox"
     return out
 
 
 def cmd_actions(v, a):
     since = parse_date(a.since).isoformat() if a.since else None
     acts = doc_actions(v, a.project, since)
+    planned = planned_blocks(v)
     for x in acts:
-        print("- [ ] %s   (from: %s%s)   <%s:%d>" % (x["text"], x["source"], ", " + x["date"] if x["date"] else "", x["path"], x["line"] + 1))
+        when = planned.get((x["path"], x["block"]))
+        print("- [ ] %s   (from: %s%s)%s   <%s:%d>" % (x["text"], x["source"], ", " + x["date"] if x["date"] else "",
+                                                  "   planned: " + when if when else "", x["path"], x["line"] + 1))
     if not acts:
         print("(no open action items)")
 
@@ -587,6 +630,9 @@ def cmd_done(v, a):
 
 def cmd_move(v, a):
     t = find_task(v, a.pattern, parse_date(a.from_) if a.from_ else None)
+    if t.get("ref_path"):
+        # a planned meeting action: move its link, the task stays in the meeting
+        t = dict(t, path=t["ref_path"], line=t["ref_line"])
     lines = v.read(t["path"]).split("\n")
     end = block_end(lines, t["line"])
     block = lines[t["line"]:end]
@@ -603,6 +649,34 @@ def cmd_move(v, a):
         d = parse_date(a.to)
         rel = insert_in_day(v, d, block)
         print("Moved to %s (%s): %s" % (rel, d.isoformat(), t["text"]))
+
+
+def cmd_plan(v, a):
+    """Plan a meeting's action item on a day: the day links to it, the task stays in the meeting."""
+    pat = fold(a.pattern)
+    hits = [x for x in doc_actions(v) if pat in fold(x["text"])]
+    if not hits:
+        sys.exit("No open action item matches '%s'." % a.pattern)
+    if len(hits) > 1:
+        sys.exit("Several action items match '%s':\n%s" % (a.pattern, "\n".join("- %s (from: %s)" % (x["text"], x["source"]) for x in hits)))
+    x = hits[0]
+    if x["block"] and (x["path"], x["block"]) in planned_blocks(v):
+        sys.exit("Already planned; use: move '%s' --to <date>" % a.pattern)
+    block = x["block"]
+    if not block:
+        text = v.read(x["path"])
+        lines = text.split("\n")
+        while True:
+            block = "".join(random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(6))
+            if "^" + block not in text:
+                break
+        lines[x["line"]] = lines[x["line"]].rstrip() + " ^" + block
+        v.write(x["path"], touch("\n".join(lines)))
+    base = os.path.basename(x["path"])[:-3]
+    link = base if resolve(v, base) == x["path"] else x["path"][:-3]
+    d = parse_date(a.date)
+    rel = insert_in_day(v, d, ["- [[%s#^%s]]" % (link, block)])
+    print("Planned for %s (%s): %s   (stays in %s)" % (d.isoformat(), rel, x["text"], x["path"]))
 
 
 BUILTIN_MEETING = """---
@@ -693,6 +767,7 @@ def main(argv=None):
     s = sub.add_parser("project"); s.add_argument("slug"); s.set_defaults(fn=cmd_project)
     s = sub.add_parser("add-task"); s.add_argument("text"); s.add_argument("--date"); s.add_argument("--inbox", action="store_true"); s.add_argument("--project"); s.set_defaults(fn=cmd_add_task)
     s = sub.add_parser("done"); s.add_argument("pattern"); s.add_argument("--date"); s.add_argument("--reopen", action="store_true"); s.set_defaults(fn=cmd_done)
+    s = sub.add_parser("plan"); s.add_argument("pattern"); s.add_argument("--date", default="today"); s.set_defaults(fn=cmd_plan)
     s = sub.add_parser("move"); s.add_argument("pattern"); s.add_argument("--to"); s.add_argument("--to-inbox", action="store_true"); s.add_argument("--from", dest="from_"); s.set_defaults(fn=cmd_move)
     s = sub.add_parser("new-meeting"); s.add_argument("--title", required=True); s.add_argument("--date", default="today"); s.add_argument("--time")
     s.add_argument("--project"); s.add_argument("--attendees"); s.add_argument("--template"); s.add_argument("--notes"); s.set_defaults(fn=cmd_new_meeting)

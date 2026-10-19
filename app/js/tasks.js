@@ -32,17 +32,24 @@ export async function doUndo() {
 }
 
 const movable = (task) => task.kind === "day" || task.kind === "inbox";
+// a task written in a meeting or note: it can be planned on a day without leaving its document
+const plannable = (task) => task.type === "task" && task.kind === "doc";
+
+function planMsg(target) {
+  return t("task.planned", { date: (target.kind === "day" ? relDay(target.date) : t("nav.inbox")).toLowerCase() });
+}
 
 /* ------------------------------------------------------------ row */
 
 export function taskRow(task, opts = {}) {
+  const ref = opts.ref || null; // this row is a "- [[doc#^id]]" line of a day plan showing `task`
   const detailsOpen = !opts.compact || state.expanded.has(keyOf(task));
   const hasDetails = task.details.some((l) => l.trim());
   const el = h("div", {
-    class: "task" + (task.done ? " done" : "") + (opts.compact ? " compact" : ""),
-    draggable: movable(task) && opts.draggable !== false ? "true" : null,
+    class: "task" + (task.done ? " done" : "") + (opts.compact ? " compact" : "") + (ref ? " is-action" : ""),
+    draggable: (ref ? movable(ref) : movable(task) || plannable(task)) && opts.draggable !== false ? "true" : null,
   });
-  el._task = task;
+  el._task = ref || task;
 
   const check = h("button", {
     class: "task-check", type: "button", role: "checkbox", "aria-checked": String(task.done),
@@ -64,12 +71,18 @@ export function taskRow(task, opts = {}) {
   });
 
   const meta = [];
-  if (opts.showDate && task.date) {
-    const overdue = task.kind === "day" && !task.done && task.date < today();
-    meta.push(h("button", { class: "chip chip-date" + (overdue ? " overdue" : ""), type: "button", onclick: (e) => { e.stopPropagation(); go(route.week(task.date)); } }, icon("calendar", 12), relDay(task.date)));
+  const at = ref || task;
+  if (opts.showDate && at.date) {
+    const overdue = at.kind === "day" && !task.done && at.date < today();
+    meta.push(h("button", { class: "chip chip-date" + (overdue ? " overdue" : ""), type: "button", onclick: (e) => { e.stopPropagation(); go(route.week(at.date)); } }, icon("calendar", 12), relDay(at.date)));
   }
-  if (opts.showSource && task.kind === "doc") {
-    meta.push(h("button", { class: "chip chip-source", type: "button", onclick: (e) => { e.stopPropagation(); go(route.doc(task.path)); } }, icon(task.docKind === "meeting" ? "users" : "file", 12), docTitle(task.path)));
+  const plan = !ref && task.planned && task.planned[0];
+  if (plan) {
+    meta.push(h("button", { class: "chip chip-date chip-planned", type: "button", title: planMsg(plan), onclick: (e) => { e.stopPropagation(); go(plan.kind === "day" ? route.week(plan.date) : route.inbox()); } },
+      icon(plan.kind === "day" ? "calendar" : "inbox", 12), plan.kind === "day" ? relDay(plan.date) : t("nav.inbox")));
+  }
+  if ((opts.showSource || ref) && task.kind === "doc") {
+    meta.push(h("button", { class: "chip chip-source", type: "button", onclick: (e) => { e.stopPropagation(); go(route.doc(task.path)); } }, icon(task.docKind === "meeting" ? "users" : "file", 12), h("span", { class: "chip-text" }, docTitle(task.path))));
   }
   if (opts.showSource && task.kind === "inbox") meta.push(h("span", { class: "chip" }, icon("inbox", 12), t("nav.inbox")));
   if (hasDetails && opts.compact) {
@@ -84,10 +97,10 @@ export function taskRow(task, opts = {}) {
     meta.length ? h("div", { class: "task-meta" }, meta) : null,
     hasDetails && detailsOpen ? h("div", { class: "task-details md", html: renderMarkdown(task.details.join("\n"), { path: task.path, lineOffset: task.line + 1 }) }) : null);
 
-  const more = h("button", { class: "icon-btn task-more", type: "button", "aria-label": t("common.more"), onclick: (e) => { e.stopPropagation(); taskMenu(more, task, el); } }, icon("more", 16));
+  const more = h("button", { class: "icon-btn task-more", type: "button", "aria-label": t("common.more"), onclick: (e) => { e.stopPropagation(); taskMenu(more, task, el, ref); } }, icon("more", 16));
 
   el.append(check, main, more);
-  el.addEventListener("contextmenu", (e) => { e.preventDefault(); taskMenu({ x: e.clientX, y: e.clientY }, task, el); });
+  el.addEventListener("contextmenu", (e) => { e.preventDefault(); taskMenu({ x: e.clientX, y: e.clientY }, task, el, ref); });
   return el;
 }
 
@@ -139,17 +152,28 @@ export function startEdit(el, task) {
 
 /* ------------------------------------------------------------ menus */
 
-export function taskMenu(anchor, task, el) {
+export function taskMenu(anchor, task, el, ref = null) {
   const items = [];
-  if (movable(task)) {
+  const subject = ref || task; // what moves: the task itself, or its link in a day plan
+  const where = (task.planned && task.planned[0]) || subject;
+  let send = null;
+  if (movable(subject)) {
+    items.push({ header: t("task.moveTo") });
+    send = (target) => run(A.moveTask(subject, target), t("task.moved"));
+  } else if (plannable(task)) {
+    items.push({ header: t("task.planFor") });
+    send = (target) => run(A.planAction(task, target), planMsg(target));
+  }
+  if (send) {
     const tdy = today();
     const nextMon = addDays(mondayOf(tdy), 7);
-    items.push({ header: t("task.moveTo") });
-    if (!(task.kind === "day" && task.date === tdy)) items.push({ label: t("date.today"), icon: "sun", onClick: () => run(A.moveTask(task, { kind: "day", date: tdy }), t("task.moved")) });
-    if (!(task.kind === "day" && task.date === addDays(tdy, 1))) items.push({ label: t("date.tomorrow"), icon: "arrow-right", hint: relDay(addDays(tdy, 1)) === t("date.tomorrow") ? fmtDate(addDays(tdy, 1), "weekdayShort") : "", onClick: () => run(A.moveTask(task, { kind: "day", date: addDays(tdy, 1) }), t("task.moved")) });
-    items.push({ label: t("date.nextWeek"), icon: "week", hint: fmtDate(nextMon, "short"), onClick: () => run(A.moveTask(task, { kind: "day", date: nextMon }), t("task.moved")) });
-    if (task.kind !== "inbox") items.push({ label: t("nav.inbox"), icon: "inbox", onClick: () => run(A.moveTask(task, { kind: "inbox" }), t("task.moved")) });
-    items.push({ label: t("task.pickDate"), icon: "calendar", onClick: () => pickDate(task.date || tdy, (d) => run(A.moveTask(task, { kind: "day", date: d }), t("task.moved"))) });
+    const on = (d) => where.kind === "day" && where.date === d;
+    if (!on(tdy)) items.push({ label: t("date.today"), icon: "sun", onClick: () => send({ kind: "day", date: tdy }) });
+    if (!on(addDays(tdy, 1))) items.push({ label: t("date.tomorrow"), icon: "arrow-right", hint: relDay(addDays(tdy, 1)) === t("date.tomorrow") ? fmtDate(addDays(tdy, 1), "weekdayShort") : "", onClick: () => send({ kind: "day", date: addDays(tdy, 1) }) });
+    items.push({ label: t("date.nextWeek"), icon: "week", hint: fmtDate(nextMon, "short"), onClick: () => send({ kind: "day", date: nextMon }) });
+    if (where.kind !== "inbox") items.push({ label: t("nav.inbox"), icon: "inbox", onClick: () => send({ kind: "inbox" }) });
+    items.push({ label: t("task.pickDate"), icon: "calendar", onClick: () => pickDate((where.kind === "day" && where.date) || tdy, (d) => send({ kind: "day", date: d })) });
+    if (ref || where !== subject) items.push({ label: t("task.unplan"), icon: "x", hint: t("task.unplanHint"), onClick: () => run(A.unplanAction(ref || where), t("task.unplanned")) });
     items.push("-");
   }
   items.push({ label: t("common.edit"), icon: "pencil", hint: t("task.clickText"), onClick: () => el && startEdit(el, task) });
@@ -254,7 +278,11 @@ document.addEventListener("drop", (e) => {
   const { task, meeting } = dragging;
   const index = list ? dropIndex(list, e.clientY).i : Infinity;
   clearDrop();
-  const meetingDoc = meeting || (task.type === "ref" && task.doc && task.doc.kind === "meeting" ? task.doc : null);
+  if (plannable(task)) {
+    run(A.planAction(task, target, index), planMsg(target));
+    return;
+  }
+  const meetingDoc = meeting || (task.type === "ref" && !task.anchor && task.doc && task.doc.kind === "meeting" ? task.doc : null);
   if (meetingDoc) {
     if (target.kind !== "day") { toast(t("meeting.onlyDays"), { error: true }); return; }
     const moved = meetingDoc.date !== target.date;
@@ -274,11 +302,12 @@ export function dropZone(el, target) {
 
 /** A "- [[meeting]]" line of a day list, shown as a meeting row among the tasks. */
 export function refRow(item, opts = {}) {
+  if (item.action) return taskRow(item.action, { ...opts, ref: item });
   const d = item.doc;
-  const isMeeting = d && d.kind === "meeting";
+  const isMeeting = d && d.kind === "meeting" && !item.anchor;
   const p = d && d.project ? projectBySlug(d.project) : null;
   const el = h("div", {
-    class: "task ref-row" + (isMeeting ? " is-meeting" : "") + (d ? "" : " missing") + (opts.compact ? " compact" : ""),
+    class: "task ref-row" + (isMeeting ? " is-meeting" : "") + (d && !item.anchor ? "" : " missing") + (opts.compact ? " compact" : ""),
     draggable: movable(item) && opts.draggable !== false ? "true" : null,
     "data-color": p ? p.color : null,
     title: d ? d.path : item.target,
@@ -297,7 +326,7 @@ export function refRow(item, opts = {}) {
     h("div", { class: "task-main", onclick: open },
       h("div", { class: "task-title" },
         isMeeting && d.time ? h("span", { class: "chip chip-time" }, d.time) : null,
-        h("span", { class: "task-text" }, d ? d.title : item.target)),
+        h("span", { class: "task-text" }, (d ? d.title : item.target) + (item.anchor ? " · " + t("task.actionGone") : ""))),
       !opts.compact && isMeeting && (d.attendees.length || p) ? h("div", { class: "task-meta" },
         d.attendees.length ? h("span", { class: "chip" }, icon("users", 12), d.attendees.slice(0, 3).join(", ")) : null,
         p ? h("span", { class: "chip chip-project", "data-color": p.color }, h("span", { class: "dot", "data-color": p.color }), h("span", { class: "chip-text" }, p.title)) : null) : null),

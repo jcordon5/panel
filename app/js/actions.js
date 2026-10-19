@@ -3,7 +3,7 @@
 
 import { store, mutate, transaction, content, create, remove, move, exists } from "./store.js";
 import { parseDoc, setFm } from "./frontmatter.js";
-import { P, vault, weekPath, TASK_RE, resolveLink, containerItems } from "./model.js";
+import { P, vault, weekPath, TASK_RE, BLOCK_ID_RE, resolveLink, containerItems } from "./model.js";
 import { split, join, findTask, toggleLine, extractBlock, buildBlock, touch, locate, insertInto, weekTemplate, inboxTemplate, ensureDay } from "./ops.js";
 import { t, fmtDate, weekdayName } from "./i18n.js";
 import { slugify, today, mondayOf, weekId, dirname, basename, stripExt } from "./util.js";
@@ -68,17 +68,55 @@ export async function updateTask(task, text) {
     const { lines: rest } = extractBlock(lines, i);
     const ind = " ".repeat(task.indent || 0);
     const block = buildBlock(text, task.done).map((l) => (l ? ind + l : l));
+    if (task.blockId && !BLOCK_ID_RE.test(block[0])) block[0] += " ^" + task.blockId; // keep links from day plans
     return touch(join([...rest.slice(0, i), ...block, ...rest.slice(i)]));
   }));
 }
 
-export async function deleteTask(task) {
-  await transaction(t("undo.delete"), () => mutate(task.path, (cur) => {
+function removeLine(item) {
+  return mutate(item.path, (cur) => {
     const lines = split(cur);
-    const i = findTask(lines, task.line, task.raw);
+    const i = findTask(lines, item.line, item.raw);
     if (i < 0) throw new TaskGone();
     return touch(join(extractBlock(lines, i).lines));
-  }));
+  });
+}
+
+export async function deleteTask(task) {
+  await transaction(t("undo.delete"), async () => {
+    await removeLine(task);
+    for (const r of task.planned || []) await removeLine(r).catch(() => {}); // its places in day plans go too
+  });
+}
+
+/** Take a planned action item out of the day plan (the task stays in its meeting). */
+export async function unplanAction(ref) {
+  await transaction(t("undo.unplan"), () => removeLine(ref));
+}
+
+/**
+ * Plan a task that lives in a meeting or note on a day (or in the inbox): the task stays where it was
+ * written, gets a ^block-id, and the day gets "- [[meeting#^id]]". Already planned: that link moves.
+ */
+export async function planAction(task, target, index = Infinity) {
+  const placed = (task.planned || [])[0];
+  if (placed) return moveTask(placed, target, index);
+  await transaction(t("undo.plan"), async () => {
+    let id = task.blockId;
+    if (!id) {
+      const used = content(task.path) || "";
+      do id = Math.random().toString(36).slice(2, 8); while (used.includes("^" + id));
+      await mutate(task.path, (cur) => {
+        const lines = split(cur);
+        const i = findTask(lines, task.line, task.raw);
+        if (i < 0) throw new TaskGone();
+        lines[i] = lines[i].replace(/\s+$/, "") + " ^" + id;
+        return touch(join(lines));
+      });
+    }
+    const dst = targetPath(target);
+    await mutate(dst, (cur) => insertBlock(cur, target, dst, [`- [[${linkTarget(task.path)}#^${id}]]`], index));
+  });
 }
 
 export async function duplicateTask(task) {
@@ -214,10 +252,15 @@ export function builtinProjectTemplate() {
 
 /* ------------------------------------------------------------ meetings in the day plan */
 
+/** Shortest [[link]] that points to `path`. */
+function linkTarget(path) {
+  const base = stripExt(basename(path));
+  return resolveLink(base) === path ? base : stripExt(path);
+}
+
 /** "- [[name]]" line that places a meeting in a day list */
 export function refLine(path) {
-  const base = stripExt(basename(path));
-  return `- [[${resolveLink(base) === path ? base : stripExt(path)}]]`;
+  return `- [[${linkTarget(path)}]]`;
 }
 
 /** Every [[ref]] (in week files / inbox) that points to `path`. */
@@ -244,7 +287,7 @@ async function placeMeeting(path, date, time, index) {
     if (index === undefined && time) {
       const v = vault();
       const norm = (x) => String(x).replace(".", ":").padStart(5, "0");
-      const times = items.map((i) => (i.type === "ref" ? v.docs.get(resolveLink(i.target) || "")?.time : i.time) || null);
+      const times = items.map((i) => (i.type === "ref" ? !i.anchor && v.docs.get(resolveLink(i.target) || "")?.time : i.time) || null);
       const k = times.findIndex((tm) => tm && norm(tm) > norm(time));
       let last = -1;
       times.forEach((tm, n) => { if (tm && norm(tm) <= norm(time)) last = n; });
@@ -331,19 +374,21 @@ export async function setProps(path, updates) {
     }
     if (doc.kind !== "meeting") return;
     // keep the meeting's place in the day plan: rename refs, follow date changes
+    // (planned action items keep their day: only the link is renamed)
     const line = refLine(newPath);
-    const stay = refs.filter((r) => r.kind !== "day" || r.date === date);
+    const stay = refs.filter((r) => r.anchor || r.kind !== "day" || r.date === date);
     for (const r of refs) {
       await mutate(r.path, (cur) => {
         const lines = split(cur);
         const i = findTask(lines, r.line, r.raw);
         if (i < 0) return null;
-        if (stay.includes(r)) lines[i] = " ".repeat(r.indent) + line;
+        if (r.anchor) lines[i] = " ".repeat(r.indent) + `- [[${linkTarget(newPath)}#^${r.anchor}]]`;
+        else if (stay.includes(r)) lines[i] = " ".repeat(r.indent) + line;
         else lines.splice(i, 1);
         return touch(join(lines));
       });
     }
-    if (updates.date && !stay.length) await placeMeeting(newPath, date, updates.time ?? doc.time);
+    if (updates.date && !stay.some((r) => !r.anchor)) await placeMeeting(newPath, date, updates.time ?? doc.time);
   });
   return newPath;
 }

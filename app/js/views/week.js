@@ -3,7 +3,7 @@
 import { h, today, addDays, weekId, weekStart, mondayOf, isoWeek } from "../util.js";
 import { icon } from "../icons.js";
 import { t, fmtDate, weekdayName, cap } from "../i18n.js";
-import { vault, dayItems, overdueTasks, unplacedMeetings, weekPath } from "../model.js";
+import { vault, dayItems, overdueTasks, unplacedMeetings, weekPath, pendingActions, isTask } from "../model.js";
 import { taskList, run, dropZone, meetingPill, eventPill } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
@@ -40,7 +40,7 @@ export function render(root, r) {
   const days = [0, 1, 2, 3, 4].map((i) => addDays(start, i));
 
   let total = 0, done = 0;
-  for (let i = 0; i < 7; i++) for (const x of dayItems(addDays(start, i))) if (x.type === "task") { total++; if (x.done) done++; }
+  for (let i = 0; i < 7; i++) for (const x of dayItems(addDays(start, i))) if (isTask(x)) { total++; if (x.done) done++; }
 
   const nav = h("div", { class: "btn-group" },
     iconBtn("chevron-left", t("week.prev"), () => go(route.week(addDays(start, -7)))),
@@ -70,16 +70,20 @@ export function render(root, r) {
 
   if (state.prefs.inboxColumn) {
     const items = v.inbox.items;
+    const toPlan = pendingActions(addDays(tdy, -30)); // meeting actions to plan: drag them onto a day
     board.append(h("div", { class: "col col-inbox" },
       dropZone(h("div", { class: "col-head" },
         h("div", { class: "col-title" }, icon("inbox", 15), h("span", {}, t("nav.inbox"))),
-        h("span", { class: "col-count" }, String(items.filter((x) => x.type === "task" && !x.done).length))), { kind: "inbox" }),
-      h("div", { class: "col-body" }, taskList(items, { target: { kind: "inbox" }, compact: true, placeholder: t("task.addShort") }))));
+        h("span", { class: "col-count" }, String(items.filter((x) => isTask(x) && !x.done).length))), { kind: "inbox" }),
+      h("div", { class: "col-body" }, taskList(items, { target: { kind: "inbox" }, compact: true, placeholder: t("task.addShort") }),
+        toPlan.length ? h("div", { class: "col-actions" },
+          h("div", { class: "task-divider" }, t("today.meetingActions") + " · " + toPlan.length),
+          taskList(toPlan.slice(0, 20), { compact: true, showSource: true })) : null)));
   }
 
   const dayParts = (d) => {
     const items = dayItems(d);
-    const tasks = items.filter((x) => x.type === "task");
+    const tasks = items.filter(isTask);
     const doneN = tasks.filter((x) => x.done).length;
     const meetings = unplacedMeetings(d);
     const events = eventsOn(d);
