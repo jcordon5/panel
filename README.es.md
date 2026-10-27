@@ -119,6 +119,8 @@ La versión de escritorio se abre en el navegador en `http://127.0.0.1:8765` y d
 - **Proyectos** — resumen, reuniones, tareas (etiquetas `#proyecto` y pendientes de sus documentos) y documentos. Los pausados y terminados siguen a un clic.
 - **Calendario** — vista mensual; tus reuniones de Outlook/Google/iCloud aparecen solas (versión de escritorio); un clic crea la nota.
 - **Tablón** — notas fijadas y recientes en tarjetas.
+- **Escribe como en Obsidian** — el editor muestra tus notas formateadas mientras escribes y solo enseña el Markdown donde está el
+  cursor (edición en vivo). También tiene modo código Markdown y modo lectura.
 - **Markdown de verdad** — tablas, avisos, `[[enlaces]]` con autocompletado, `#etiquetas`, resaltado, código, imágenes (pegar o arrastrar), checkboxes que funcionan.
 - **Búsqueda global** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **deshacer cualquier cosa** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>), atajos de teclado, modo claro/oscuro, español/inglés.
 - **Convive con otras herramientas** — edita los archivos en Obsidian, con un script o con un agente de IA con Panel abierto: lo detecta en segundos y nunca pisa esos cambios.
@@ -127,7 +129,13 @@ La versión de escritorio se abre en el navegador en `http://127.0.0.1:8765` y d
 
 - **Sincronizar**: pon la carpeta de la bóveda en OneDrive, Dropbox, iCloud o Syncthing (versión de escritorio o modo carpeta), o usa un repositorio privado de GitHub (web).
 - **Exportar**: *Ajustes → Bóveda → Exportar bóveda (.zip)* — todo, en un archivo.
-- **Copias de seguridad**: lo borrado va a una carpeta `.trash` dentro de la bóveda. La versión de escritorio además comprime tu bóveda antes
+- **Copias cifradas**: *Ajustes → Copias* crea un único archivo con toda tu bóveda cifrado con tu contraseña (AES-256-GCM, clave
+  derivada con PBKDF2-SHA256 y 600.000 iteraciones). Guárdalo en la nube o en un USB: sin la contraseña nadie puede leerlo. Panel puede
+  hacer una al día en la carpeta que elijas (elige una de OneDrive/Google Drive/Dropbox y tendrás una copia cifrada en la nube); funciona
+  en la versión de escritorio y en el modo carpeta. Restaurar pide la contraseña y deja los archivos sustituidos en `.trash`, o te da un
+  `.zip` normal. Si dejas que el dispositivo recuerde la contraseña, guarda una clave que solo sirve para *cifrar*: las copias automáticas
+  funcionan, pero nadie con acceso a ese navegador puede abrirlas.
+- **Redes de seguridad**: lo borrado va a una carpeta `.trash` dentro de la bóveda. La versión de escritorio además comprime tu bóveda antes
   de cada actualización y se limpia sola (guarda las 5 últimas copias automáticas y las 10 últimas manuales).
 - **Actualizaciones**: la app web es siempre la última versión. La de escritorio mira en GitHub al arrancar y se actualiza con un clic — solo
   se sustituye el código; tu bóveda y tus ajustes no se tocan. El formato de la bóveda se mantiene compatible; si algún día evoluciona, Panel
@@ -211,7 +219,8 @@ o mover tareas y crear reuniones igual que la app.
 ## Desarrollo
 
 Sin compilación y sin dependencias: HTML/CSS/módulos ES en `app/` (esos mismos archivos son la app web), `server.py` para la versión de
-escritorio (solo librería estándar) y [marked](https://github.com/markedjs/marked) incluido.
+escritorio (solo librería estándar), y [marked](https://github.com/markedjs/marked) y [CodeMirror 6](https://codemirror.net) incluidos
+(`tools/vendor/build-codemirror.sh` regenera el paquete de CodeMirror; solo hace falta para actualizarlo).
 
 ```bash
 python3 server.py --demo   # versión de escritorio con datos de ejemplo

@@ -5,6 +5,7 @@ import { icon } from "./icons.js";
 import { t, lang, setLang } from "./i18n.js";
 import { store, loadInfo, sync, onChange, startPolling, apiGet } from "./store.js";
 import { vault, dayTasks, overdueTasks, isTask } from "./model.js";
+import { startAutoBackups } from "./backup.js";
 import { state, requestRender, applyTheme } from "./state.js";
 import { parseRoute, route, go, trackNavigation, setNavTitle, navBack, navForward } from "./nav.js";
 import { toast, errorToast, isModalOpen, closeMenus } from "./ui.js";
@@ -170,7 +171,7 @@ function bindGlobal() {
   document.addEventListener("keydown", (e) => {
     const mod = e.metaKey || e.ctrlKey;
     const typing = e.target.closest?.("input, textarea, select, [contenteditable=true]");
-    if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
+    if (mod && e.key.toLowerCase() === "k" && !e.defaultPrevented) { e.preventDefault(); openPalette(); return; } // the editor uses Ctrl+K for links
     if (typing || isModalOpen() || e.altKey) return;
     if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); doUndo(); return; }
     if (mod) return;
@@ -238,6 +239,7 @@ async function start() {
   startPolling();
   render();
   if (backend.features.updates) lookForUpdates();
+  startAutoBackups();
 }
 
 /** Open a vault file that is not Markdown (image, PDF...) in a new tab. */

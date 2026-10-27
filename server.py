@@ -34,7 +34,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
-VERSION = "2.4.0"
+VERSION = "2.5.0"
 APP_NAME = "panel"
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_DIR = os.path.join(ROOT_DIR, "app")
@@ -42,6 +42,9 @@ DEFAULT_PORT = 8765
 TRASH_DIR = ".trash"
 MAX_UPLOAD = 25 * 1024 * 1024
 UPLOAD_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".pdf", ".bmp"}
+RESTORE_EXT = UPLOAD_EXT | {".md", ".txt", ".csv", ".json"}  # what a backup can put back into the vault
+BACKUP_NAME_RE = re.compile(r"^panel-backup-[\w.-]{1,120}\.panelbackup$")
+MAX_BACKUP = 1024 * 1024 * 1024
 # Folders never listed (tool state, VCS, trash...)
 SKIP_DIRS = {"node_modules", "__pycache__"}
 
@@ -317,6 +320,53 @@ def api_upload(payload):
     return {"path": rel_of(full)}
 
 
+def api_write_bytes(payload):
+    """Put a file back from a backup (restore): Markdown, images, PDFs and a few text formats."""
+    full = safe_path(payload.get("path"))
+    if os.path.splitext(full)[1].lower() not in RESTORE_EXT:
+        raise ApiError("file type not allowed")
+    try:
+        data = base64.b64decode(payload.get("data") or "", validate=False)
+    except Exception:
+        raise ApiError("bad data")
+    if len(data) > MAX_UPLOAD:
+        raise ApiError("file too large")
+    with WRITE_LOCK:
+        atomic_write(full, data)
+    return {"path": rel_of(full)}
+
+
+def backup_dir(cfg=None):
+    cfg = load_config() if cfg is None else cfg
+    return os.path.realpath(os.path.expanduser(cfg.get("backup_dir") or os.path.join(ROOT_DIR, "backups")))
+
+
+def encrypted_backups(folder):
+    try:
+        return sorted(n for n in os.listdir(folder) if BACKUP_NAME_RE.match(n))  # names carry the date: sort = age
+    except OSError:
+        return []
+
+
+def save_encrypted_backup(name, data):
+    """Encrypted backups are made in the browser; the server only stores them (it never sees the password)."""
+    if not BACKUP_NAME_RE.match(name or ""):
+        raise ApiError("bad backup name")
+    if not data.startswith(b"PANELBK1"):
+        raise ApiError("only encrypted Panel backups can be stored here")
+    cfg = load_config()
+    folder = backup_dir(cfg)
+    full = os.path.join(folder, name)
+    atomic_write(full, data)
+    keep = max(1, int(cfg.get("backup_keep") or 14))
+    for old in encrypted_backups(folder)[:-keep]:
+        try:
+            os.remove(os.path.join(folder, old))
+        except OSError:
+            pass
+    return {"path": full}
+
+
 def api_mkdir(payload):
     full = safe_path(payload.get("path"))
     os.makedirs(full, exist_ok=True)
@@ -345,7 +395,19 @@ def api_settings(_q=None):
         "version": VERSION,
         "git": os.path.isdir(os.path.join(ROOT_DIR, ".git")),
         "checkUpdates": cfg.get("check_updates", True),
+        "backupDir": backup_dir(cfg),
+        "backupKeep": int(cfg.get("backup_keep") or 14),
+        "autoBackup": bool(cfg.get("auto_backup")),
+        "lastBackup": last_encrypted_backup(cfg),
     }
+
+
+def last_encrypted_backup(cfg):
+    folder = backup_dir(cfg)
+    names = encrypted_backups(folder)
+    if not names:
+        return None
+    return int(os.path.getmtime(os.path.join(folder, names[-1])) * 1000)
 
 
 def api_save_settings(payload):
@@ -358,6 +420,19 @@ def api_save_settings(payload):
         cfg["outlook_attendees"] = bool(payload["outlookAttendees"])
     if "checkUpdates" in payload:
         cfg["check_updates"] = bool(payload["checkUpdates"])
+    if "autoBackup" in payload:
+        cfg["auto_backup"] = bool(payload["autoBackup"])
+    if "backupKeep" in payload:
+        cfg["backup_keep"] = max(1, min(365, int(payload["backupKeep"] or 14)))
+    if payload.get("backupDir"):
+        folder = os.path.realpath(os.path.expanduser(str(payload["backupDir"]).strip()))
+        try:
+            os.makedirs(folder, exist_ok=True)
+        except OSError as e:
+            raise ApiError("cannot use that folder: %s" % e)
+        if not os.access(folder, os.W_OK):
+            raise ApiError("that folder is not writable")
+        cfg["backup_dir"] = folder
     if payload.get("vault"):
         new = os.path.realpath(os.path.expanduser(str(payload["vault"]).strip()))
         if new != VAULT and STATE["vault_source"] in ("cli", "env"):
@@ -438,6 +513,7 @@ POST_ROUTES = {
     "/api/move": api_move,
     "/api/delete": api_delete,
     "/api/upload": api_upload,
+    "/api/write-bytes": api_write_bytes,
     "/api/mkdir": api_mkdir,
     "/api/migrate": api_migrate,
 }
@@ -557,7 +633,20 @@ class Handler(BaseHTTPRequestHandler):
         # never approve), so other websites cannot write into your vault.
         if self.headers.get("X-Panel") != "1":
             return self._json({"ok": False, "error": "missing header"}, 403)
-        route = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        route = parsed.path
+        if route == "/api/backup/encrypted":  # raw bytes, may be large
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+                if length > MAX_BACKUP:
+                    raise ApiError("backup too large", 413)
+                res = save_encrypted_backup((parse_qs(parsed.query).get("name") or [""])[0], self.rfile.read(length))
+                res["ok"] = True
+                return self._json(res)
+            except ApiError as e:
+                return self._error(e)
+            except Exception as e:
+                return self._error(ApiError(str(e), 500))
         fn = POST_ROUTES.get(route)
         if not fn:
             return self._json({"ok": False, "error": "unknown route"}, 404)

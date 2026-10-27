@@ -6,6 +6,7 @@ import { icon } from "../icons.js";
 import { t, lang, setLang, LANGS } from "../i18n.js";
 import { FolderBackend, GitHubBackend, MemoryBackend, setBackend } from "../backends.js";
 import { field, errorToast } from "../ui.js";
+import { regrantFolderDest } from "../backup.js";
 
 const REPO_URL = "https://github.com/jcordon5/panel";
 export const DOWNLOAD_WIN = REPO_URL + "/releases/latest/download/Panel-Windows.zip";
@@ -88,7 +89,7 @@ export function renderReconnect(root, b, onReady) {
   const btn = h("button", { class: "btn btn-primary btn-lg", type: "button" }, icon("folder", 16), t("connect.reopen", { name: b.handle.name }));
   btn.onclick = async () => {
     try {
-      if (await b.grant()) await onReady();
+      if (await b.grant()) { await regrantFolderDest(); await onReady(); } // same click: the backup folder too
     } catch (e) { errorToast(e); }
   };
   root.addEventListener("rerender", () => renderReconnect(root, b, onReady), { once: true });

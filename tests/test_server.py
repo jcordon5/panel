@@ -18,7 +18,9 @@ import server  # noqa: E402
 import migrate_v1  # noqa: E402
 
 
-class ServerTest(unittest.TestCase):
+class ServerHarness:
+    """A real server on a random port with a throw-away vault."""
+
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.mkdtemp(prefix="panel-test-")
@@ -52,6 +54,9 @@ class ServerTest(unittest.TestCase):
         body.update(extra)
         return self.req("POST", "/api/write", body)
 
+
+
+class ServerTest(ServerHarness, unittest.TestCase):
     def test_info_and_app(self):
         st, info = self.req("GET", "/api/info")
         self.assertEqual(st, 200)
@@ -125,6 +130,51 @@ class ServerTest(unittest.TestCase):
         c.close()
         st, _ = self.req("POST", "/api/upload", {"name": "x.html", "data": png})
         self.assertEqual(st, 400)
+
+
+class BackupTest(ServerHarness, unittest.TestCase):
+    """Encrypted backups: the browser encrypts, the desktop server only stores and restores files."""
+
+    def setUp(self):
+        self.orig_config = server.CONFIG_PATH
+        server.CONFIG_PATH = os.path.join(self.tmp, "panel.config.json")
+        self.dest = os.path.join(self.tmp, "cloud-backups")
+
+    def tearDown(self):
+        server.CONFIG_PATH = self.orig_config
+
+    def raw(self, path, data):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        c.request("POST", path, body=data, headers={"X-Panel": "1", "Content-Type": "application/octet-stream"})
+        r = c.getresponse()
+        out = json.loads(r.read().decode("utf-8"))
+        c.close()
+        return r.status, out
+
+    def test_encrypted_backups_are_stored_and_pruned(self):
+        st, res = self.req("POST", "/api/settings", {"backupDir": self.dest, "backupKeep": 2, "autoBackup": True})
+        self.assertEqual(st, 200)
+        st, cfg = self.req("GET", "/api/settings")
+        self.assertEqual((cfg["backupDir"], cfg["backupKeep"], cfg["autoBackup"], cfg["lastBackup"]), (os.path.realpath(self.dest), 2, True, None))
+        for day in ("01", "02", "03"):
+            st, res = self.raw("/api/backup/encrypted?name=panel-backup-v-2026-10-%s-0900.panelbackup" % day, b"PANELBK1" + b"x" * 10)
+            self.assertEqual(st, 200, res)
+        self.assertEqual(sorted(os.listdir(self.dest)), ["panel-backup-v-2026-10-02-0900.panelbackup", "panel-backup-v-2026-10-03-0900.panelbackup"])
+        self.assertIsNotNone(self.req("GET", "/api/settings")[1]["lastBackup"])
+        # never plain data, never another name or folder
+        self.assertEqual(self.raw("/api/backup/encrypted?name=panel-backup-v.panelbackup", b"PK\x03\x04 plain zip")[0], 400)
+        self.assertEqual(self.raw("/api/backup/encrypted?name=../../evil.panelbackup", b"PANELBK1")[0], 400)
+
+    def test_restore_writes_files_back_inside_the_vault_only(self):
+        import base64
+        b64 = lambda b: base64.b64encode(b).decode()
+        st, _ = self.req("POST", "/api/write-bytes", {"path": "assets/2026-10/a.png", "data": b64(b"\x89PNG")})
+        self.assertEqual(st, 200)
+        with open(os.path.join(server.VAULT, "assets/2026-10/a.png"), "rb") as f:
+            self.assertEqual(f.read(), b"\x89PNG")
+        self.assertEqual(self.req("POST", "/api/write-bytes", {"path": "notes/r.md", "data": b64("# R ñ\n".encode())})[0], 200)
+        for bad in ("../x.md", ".trash/x.md", "run.exe"):
+            self.assertEqual(self.req("POST", "/api/write-bytes", {"path": bad, "data": b64(b"x")})[0], 400, bad)
 
 
 class NetTest(unittest.TestCase):

@@ -9,12 +9,24 @@ import { run } from "../tasks.js";
 import * as A from "../actions.js";
 import { pageHeader, btn, iconBtn, projectChip, bodyWithoutTitle } from "./common.js";
 import { propertiesDialog } from "./dialogs.js";
+import { state } from "../state.js";
 import { go, route } from "../nav.js";
 import { menu, confirmDialog, emptyState, toast } from "../ui.js";
 import { store } from "../store.js";
 
 export const title = (r) => vault().docs.get(r.arg)?.title || "";
-export const keys = { e: () => go(route.edit(currentPath)) };
+export const keys = { e: () => editHere(currentPath) };
+
+/** Open the editor where you are reading: at the clicked text, or at the same scroll position. */
+function editHere(path, e) {
+  const sc = document.getElementById("view");
+  const max = sc ? sc.scrollHeight - sc.clientHeight : 0;
+  let text = "";
+  const block = e && e.target.closest?.(".md p, .md li, .md h1, .md h2, .md h3, .md h4, .md td, .md blockquote");
+  if (block) text = (block.firstChild?.textContent || block.textContent || "").trim().split("\n")[0].slice(0, 40);
+  state.editAt = { path, ratio: max > 0 ? sc.scrollTop / max : 0, text: text.length >= 3 ? text : "" };
+  go(route.edit(path));
+}
 
 let currentPath = null;
 const fmtPath = (dir) => (dir || "").split("/").filter(Boolean).join(" / ");
@@ -80,7 +92,7 @@ export function render(root, r) {
   ], { align: "end" }));
 
   root.append(h("div", { class: "doc-top" }, crumbs(doc), h("div", { class: "page-actions" },
-    btn(t("common.edit"), "pencil", () => go(route.edit(path)), "btn-primary"), more)));
+    btn(t("common.edit"), "pencil", () => editHere(path), "btn-primary"), more)));
 
   const { body, offset } = bodyWithoutTitle(doc);
   const article = h("article", { class: "doc" },
@@ -89,8 +101,8 @@ export function render(root, r) {
     body.trim() ? h("div", { class: "md", html: renderMarkdown(body, { path, lineOffset: offset }) })
       : h("button", { class: "doc-empty", type: "button", onclick: () => go(route.edit(path)) }, icon("pencil", 16), t("doc.emptyBody")));
   article.addEventListener("dblclick", (e) => {
-    if (e.target.closest("a, input, button, summary") || window.getSelection()?.toString()) return;
-    go(route.edit(path));
+    if (e.target.closest("a, input, button, summary")) return;
+    editHere(path, e);
   });
   root.append(article);
 

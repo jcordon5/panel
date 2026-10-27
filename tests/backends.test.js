@@ -141,6 +141,18 @@ test("github: uploads binary assets", async () => {
   assert.deepEqual([...gh.blobs.get(b.entries.get(path).sha)], [...bytes]);
 });
 
+test("github: restoring a backup writes text and binary files in one commit", async () => {
+  const gh = fakeGitHub();
+  const b = await client(gh);
+  await b.write("notes/a.md", "now\n");
+  const before = gh.head;
+  await b.writeMany([{ path: "notes/a.md", data: new TextEncoder().encode("backup\r\n") }, { path: "assets/x.png", data: new Uint8Array([1, 2, 255]) }, { path: ".trash/no.md", data: new Uint8Array([1]) }], "Panel: restore backup");
+  assert.equal(gh.file("notes/a.md"), "backup\n");
+  assert.deepEqual([...gh.blobs.get(b.entries.get("assets/x.png").sha)], [1, 2, 255]);
+  assert.ok(!gh.paths().includes(".trash/no.md"));
+  assert.notEqual(gh.head, before);
+});
+
 /* ------------------------------------------------------------ fake File System Access API */
 function fakeDir(name = "vault") {
   const kids = new Map();

@@ -12,7 +12,7 @@
 import { idbGet, idbSet, idbDel } from "./idb.js";
 import { slugify } from "./util.js";
 
-export const APP_VERSION = "2.4.0";
+export const APP_VERSION = "2.5.0";
 
 export class ApiError extends Error {
   constructor(msg, status, data) { super(msg); this.status = status; this.data = data || {}; }
@@ -101,6 +101,15 @@ export class ServerBackend {
   }
   assetUrl(path) { return "/vault/" + path.split("/").map(encodeURIComponent).join("/"); }
   async assetBlobUrl(path) { return this.assetUrl(path); }
+  /** Restore: put a file back at its exact path. */
+  writeBytes(path, bytes) { return this.api("/api/write-bytes", { path, data: b64encode(bytes) }); }
+  /** Store an encrypted backup in the backup folder of the desktop version. */
+  async saveBackup(name, bytes) {
+    const res = await fetch("/api/backup/encrypted?name=" + encodeURIComponent(name), { method: "POST", headers: { "X-Panel": "1", "Content-Type": "application/octet-stream" }, body: bytes });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new ApiError(data.error || res.statusText, res.status, data);
+    return data;
+  }
   migrate(lang) { return this.api("/api/migrate", { lang }); }
   describe() { return null; }
 }
@@ -228,6 +237,16 @@ export class FolderBackend {
       await this.copyTree(path, trash);
       await this.removeEntry(path);
       return { trash };
+    });
+  }
+  writeBytes(path, bytes) {
+    return this.q(async () => {
+      if (hidden(path)) throw new ApiError("path not allowed", 400);
+      const w = await (await this.fileHandle(path, true)).createWritable();
+      await w.write(bytes);
+      await w.close();
+      this.urls.delete(path);
+      return { path };
     });
   }
   upload(name, blob) {
@@ -469,6 +488,18 @@ export class GitHubBackend {
       await this.commit(changes, `Panel: delete ${path}`);
       for (const d of [...this.dirSet]) if (d === path || d.startsWith(path + "/")) this.dirSet.delete(d);
       return { trash };
+    }));
+  }
+  writeBytes(path, bytes) { return this.writeMany([{ path, data: bytes }], "Panel: " + path); }
+  /** Several files in one commit (restoring a backup): the repository history keeps what they replace. */
+  writeMany(files, message) {
+    return this.q(() => this.withRetry(async () => {
+      const changes = files.filter((f) => !hidden(f.path)).map((f) => (/\.md$/i.test(f.path)
+        ? { path: f.path, content: dec.decode(f.data).replace(/\r\n/g, "\n") }
+        : { path: f.path, base64: b64encode(f.data) }));
+      if (changes.length) await this.commit(changes, message);
+      for (const f of files) this.urls.delete(f.path);
+      return { count: changes.length };
     }));
   }
   upload(name, blob) {

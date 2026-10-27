@@ -122,6 +122,8 @@ The desktop version opens in your browser at `http://127.0.0.1:8765` and keeps a
 - **Projects** — overview, meetings, tasks (`#project` tags plus open items in its documents) and documents. Paused and done projects stay one click away.
 - **Calendar** — month view; your Outlook/Google/iCloud meetings appear on their own (desktop version); one click creates the note.
 - **Notes board** — pinned and recent notes as cards.
+- **Write the way Obsidian does** — the editor shows your notes formatted as you type, and reveals the Markdown only where the
+  cursor is (live preview). There's also a Markdown source mode and a reading mode.
 - **Real Markdown** — tables, callouts, `[[links]]` with autocomplete, `#tags`, highlights, code, images (paste or drop), interactive checkboxes.
 - **Search everything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **undo anything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>), keyboard shortcuts, light/dark, English/Spanish.
 - **Plays well with others** — edit the files in Obsidian, a script or with an AI agent while Panel is open: it notices within seconds and never overwrites those changes.
@@ -130,7 +132,13 @@ The desktop version opens in your browser at `http://127.0.0.1:8765` and keeps a
 
 - **Sync**: put the vault folder in OneDrive, Dropbox, iCloud or Syncthing (desktop version or folder mode), or use a private GitHub repository (web).
 - **Export**: *Settings → Vault → Export vault (.zip)* — everything, in one file.
-- **Backups**: deletes go to a `.trash` folder inside the vault. The desktop version also zips your vault before every update and
+- **Encrypted backups**: *Settings → Backups* makes one file with your whole vault, encrypted with your password (AES-256-GCM, key
+  from PBKDF2-SHA256 with 600,000 iterations). Keep it in the cloud or on a USB stick — without the password nobody can read it.
+  Panel can make one a day into a folder you choose (pick a OneDrive/Google Drive/Dropbox folder for an encrypted copy in the cloud);
+  this works in the desktop version and in folder mode. Restoring asks for the password and puts the replaced files in `.trash`, or
+  gives you a plain `.zip`. If you let the device remember the password, it keeps a key that can only *encrypt*: automatic copies
+  work, but nobody with access to that browser can open them.
+- **Safety nets**: deletes go to a `.trash` folder inside the vault. The desktop version also zips your vault before every update and
   cleans up after itself (it keeps the last 5 automatic and 10 manual backups).
 - **Updates**: the web app is always the latest version. The desktop version checks GitHub when it starts and updates with one click —
   only the app code is replaced; your vault and settings are never touched. The vault format stays backwards compatible; if it ever
@@ -213,7 +221,8 @@ tasks and create meetings exactly like the app does.
 ## Development
 
 No build step and no dependencies: plain HTML/CSS/ES modules in `app/` (the same files are the web app), `server.py` for the desktop
-version (standard library only), [marked](https://github.com/markedjs/marked) vendored.
+version (standard library only), [marked](https://github.com/markedjs/marked) and [CodeMirror 6](https://codemirror.net) vendored
+(`tools/vendor/build-codemirror.sh` rebuilds the CodeMirror bundle; only needed to update it).
 
 ```bash
 python3 server.py --demo   # desktop version with sample data

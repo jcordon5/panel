@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.5.0 — 2026-10-27
+
+- New editor with **live preview**, like Obsidian: notes look formatted while you write, and the Markdown of whatever is under the
+  cursor shows up so you can edit it (headings, bold, links, `[[links]]`, tasks with real checkboxes, tables, images, code…).
+  Also a Markdown source mode and a reading mode. Built on CodeMirror 6 (vendored, still no build step): search with Ctrl/⌘+F,
+  `[[` autocompletion, lists continue on Enter.
+- The editor opens where you were reading (double-click a paragraph to edit right there) instead of jumping to the end.
+- **Encrypted backups** (*Settings → Backups*): one file with the whole vault, encrypted in the browser with your password
+  (AES-256-GCM, PBKDF2-SHA256). Restore with the password (replaced files go to `.trash`) or save it as a plain .zip.
+  Optional daily automatic copy to a folder you choose (desktop version and folder mode), e.g. a OneDrive folder for an
+  encrypted copy in the cloud. A remembered password is kept as an encrypt-only key.
+
 ## 2.4.0 — 2026-10-19
 
 - Plan meeting action items: drag them from *Meeting actions* (Today, or under the inbox in Week) onto a day, or use

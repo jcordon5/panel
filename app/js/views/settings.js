@@ -10,6 +10,7 @@ import { apiGet, apiPost, waitForServerAndReload } from "../store.js";
 import { resetEvents } from "../events.js";
 import { backend } from "../backends.js";
 import { makeZip } from "../zip.js";
+import { backupPane, vaultFiles } from "../backup.js";
 import { DOWNLOAD_WIN, DOWNLOAD_ZIP } from "./connect.js";
 import * as A from "../actions.js";
 import { go, route } from "../nav.js";
@@ -25,6 +26,7 @@ const TABS = [
   ["general", "settings", "settings.tab.general"],
   ["calendar", "calendar", "settings.tab.calendar"],
   ["vault", "archive", "settings.tab.vault"],
+  ["backups", "lock", "settings.tab.backups"],
   ["updates", "sparkles", "settings.tab.updates"],
   ["templates", "file", "tpl.title"],
   ["shortcuts", "keyboard", "settings.shortcuts"],
@@ -172,6 +174,8 @@ const PANES = {
     return wrap;
   },
 
+  backups() { return backupPane(); },
+
   templates() { return templatesBlock(); },
 
   shortcuts() {
@@ -228,12 +232,7 @@ function templatesBlock() {
 
 /** Export the whole vault as a .zip from the browser (web backends). */
 export async function exportZip() {
-  const enc = new TextEncoder();
-  const files = [...store.files.entries()].map(([p, f]) => ({ name: "vault/" + p, data: enc.encode(f.content) }));
-  for (const p of store.others.keys()) {
-    const url = await backend.assetBlobUrl(p);
-    if (url) files.push({ name: "vault/" + p, data: new Uint8Array(await (await fetch(url)).arrayBuffer()) });
-  }
+  const files = await vaultFiles();
   const a = document.createElement("a");
   a.href = URL.createObjectURL(makeZip(files));
   a.download = "panel-vault-" + today() + ".zip";

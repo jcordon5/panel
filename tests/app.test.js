@@ -31,6 +31,7 @@ globalThis.fetch = async (url, init = {}) => {
       disk.set(body.path, body.content);
       return ok({ path: body.path, etag: etag(body.content), mtime: 2, size: body.content.length });
     }
+    case "/api/write-bytes": { disk.set(body.path, Buffer.from(body.data, "base64").toString("utf8")); return ok({ path: body.path }); }
     case "/api/delete": { for (const p of [...disk.keys()]) if (p === body.path || p.startsWith(body.path + "/")) disk.delete(p); return ok({}); }
     case "/api/move": {
       if (disk.has(body.to)) return err(409, { reason: "exists" });
@@ -373,4 +374,33 @@ test("flow: editing a task keeps its time", async () => {
   assert.equal(ops.blockText(tk).split("\n")[0], "09:30 a");
   await A.updateTask(tk, "09:30 a cambiada");
   assert.match(disk.get("weeks/2026-W40.md"), /- \[ \] 09:30 a cambiada\n/);
+});
+
+test("backup: an encrypted backup restores into the vault (new + replaced files, unsafe paths skipped)", async () => {
+  const B = await import("../app/js/backup.js");
+  const zip = await import("../app/js/zip.js");
+  const crypt = await import("../app/js/crypt.js");
+  await reset({ "weeks/2026-W40.md": WEEK, "notes/a.md": "# A\nnuevo\n" });
+  const files = (await B.vaultFiles()).map((f) => f.name);
+  assert.deepEqual(files.sort(), ["vault/notes/a.md", "vault/weeks/2026-W40.md"]);
+  // a backup made earlier: a.md had other content, b.md existed, plus paths that must never be written
+  const e = new TextEncoder();
+  const inner = new Uint8Array(await (await zip.makeZipCompressed([
+    { name: "vault/notes/a.md", data: e.encode("# A\nviejo\n") },
+    { name: "vault/notes/b.md", data: e.encode("# B\n") },
+    { name: "vault/weeks/2026-W40.md", data: e.encode(WEEK) },
+    { name: "vault/../evil.md", data: e.encode("x") },
+    { name: "vault/.trash/x.md", data: e.encode("x") },
+    { name: "vault/run.exe", data: e.encode("x") },
+  ])).arrayBuffer());
+  const file = await crypt.encryptBackup(inner, { password: "pw-12345678", iterations: 1000 });
+  const { data } = await crypt.decryptBackup(file, "pw-12345678");
+  const entries = await B.backupEntries(data);
+  assert.deepEqual(entries.map((x) => x.path), ["notes/a.md", "notes/b.md", "weeks/2026-W40.md"]);
+  const plan = B.planRestore(entries);
+  assert.deepEqual([plan.add.map((x) => x.path), plan.replace.map((x) => x.path), plan.same], [["notes/b.md"], ["notes/a.md"], 1]);
+  await B.applyRestore(plan);
+  assert.equal(disk.get("notes/a.md"), "# A\nviejo\n");
+  assert.equal(disk.get("notes/b.md"), "# B\n");
+  assert.ok(![...disk.keys()].some((k) => k.includes("evil") || k.endsWith(".exe")));
 });
