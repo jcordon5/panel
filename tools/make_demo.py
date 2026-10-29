@@ -52,10 +52,10 @@ T = {
              (-1, "## Para comentar\n\n- [x] Estado del piloto\n- [ ] Vacaciones de diciembre\n\n## Notas\n\n- Todo en verde salvo el piloto.\n\n## Tareas\n\n- [ ] @Luis revisar los permisos de red\n\n## Decisiones\n\n")),
         ],
         "knowledge": [
-            ("pedir-acceso-a-un-entorno", "Cómo pedir acceso a un entorno", "howto", "migracion-cloud", ["Luis Pérez"],
-             "1. Abre una solicitud en el portal de servicio, categoría «Accesos».\n2. Indica el entorno y para qué lo necesitas.\n3. Pide a tu responsable que la apruebe.\n\n> [!tip]\n> Si es urgente, avisa a Luis en cuanto la abras.\n"),
-            ("documentacion-del-api", "Documentación del API", "resource", "portal-clientes", ["Marta Ruiz"],
-             "- Referencia: https://example.com/api\n- Entorno de pruebas: https://sandbox.example.com\n"),
+            ("dar-de-alta-un-proveedor", "Cómo dar de alta a un proveedor", "howto", None, ["Ana García"],
+             "1. Pide al proveedor sus datos fiscales y un certificado bancario.\n2. Rellena la ficha de proveedor y adjunta los documentos.\n3. Compras la revisa en unos tres días.\n\n> [!tip]\n> Hazlo antes de pedir el primer presupuesto: sin alta no se puede aprobar.\n"),
+            ("guia-de-marca", "Guía de marca", "resource", "portal-clientes", ["Sara Gómez"],
+             "- Guía: https://example.com/marca\n- Logos y colores en la carpeta compartida de diseño\n"),
             ("presupuestos-antes-del-dia-20", "Los presupuestos se aprueban antes del día 20", "fact", None, ["Ana García"],
              "Lo que llega después del día 20 pasa al mes siguiente.\n"),
         ],
@@ -106,10 +106,10 @@ T = {
              (-1, "## To discuss\n\n- [x] Pilot status\n- [ ] December holidays\n\n## Notes\n\n- All green except the pilot.\n\n## Tasks\n\n- [ ] @Luis review the network permissions\n\n## Decisions\n\n")),
         ],
         "knowledge": [
-            ("request-access-to-an-environment", "How to request access to an environment", "howto", "cloud-migration", ["Luis Pérez"],
-             "1. Open a request in the service portal, category “Access”.\n2. Say which environment and what you need it for.\n3. Ask your manager to approve it.\n\n> [!tip]\n> If it's urgent, tell Luis as soon as you open it.\n"),
-            ("api-documentation", "API documentation", "resource", "customer-portal", ["Marta Ruiz"],
-             "- Reference: https://example.com/api\n- Sandbox: https://sandbox.example.com\n"),
+            ("register-a-supplier", "How to register a new supplier", "howto", None, ["Ana García"],
+             "1. Ask the supplier for their tax details and a bank certificate.\n2. Fill in the supplier form and attach the documents.\n3. Purchasing reviews it in about three days.\n\n> [!tip]\n> Do it before asking for the first quote: it can't be approved otherwise.\n"),
+            ("brand-guidelines", "Brand guidelines", "resource", "customer-portal", ["Sara Gómez"],
+             "- Guide: https://example.com/brand\n- Logos and colours in the shared design folder\n"),
             ("quotes-before-the-20th", "Quotes are approved before the 20th", "fact", None, ["Ana García"],
              "Anything that arrives after the 20th moves to the next month.\n"),
         ],
@@ -120,6 +120,12 @@ T = {
             ("offsite-ideas", "Offsite ideas", False, "- Technical writing workshop\n- One-day hackathon\n- Mountain hike 🥾\n"),
         ],
     },
+}
+
+
+ROUTINES = {
+    "es": "# Rutinas\n\nLo que mi IA hace cuando le digo estas frases.\n\n## «Buenos días»\n1. Procesa lo pendiente.\n2. Dame el día: reuniones con lo abierto con cada asistente, tareas, atrasadas y lo que espero de otros.\n3. Las 3 cosas más importantes de hoy.\n\n## «Cierre del día»\n1. Procesa las reuniones de hoy.\n2. Lista lo que quedó sin hacer y propón a qué día moverlo.\n",
+    "en": "# Routines\n\nWhat my AI does when I say these phrases.\n\n## \"Good morning\"\n1. Process what's pending.\n2. Give me the day: meetings with what's open with each attendee, tasks, overdue and what I'm waiting on.\n3. The 3 most important things today.\n\n## \"End of day\"\n1. Process today's meetings.\n2. List what's left undone and suggest a day for each.\n",
 }
 
 
@@ -208,6 +214,8 @@ def make(dest, lang="es"):
     for s, title, kind, proj, people, body in L["knowledge"]:
         w(os.path.join(dest, "knowledge", s + ".md"), "---\ntype: knowledge\nkind: %s\ntitle: %s\n%speople: [%s]\ncreated: %s\nupdated: %s\n---\n\n# %s\n\n%s" % (
             kind, title, "project: %s\n" % proj if proj else "", ", ".join(people), stamp, stamp, title, body))
+
+    w(os.path.join(dest, "routines.md"), ROUTINES[lang])
 
     for s, title, pinned, body in L["notes"]:
         fm = "---\ntype: note\ntitle: %s\n%screated: %s\nupdated: %s\n---\n\n# %s\n\n" % (title, "pinned: true\n" if pinned else "", stamp, stamp, title)

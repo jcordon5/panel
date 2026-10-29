@@ -522,8 +522,25 @@ export function seriesDue(date) {
     .sort((a, b) => String(a.fm.time || "99").localeCompare(String(b.fm.time || "99")));
 }
 
-/** A meeting that already happened, has notes and hasn't been processed into minutes/tasks yet. */
-export function needsProcessing(m, today) {
-  if (m.kind !== "meeting" || m.fm.processed || !m.date || m.date > today) return false;
-  return /\S/.test(m.body.replace(/^#.*$/gm, "").replace(/^\s*[-*]\s*(\[[ xX]\]\s*)?$/gm, ""));
+/** Sources (transcripts, emails…) attached to a meeting, waiting to be processed. */
+export function sourcesOf(meeting) {
+  const k = fold(stripExt(meeting.name));
+  return vault().sources.filter((s) => typeof s.fm.meeting === "string" && fold(unlink(s.fm.meeting).split("/").pop()) === k);
+}
+
+/**
+ * A meeting of the last `days` days that already happened, has notes and hasn't been processed into
+ * a summary and tasks yet. (Older meetings — e.g. from before Panel 3 — are processed only on request.)
+ */
+export function needsProcessing(m, today, days = 14) {
+  if (m.kind !== "meeting" || m.fm.processed || !m.date || m.date > today || m.date < addDays(today, -days)) return false;
+  if (m.date === today && m.time) { // not before it starts
+    const d = new Date(), now = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    if (String(m.time).padStart(5, "0") > now) return false;
+  }
+  if (sourcesOf(m).length) return true;
+  // something written outside the "to discuss" list (which is prepared beforehand)
+  const lines = m.body.split("\n");
+  const skip = new Set(agendaRanges(lines).flatMap(([a, b]) => Array.from({ length: b - a }, (_, i) => a + i)));
+  return lines.some((l, i) => !skip.has(i) && !/^\s*(#.*|[-*+]\s*(\[[ xX]\]\s*)?)?$/.test(l));
 }

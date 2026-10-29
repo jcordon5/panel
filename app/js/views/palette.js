@@ -7,9 +7,9 @@ import { vault } from "../model.js";
 import { store } from "../store.js";
 import { go, route } from "../nav.js";
 import { quickAdd } from "../tasks.js";
-import { newMeetingDialog, newNoteDialog, newProjectDialog } from "./dialogs.js";
+import { newMeetingDialog, newNoteDialog, newProjectDialog, newPersonDialog, newKnowledgeDialog, seriesDialog } from "./dialogs.js";
+import { captureDialog } from "./capture.js";
 import { openSettings } from "./settings.js";
-import { backend } from "../backends.js";
 
 function commands() {
   return [
@@ -17,6 +17,12 @@ function commands() {
     { label: t("meeting.new"), icon: "users", hint: "M", run: () => newMeetingDialog() },
     { label: t("note.new"), icon: "note", hint: "⇧N", run: () => newNoteDialog() },
     { label: t("project.new"), icon: "folder", run: () => newProjectDialog() },
+    { label: t("series.new"), icon: "clock", run: () => seriesDialog() },
+    { label: t("person.new"), icon: "user", run: () => newPersonDialog() },
+    { label: t("know.new"), icon: "book", run: () => newKnowledgeDialog() },
+    { label: t("cap.title"), icon: "upload", run: () => captureDialog() },
+    { label: t("nav.people"), icon: "user", hint: "U", run: () => go(route.people()) },
+    { label: t("nav.knowledge"), icon: "book", hint: "K", run: () => go(route.knowledge()) },
     { label: t("nav.today"), icon: "sun", hint: "T", run: () => go(route.today()) },
     { label: t("nav.inbox"), icon: "inbox", hint: "I", run: () => go(route.inbox()) },
     { label: t("nav.week"), icon: "week", hint: "W", run: () => go(route.week()) },
@@ -34,7 +40,7 @@ function commands() {
 }
 
 function docIcon(d) {
-  return { meeting: "users", project: "folder", week: "week", inbox: "inbox", note: "note" }[d.kind] || "file";
+  return { meeting: "users", project: "folder", week: "week", inbox: "inbox", note: "note", person: "user", knowledge: "book", series: "clock", source: "upload" }[d.kind] || "file";
 }
 
 function score(q, text) {

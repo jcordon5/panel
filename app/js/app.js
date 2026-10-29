@@ -29,6 +29,7 @@ import * as welcome from "./views/welcome.js";
 import * as people from "./views/people.js";
 import * as knowledge from "./views/knowledge.js";
 import * as meet from "./views/meet.js";
+import { bindGlobalDrop } from "./views/capture.js";
 import { backend, setBackend, detectBackend } from "./backends.js";
 
 const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet };
@@ -182,12 +183,14 @@ function bindGlobal() {
       n: () => quickAdd(), m: () => newMeetingDialog(), N: () => newNoteDialog(), "/": () => openPalette(),
       t: () => go(route.today()), i: () => go(route.inbox()), w: () => go(route.week()), c: () => go(route.calendar()),
       r: () => go(route.meetings()), b: () => go(route.notes()), p: () => go(route.projects()),
+      u: () => go(route.people()), k: () => go(route.knowledge()),
       "?": () => openSettings("shortcuts"),
     };
     if (actions[k] && !current.view?.keys?.[k]) { e.preventDefault(); actions[k](); return; }
     current.view?.keys?.[k]?.(e);
   });
 
+  bindGlobalDrop();
   $("#menu-btn").addEventListener("click", () => document.body.classList.toggle("sb-open"));
   $("#sb-backdrop").addEventListener("click", () => document.body.classList.remove("sb-open"));
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);

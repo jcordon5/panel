@@ -4,14 +4,14 @@
 
 # Panel
 
-**Tu semana, tus reuniones y tus notas — en archivos Markdown que son tuyos.**
+**Tu memoria de trabajo: la semana, las reuniones, la gente y lo que vas aprendiendo — en Markdown que es tuyo,
+con una IA que hace el trabajo pesado.**
 
-Sin cuentas. Sin nubes en las que tengas que confiar. Sin instalar nada.<br>
-Funciona en Windows, macOS, Linux, iPhone y Android.
+Sin cuentas. Sin nubes en las que tengas que confiar. Sin permisos de administrador.<br>
+Windows, macOS y Linux.
 
-[**Abrir la app web**](https://panel.yous.dev) ·
-[Descargar para Windows](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip) ·
-[macOS / Linux](#versión-de-escritorio) ·
+[**Descargar para Windows**](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip) ·
+[macOS / Linux](#empezar) ·
 [English](README.md)
 
 <img src="docs/img/week.png" alt="Panel: el tablero semanal" width="100%">
@@ -20,210 +20,164 @@ Funciona en Windows, macOS, Linux, iPhone y Android.
 
 ---
 
-## ¿Otra app de tareas?
+## El problema
 
-Hay mil apps de tareas y notas. Panel no intenta ganarles en funciones. Existe por unas pocas convicciones:
+Días enteros de reunión en reunión. Al día siguiente, el hueco libre se va en repasar notas, buscar en el chat lo que se dijo, rehacer
+la lista de tareas… *tareas para crear tareas*. Y aun así se escapan cosas: quién quedó en mandar qué, cómo se pedía aquel acceso,
+dónde estaba aquel documento.
 
-**Tus datos deben sobrevivir a la app.** Todo lo que escribes en Panel es un archivo `.md` en una carpeta que eliges tú. No hay base
-de datos, ni formato propietario, ni “exportar”: abre la carpeta con cualquier editor de texto, Obsidian, VS Code o Git y ahí está todo.
-Si Panel desapareciera mañana, no perderías nada.
+Panel está hecho para que **atiendas a la reunión** y luego **hagas**, no para que organices.
 
-**Privado por diseño, no por promesa.** Panel no tiene servidores ni cuentas. La app se ejecuta en tu navegador (o como un pequeño
-programa local) y lee y escribe tus archivos directamente — en tu disco o en *tu* repositorio privado de GitHub. No hay ninguna empresa
-en medio que pueda sufrir una filtración, venderse, cerrar, subir precios o entrenar con tus notas.
+## Cómo funciona
 
-**Simple a propósito.** Una semana, un plan del día, reuniones, proyectos y notas. Nada más. Sin bases de datos que diseñar, sin
-plugins que configurar, sin 40 vistas que mantener. Lo abres y planificas tu semana; la estructura ya está hecha.
+1. **Planificas la semana** en un tablero: tareas y reuniones en el orden en que ocurren.
+2. **Entras a la reunión en modo reunión**: lo que querías comentar a la izquierda; abajo escribes una línea y Enter.
+   `!` la convierte en tarea tuya, `@Ana` en algo que esperas de Ana, `>` en una decisión, `?` en una duda.
+   ¿Hay transcripción? La sueltas encima.
+3. **Al terminar** repartes tus tareas por días en un clic.
+4. **Tu IA lo procesa** (Claude u otro agente, con la [skill](skills/panel-vault) incluida): «procesa mis reuniones» y escribe el
+   resumen, completa tareas y decisiones que se te escaparon, actualiza las fichas de las personas y guarda como conocimiento lo que
+   vale la pena recordar. Las fuentes que usó se borran: no se acumula basura.
+5. **Preguntas a tu memoria**: «¿cómo se daba de alta a un proveedor?», «¿qué me debe Luis?», «prepárame la reunión del jueves». La
+   respuesta sale de tus notas, con la fuente.
 
-**Funciona donde otras herramientas no están permitidas.** Muchas empresas bloquean herramientas en la nube como Notion y no dejan
-instalar apps como Obsidian. Panel funciona en el navegador sobre una carpeta local y nada sale del ordenador — una conversación fácil con
-IT. Pon la carpeta en el OneDrive de la empresa y se sincroniza como cualquier otro documento.
-
-**Las reuniones son de primera clase.** La mayoría de apps de tareas tratan las reuniones como algo secundario. En Panel tus reuniones
-están *dentro* del plan del día, entre lo que tienes que hacer antes y después; las notas siguen una plantilla; los *próximos pasos* se
-convierten en acciones que verás mañana; y tu calendario puede alimentarlo solo.
-
-**Preparado para la IA.** Una bóveda de Markdown estructurado es el idioma nativo de los agentes de IA. Apunta a Claude (o a cualquier
-agente) a la carpeta y pregúntale *“¿qué acordamos con el proveedor esta semana?”* o *“planifícame el jueves”*. Una [skill](skills/panel-vault)
-lista para usar le enseña el formato.
-
-## ¿Para quién es?
-
-- **Gente con muchas reuniones y varios proyectos** — consultoría, ingeniería, gestión, investigación — que necesita un solo sitio para
-  *lo que tengo que hacer* y *lo que se dijo*.
-- **Quien planifica por semanas**: suelta tareas en los días, muévelas arrastrando, trae lo atrasado a hoy con un clic.
-- **Responsables de equipo** que llevan sus 1:1 y hacen seguimiento de acciones semana a semana.
-- **Quien cuida su privacidad**, y quien trabaja en una empresa que no permite apps de notas en la nube.
-- **Usuarios de Obsidian** que quieren un planificador sobre su bóveda, y **curiosos de la IA** que quieren que su asistente lea sus notas de trabajo.
-
-## Comparado con…
-
-| | Panel | Notion | Obsidian | App de tareas típica |
-| --- | --- | --- | --- | --- |
-| Dónde están tus datos | Tu carpeta o tu repo privado | Sus servidores | Tu carpeta | Sus servidores |
-| Necesita cuenta | No | Sí | No (la sincronización es de pago) | Sí |
-| Archivos legibles en cualquier sitio | ✅ Markdown | ❌ hay que exportar | ✅ Markdown | ❌ |
-| Hay que instalar | No (navegador); app de escritorio opcional | No | Sí | Normalmente |
-| Semana + reuniones + proyectos de serie | ✅ | Móntatelo tú | Con plugins | Solo tareas |
-| Funciona en un PC corporativo restringido | ✅ | A menudo bloqueado | A menudo bloqueado | Depende |
-| Móvil | ✅ app web + GitHub | ✅ | ✅ | ✅ |
-| Precio | Gratis, código abierto | Freemium | Gratis / sync de pago | Freemium |
-
-Notion es genial para wikis y bases de datos de equipo; Obsidian es una herramienta de conocimiento magnífica con un ecosistema enorme
-de plugins. Panel es más pequeño a propósito: un espacio de trabajo diario y semanal rápido, con archivos compatibles con ambos.
-
-## Empezar
-
-### App web — sin instalar nada
-
-Abre **[panel.yous.dev](https://panel.yous.dev)** y elige dónde vive tu bóveda:
-
-- **Una carpeta de tu ordenador** (Chrome, Edge o Brave en el ordenador). Tus archivos no salen del equipo. Usa *Instalar app* en el menú
-  del navegador para tener el icono de Panel en el escritorio o el dock.
-- **Un repositorio privado de GitHub** — funciona en todos tus dispositivos, **también el móvil**, con el historial de cada cambio. Panel
-  te guía para crear el repositorio y un token que solo puede tocar ese repositorio. El token se queda en tu navegador.
-- **Probar con datos de ejemplo** — una bóveda de demostración en memoria; no se guarda nada.
-
-### Versión de escritorio
-
-Para Firefox o Safari, para usarlo totalmente sin conexión o para leer automáticamente tu **calendario de Outlook de escritorio**.
-
-- **Windows** — [descarga `Panel-Windows.zip`](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip), descomprímelo
-  y haz doble clic en **`panel.bat`**. Lleva Python incluido: nada más que instalar y sin permisos de administrador.
-- **macOS / Linux** — [descarga `panel.zip`](https://github.com/jcordon5/panel/releases/latest/download/panel.zip), descomprímelo y haz doble
-  clic en `panel.command` (macOS; la primera vez, clic derecho → *Abrir*) o ejecuta `./panel.sh`. Necesita Python 3.7+ (viene en Linux; en
-  macOS el sistema ofrece instalarlo). O en una línea:
-  `curl -fsSL https://raw.githubusercontent.com/jcordon5/panel/main/install.sh | sh`
-
-La versión de escritorio se abre en el navegador en `http://127.0.0.1:8765` y deja una ventanita abierta mientras la usas.
-`python3 server.py --demo` la arranca con datos de ejemplo.
+Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel con estructura y los lee y edita tu IA.
 
 ## Qué incluye
 
 <table>
 <tr>
 <td><img src="docs/img/today.png" alt="Hoy"></td>
-<td><img src="docs/img/meeting.png" alt="Notas de reunión"></td>
+<td><img src="docs/img/meeting.png" alt="Reunión"></td>
 </tr>
 <tr>
-<td><img src="docs/img/editor.png" alt="Editor con vista previa"></td>
+<td><img src="docs/img/editor.png" alt="Editor"></td>
 <td><img src="docs/img/search.png" alt="Búsqueda"></td>
 </tr>
 </table>
 
-- **Tablero semanal** — una columna por día más la bandeja. Arrastra tareas entre días y reordénalas; clic para editar; trae lo atrasado a hoy con un clic.
-- **Plan del día con las reuniones dentro** — las reuniones van entre tus tareas, en el orden en que ocurren. Arrastra una reunión a otro día para cambiarla de fecha.
-- **Hoy** — el día en orden, lo atrasado, los próximos días y las acciones pendientes de tus reuniones recientes.
-- **Reuniones** — pulsa <kbd>M</kbd> y empieza a escribir. Plantillas editables (retro, 1:1, entrevista…). Las líneas `- [ ]` son acciones:
-  arrástralas a un día (o *Planificar para → Hoy*) y aparecen en tu plan sin salir del acta; márcalas en cualquiera de los dos sitios.
-- **Proyectos** — resumen, reuniones, tareas (etiquetas `#proyecto` y pendientes de sus documentos) y documentos. Los pausados y terminados siguen a un clic.
-- **Calendario** — vista mensual; tus reuniones de Outlook/Google/iCloud aparecen solas (versión de escritorio); un clic crea la nota.
-- **Tablón** — notas fijadas y recientes en tarjetas.
-- **Escribe como en Obsidian** — el editor muestra tus notas formateadas mientras escribes y solo enseña el Markdown donde está el
-  cursor (edición en vivo). También tiene modo código Markdown y modo lectura.
-- **Markdown de verdad** — tablas, avisos, `[[enlaces]]` con autocompletado, `#etiquetas`, resaltado, código, imágenes (pegar o arrastrar), checkboxes que funcionan.
-- **Búsqueda global** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **deshacer cualquier cosa** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>), atajos de teclado, modo claro/oscuro, español/inglés.
-- **Convive con otras herramientas** — edita los archivos en Obsidian, con un script o con un agente de IA con Panel abierto: lo detecta en segundos y nunca pisa esos cambios.
+- **Semana y plan del día** — una columna por día más la bandeja; arrastra tareas y reuniones; lo atrasado a hoy con un clic.
+- **Reuniones recurrentes** — una daily, un seguimiento cada dos semanas, el primer lunes de mes… Con sus asistentes habituales. Cada
+  sesión aparece sola en su día y su nota se crea al entrar, con lo que quedó sin comentar en la anterior.
+- **Modo reunión** — orden del día para marcar, notas rápidas que se clasifican solas, tareas y decisiones a la vista, y el contexto:
+  lo abierto de la sesión anterior y lo que te deben los asistentes. Sin scroll arriba y abajo.
+- **Personas** — fichas con puesto, equipo y *para qué acudir a ellas*; en cada una, sus reuniones y lo que te debe. Panel te enseña
+  quién aparece en tus reuniones sin ficha y la crea con un clic. Selector de asistentes con autocompletado.
+- **Conocimiento** — notas pequeñas de *procedimientos* (cómo se hace algo), *recursos* (dónde está) y *datos* (lo que conviene
+  recordar), enlazadas con proyectos y personas.
+- **Para tu IA** — suelta o pega transcripciones (.vtt, .docx), correos (.eml, o .msg arrastrado desde Outlook) o chats; Hoy te dice
+  qué está pendiente de procesar.
+- **Esperando a otros** — cualquier tarea que empieza por `@Nombre`; aparece en Hoy, en la ficha de la persona y en sus reuniones.
+- **Editor como Obsidian** — formateado mientras escribes; el Markdown solo aparece donde está el cursor. También modo código y lectura.
+- **Calendario** — tus reuniones de Outlook/Google/iCloud aparecen solas; un clic crea la nota.
+- **Proyectos, tablón de notas, búsqueda global** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **deshacer cualquier cosa**, atajos de
+  teclado, claro/oscuro, español/inglés.
+- **Copias cifradas** de toda la bóveda con tu contraseña, también automáticas a una carpeta en la nube.
+
+## Por qué así
+
+**Tus datos sobreviven a la app.** Todo es Markdown en una carpeta que eliges. Sin base de datos ni formato propietario: ábrela con
+cualquier editor, Obsidian, VS Code o Git. Si Panel desapareciera mañana, no perderías nada.
+
+**La IA trabaja sobre lo que tú controlas.** Panel no conecta con tu correo ni lee tus chats por su cuenta: tú decides qué le das, y tu
+agente de IA (el que ya uses, con tu cuenta) lo destila en la bóveda. Nada sale de tu equipo salvo lo que tú le pidas a tu IA.
+
+**Privado por diseño.** Sin servidores, cuentas ni analítica. Un programa pequeño que solo escucha en tu propio ordenador.
+
+**Funciona en un ordenador de empresa.** Sin instalar nada como administrador, sin extensiones, sin acceso a otras aplicaciones. Pon
+la bóveda en el OneDrive de la empresa y se sincroniza como cualquier documento.
+
+**Simple a propósito.** Semana, reuniones, personas, conocimiento y proyectos. Sin bases de datos que diseñar ni plugins que configurar.
+
+## Empezar
+
+- **Windows** — [descarga `Panel-Windows.zip`](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip), descomprímelo y
+  haz doble clic en **`panel.bat`**. Lleva Python incluido: nada más que instalar y sin permisos de administrador.
+- **macOS / Linux** — [descarga `panel.zip`](https://github.com/jcordon5/panel/releases/latest/download/panel.zip), descomprímelo y haz doble
+  clic en `panel.command` (macOS; la primera vez, clic derecho → *Abrir*) o ejecuta `./panel.sh`. Necesita Python 3.7+. O en una línea:
+  `curl -fsSL https://raw.githubusercontent.com/jcordon5/panel/main/install.sh | sh`
+
+Panel se abre en tu navegador en `http://127.0.0.1:8765`. `python3 server.py --demo` lo arranca con datos de ejemplo.
+
+**Conecta tu IA**: copia [`skills/panel-vault`](skills/panel-vault) a `~/.claude/skills/` (Claude Code, también la extensión de VS Code)
+o añádela como skill en la app de Claude; a otros agentes, apúntales a `skills/panel-vault/SKILL.md`. Después: «procesa mis reuniones».
+
+## Tu IA y tus rutinas
+
+La skill enseña a tu agente el formato de la bóveda y le da un script (solo librería estándar de Python) para hacer cada cosa igual que
+la app: ver qué está pendiente, leer una reunión con su contexto, escribir el resumen, crear fichas y notas de conocimiento, planificar
+y mover tareas, buscar en todo.
+
+En la bóveda hay un `routines.md` con tus rutinas, en lenguaje normal: *cuando diga «buenos días», procesa lo pendiente y dame el día*.
+Lo editas tú; tu IA lo sigue.
 
 ## Tus datos
 
-- **Sincronizar**: pon la carpeta de la bóveda en OneDrive, Dropbox, iCloud o Syncthing (versión de escritorio o modo carpeta), o usa un repositorio privado de GitHub (web).
-- **Exportar**: *Ajustes → Bóveda → Exportar bóveda (.zip)* — todo, en un archivo.
-- **Copias cifradas**: *Ajustes → Copias* crea un único archivo con toda tu bóveda cifrado con tu contraseña (AES-256-GCM, clave
-  derivada con PBKDF2-SHA256 y 600.000 iteraciones). Guárdalo en la nube o en un USB: sin la contraseña nadie puede leerlo. Panel puede
-  hacer una al día en la carpeta que elijas (elige una de OneDrive/Google Drive/Dropbox y tendrás una copia cifrada en la nube); funciona
-  en la versión de escritorio y en el modo carpeta. Restaurar pide la contraseña y deja los archivos sustituidos en `.trash`, o te da un
-  `.zip` normal. Si dejas que el dispositivo recuerde la contraseña, guarda una clave que solo sirve para *cifrar*: las copias automáticas
-  funcionan, pero nadie con acceso a ese navegador puede abrirlas.
-- **Redes de seguridad**: lo borrado va a una carpeta `.trash` dentro de la bóveda. La versión de escritorio además comprime tu bóveda antes
-  de cada actualización y se limpia sola (guarda las 5 últimas copias automáticas y las 10 últimas manuales).
-- **Actualizaciones**: la app web es siempre la última versión. La de escritorio mira en GitHub al arrancar y se actualiza con un clic — solo
-  se sustituye el código; tu bóveda y tus ajustes no se tocan. El formato de la bóveda se mantiene compatible; si algún día evoluciona, Panel
-  migra tus archivos de forma segura después de hacer una copia.
+- **Sincronizar**: pon la carpeta de la bóveda en OneDrive, Dropbox, iCloud o Syncthing.
+- **Exportar**: *Ajustes → Bóveda → Exportar bóveda (.zip)*.
+- **Copias cifradas**: *Ajustes → Copias* crea un archivo con toda la bóveda cifrado con tu contraseña (AES-256-GCM, clave derivada con
+  PBKDF2-SHA256 y 600.000 iteraciones). Panel puede hacer una al día en la carpeta que elijas (una de OneDrive, por ejemplo). Restaurar
+  pide la contraseña y deja los archivos sustituidos en `.trash`, o te da un `.zip`. Si el equipo recuerda la contraseña, guarda una clave
+  que solo sirve para *cifrar*: nadie con acceso a ese equipo puede abrir las copias.
+- **Redes de seguridad**: lo borrado va a `.trash` dentro de la bóveda; antes de cada actualización se hace una copia.
+- **Actualizaciones**: Panel mira en GitHub al arrancar y se actualiza con un clic. Solo se sustituye el código; tu bóveda y tus ajustes no
+  se tocan. **Las bóvedas antiguas siguen funcionando tal cual**: lo nuevo es opcional y tu IA puede migrar tus notas cuando quieras.
 
 ## Calendario
 
-*Versión de escritorio → Ajustes → Calendario.* Dos formas; usa la que permita tu organización:
-
-- **Enlace de suscripción al calendario (.ics)** — un solo enlace para *todo* tu calendario (no uno por reunión), que se refresca solo cada pocos
-  minutos. Funciona con cualquier sistema: Outlook web (*Configuración → Calendario → Calendarios compartidos → Publicar un calendario → enlace ICS*),
-  Google Calendar (*Configuración → tu calendario → Dirección secreta en formato iCal*), iCloud, Nextcloud…
-- **Outlook de escritorio (Windows)** — lee directamente el Outlook instalado en tu PC, para empresas que desactivan la publicación de calendarios.
-
-Las reuniones aparecen en *Hoy*, *Semana* y *Calendario*; un clic en una y Panel crea su nota (título, hora, asistentes, lugar) en tu plan del
-día. Los calendarios solo se leen, nunca se modifican. Los navegadores no dejan que una web lea calendarios de otros sitios, por eso esto va en la versión de escritorio.
+*Ajustes → Calendario.* Un enlace de suscripción **.ics** (Outlook web, Google Calendar, iCloud, Nextcloud…), que se refresca solo, o el
+**Outlook de escritorio** de Windows, para empresas que no permiten publicar el calendario. Las reuniones aparecen en Hoy, Semana y
+Calendario; un clic crea su nota. Los calendarios solo se leen.
 
 ## La bóveda
 
 ```
 vault/
-├── README.md                         cómo se organiza la bóveda (para personas e IAs)
-├── inbox.md                          tareas sin fecha (Bandeja)
-├── weeks/2026-W40.md                 un archivo por semana ISO, una sección "## " por día
-├── meetings/2026-09-29-sync.md       reuniones que no son de ningún proyecto
-├── projects/<proyecto>/README.md     ficha del proyecto
-├── projects/<proyecto>/meetings/…    reuniones del proyecto
-├── projects/<proyecto>/*.md          otros documentos del proyecto
-├── notes/*.md                        notas generales (el Tablón)
-├── templates/meeting.md …            plantillas personalizables
-└── assets/2026-09/…                  imágenes pegadas
+├── README.md                     cómo se organiza (para personas e IAs)
+├── routines.md                   tus rutinas para la IA
+├── inbox.md                      tareas sin fecha
+├── weeks/2026-W44.md             una semana por archivo, una sección por día (el plan del día, en orden)
+├── meetings/2026-10-29-….md      reuniones (projects/<p>/meetings/ si son de un proyecto)
+├── series/<nombre>.md            reuniones recurrentes
+├── people/<nombre>.md            personas
+├── knowledge/<título>.md         conocimiento: procedimientos, recursos, datos
+├── projects/<proyecto>/README.md proyectos
+├── notes/*.md                    notas (el Tablón)
+├── sources/*.md                  lo que dejas para tu IA (se borra al procesarlo)
+└── templates/, assets/           plantillas e imágenes
 ```
-
-Un archivo de semana es Markdown sin más:
 
 ```markdown
----
-type: week
-week: 2026-W40
-start: 2026-09-28
----
+## Jueves · 2026-10-29
 
-# Semana 40 · 28 sep – 4 oct 2026
-
-## Martes · 2026-09-29
-
-- [ ] 09:30 Daily del equipo
-- [ ] Preparar la demo                  ← antes de la reunión
-- [[2026-09-29-sync-con-el-proveedor]]  ← la reunión, donde ocurre
-- [ ] Enviar el acta #migracion-cloud
-  - el detalle va indentado bajo su tarea
-- [[2026-09-28-retro#^k3x9pa]]          ← una acción de otra reunión, planificada aquí
+- [ ] 09:00 Revisar el informe #proyecto-alfa
+- [[2026-10-29-seguimiento-alfa]]          ← la reunión, donde ocurre
+- [ ] @Ana enviar el presupuesto            ← esperando a Ana
+- [[2026-10-28-seguimiento-alfa#^k3x9pa]]   ← una tarea de otra reunión, planificada hoy
 ```
 
-Convenciones: cabecera YAML (`type`, `title`, `date`, `time`, `project`, `attendees`, `tags`, `created`, `updated`; las claves desconocidas se
-respetan) · tareas `- [ ]` / `- [x]` · una hora `HH:MM` al principio es la hora de la tarea · `#carpeta-del-proyecto` asocia la tarea a un
-proyecto · lo que cuenta es la fecha ISO del título del día · `[[reunión#^id]]` en un día planifica la tarea de esa reunión que termina en
-` ^id` (id de bloque de Obsidian) · plantillas en `templates/` (`meeting.md` por defecto, `meeting-<nombre>.md`
-alternativas) con `{{title}}`, `{{date}}`, `{{time}}`, `{{project}}`, `{{attendees}}`, `{{today}}`. 100 % compatible con Obsidian.
+El formato completo de cada archivo está en [`skills/panel-vault/references/format.md`](skills/panel-vault/references/format.md).
+Compatible con Obsidian.
 
-**¿Vienes de Panel v1 (`boveda/`)?** Pon tu carpeta `boveda` junto a `server.py` de la versión de escritorio antes de arrancarla la primera vez
-y Panel te ofrece migrarla (la original no se toca), o ejecuta `python3 tools/migrate_v1.py ruta/a/boveda ruta/a/vault es`.
-
-## Para agentes de IA
-
-[`skills/panel-vault`](skills/panel-vault) es una skill para Claude (y una guía para cualquier agente) con un pequeño script, `panel_vault.py`
-(solo librería estándar), para leer el día o la semana, listar reuniones y acciones pendientes, ver el estado de un proyecto, y añadir, completar
-o mover tareas y crear reuniones igual que la app.
-
-- Claude Code: copia la carpeta a `~/.claude/skills/panel-vault` (o a `.claude/skills/` en un proyecto).
-- Apps de Claude: comprime la carpeta en un zip y añádela en *Ajustes → Capacidades → Skills*.
-- Otros agentes: apúntales a `skills/panel-vault/SKILL.md`.
+**¿Vienes de Panel v1 (`boveda/`)?** Pon la carpeta `boveda` junto a `server.py` antes de arrancar la primera vez y Panel te ofrece
+migrarla (la original no se toca), o ejecuta `python3 tools/migrate_v1.py ruta/a/boveda ruta/a/vault es`.
 
 ## Privacidad y seguridad
 
-- Sin servidores, cuentas, analítica ni rastreo. La app web son archivos estáticos; tu bóveda va directamente de tu navegador a tu disco o a `api.github.com`.
-- El servidor de escritorio solo escucha en `127.0.0.1`, rechaza peticiones de otras webs y solo puede tocar archivos dentro de la bóveda.
+- Sin servidores, cuentas, analítica ni rastreo.
+- El servidor solo escucha en `127.0.0.1`, rechaza peticiones de otras webs y solo puede tocar archivos dentro de la bóveda.
 - El Markdown se sanea (sin HTML crudo ni enlaces `javascript:`) y se aplica una política de seguridad de contenido estricta.
-- Las únicas conexiones externas son las que tú configuras: tu repositorio de GitHub, tus calendarios y la comprobación de actualizaciones.
+- Lo que sueltas para tu IA pasa por un filtro que oculta contraseñas y tokens evidentes, y se borra al procesarlo.
+- Las únicas conexiones externas son las que configuras: tus calendarios y la comprobación de actualizaciones.
 
 ## Desarrollo
 
-Sin compilación y sin dependencias: HTML/CSS/módulos ES en `app/` (esos mismos archivos son la app web), `server.py` para la versión de
-escritorio (solo librería estándar), y [marked](https://github.com/markedjs/marked) y [CodeMirror 6](https://codemirror.net) incluidos
-(`tools/vendor/build-codemirror.sh` regenera el paquete de CodeMirror; solo hace falta para actualizarlo).
+Sin compilación y sin dependencias: HTML/CSS/módulos ES en `app/`, `server.py` (solo librería estándar), y
+[marked](https://github.com/markedjs/marked) y [CodeMirror 6](https://codemirror.net) incluidos (`tools/vendor/build-codemirror.sh`
+regenera CodeMirror; solo hace falta para actualizarlo).
 
 ```bash
-python3 server.py --demo   # versión de escritorio con datos de ejemplo
+python3 server.py --demo   # con datos de ejemplo
 npm test                   # node --test tests/*.test.js && python3 -m unittest discover -s tests
 ```
 

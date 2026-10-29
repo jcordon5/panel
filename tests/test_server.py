@@ -177,6 +177,24 @@ class BackupTest(ServerHarness, unittest.TestCase):
             self.assertEqual(self.req("POST", "/api/write-bytes", {"path": bad, "data": b64(b"x")})[0], 400, bad)
 
 
+class SourceTest(ServerHarness, unittest.TestCase):
+    def test_pasted_text_and_files_become_sources(self):
+        import base64
+        st, res = self.req("POST", "/api/source", {"text": "Ana: el taller empieza a las diez\npassword: secreta", "title": "Chat: taller", "kind": "chat", "meeting": "[[2026-10-29-sync]]"})
+        self.assertEqual(st, 200, res)
+        self.assertTrue(res["path"].startswith("sources/") and res["path"].endswith("-chat-taller.md"))
+        with open(os.path.join(server.VAULT, res["path"]), encoding="utf-8") as f:
+            text = f.read()
+        self.assertIn("type: source\nkind: chat\ntitle: \"Chat: taller\"", text)
+        self.assertIn('meeting: "[[2026-10-29-sync]]"', text)
+        self.assertIn("el taller empieza a las diez", text)
+        self.assertNotIn("secreta", text)
+        vtt = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n<v Ana>Hola</v>\n"
+        st, res = self.req("POST", "/api/source", {"name": "Daily.vtt", "data": base64.b64encode(vtt.encode()).decode()})
+        self.assertEqual((st, res["kind"], res["title"]), (200, "transcript", "Daily"))
+        self.assertEqual(self.req("POST", "/api/source", {"name": "x.exe", "data": "TVo="})[0], 400)
+
+
 class NetTest(unittest.TestCase):
     """Behind proxies Python's urllib can fail where the system curl works."""
 

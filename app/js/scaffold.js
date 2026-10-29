@@ -26,6 +26,11 @@ projects/<proyecto>/README.md    Ficha del proyecto (descripción, objetivos...)
 projects/<proyecto>/meetings/    Reuniones del proyecto
 projects/<proyecto>/*.md         Otros documentos del proyecto
 notes/*.md                       Notas generales (el "Tablón"); pinned: true = fijada
+series/<nombre>.md               Reuniones recurrentes (cada sesión es una reunión con series: <nombre>)
+people/<nombre>.md               Fichas de personas: puesto, equipo, para qué acudir a ellas
+knowledge/<titulo>.md            Conocimiento: procedimientos, recursos y datos
+sources/*.md                     Lo que dejas para que tu IA lo procese (se borra al procesarlo)
+routines.md                      Tus rutinas: «cuando diga X, haz Y»
 templates/*.md                   Plantillas para reuniones, notas y proyectos
 assets/                          Imágenes pegadas en las notas
 \`\`\`
@@ -40,6 +45,8 @@ assets/                          Imágenes pegadas en las notas
 - Plantillas: \`templates/meeting.md\` es la de por defecto; \`templates/meeting-retro.md\`, \`templates/meeting-1-1.md\`… son alternativas (igual con \`note\`).
 - Enlaces entre notas: \`[[nombre-de-archivo]]\` o \`[[Título]]\`.
 - Nombres de archivo: \`AAAA-MM-DD-titulo.md\` para reuniones; minúsculas y guiones.
+- Una tarea que empieza por \`@Nombre\` es de otra persona: algo que esperas de ella.
+- En una reunión, las secciones se reconocen por su título: *Para comentar* (lo que quieres sacar; sus casillas no son tareas), *Notas*, *Tareas*, *Decisiones* y *Resumen* (lo escribe tu IA al procesarla, y entonces pone \`processed: fecha\`).
 
 ## Para agentes de IA
 
@@ -49,7 +56,10 @@ Puedes leer y editar estos archivos directamente. Por ejemplo:
 - **Añadir una tarea**: una línea \`- [ ] texto\` al final de la sección del día (o en \`inbox.md\` si no tiene fecha). Si el archivo de la semana no existe, créalo con la misma estructura.
 - **Crear una reunión**: archivo en \`meetings/\` (o \`projects/<p>/meetings/\`) a partir de \`templates/meeting*.md\`, y una línea \`- [[nombre-del-archivo]]\` en el plan de su día.
 - **Resumir reuniones**: lee \`meetings/\` y \`projects/*/meetings/\`; la fecha está en \`date\`.
-- **Acciones pendientes**: las líneas \`- [ ]\` de las reuniones.
+- **Acciones pendientes**: las líneas \`- [ ]\` de las reuniones (fuera de *Para comentar*).
+- **Procesar reuniones y fuentes**: resumen, tareas, decisiones, fichas de personas y notas de conocimiento; después borra cada fuente usada.
+- **Rutinas**: lee \`routines.md\` cuando el usuario use una de sus frases.
+- La skill \`panel-vault\` de Panel explica el formato completo y trae un script que hace todo esto.
 - Mantén la cabecera YAML y actualiza \`updated\` al modificar un archivo.
 `,
   en: `---
@@ -71,6 +81,11 @@ projects/<project>/README.md     Project overview (description, goals...)
 projects/<project>/meetings/     Project meetings
 projects/<project>/*.md          Other project documents
 notes/*.md                       General notes (the board); pinned: true = pinned
+series/<name>.md                 Recurring meetings (each session is a meeting with series: <name>)
+people/<name>.md                 People cards: role, team, what to go to them for
+knowledge/<title>.md             Knowledge: procedures, resources and facts
+sources/*.md                     Things left for your AI to process (deleted once processed)
+routines.md                      Your routines: "when I say X, do Y"
 templates/*.md                   Templates for meetings, notes and projects
 assets/                          Images pasted into notes
 \`\`\`
@@ -85,6 +100,8 @@ assets/                          Images pasted into notes
 - Templates: \`templates/meeting.md\` is the default; \`templates/meeting-retro.md\`, \`templates/meeting-1-1.md\`… are alternatives (same with \`note\`).
 - Links between notes: \`[[file-name]]\` or \`[[Title]]\`.
 - File names: \`YYYY-MM-DD-title.md\` for meetings; lowercase with dashes.
+- A task that starts with \`@Name\` belongs to someone else: something you are waiting on.
+- In a meeting, sections are recognised by their heading: *To discuss* (what you want to bring up; its checkboxes are not tasks), *Notes*, *Tasks*, *Decisions* and *Summary* (written by your AI when it processes the meeting, which then gets \`processed: date\`).
 
 ## For AI agents
 
@@ -94,7 +111,10 @@ You can read and edit these files directly. For example:
 - **Add a task**: a \`- [ ] text\` line at the end of that day's section (or in \`inbox.md\` when it has no date). If the week file does not exist, create it with the same structure.
 - **Create a meeting**: a file in \`meetings/\` (or \`projects/<p>/meetings/\`) from \`templates/meeting*.md\`, plus a \`- [[file-name]]\` line in its day plan.
 - **Summarise meetings**: read \`meetings/\` and \`projects/*/meetings/\`; the date is in \`date\`.
-- **Pending actions**: the \`- [ ]\` lines inside meetings.
+- **Pending actions**: the \`- [ ]\` lines inside meetings (outside *To discuss*).
+- **Process meetings and sources**: summary, tasks, decisions, people cards and knowledge notes; then delete each source used.
+- **Routines**: read \`routines.md\` when the user says one of their phrases.
+- Panel's \`panel-vault\` skill documents the full format and has a script that does all of this.
 - Keep the YAML frontmatter and update \`updated\` when you change a file.
 `,
 };
@@ -110,14 +130,15 @@ updated: {{today}}
 
 # Bienvenida a Panel
 
-Esto es una nota del **Tablón**. Pulsa **Editar** (o la tecla \`E\`) para cambiarla: a la izquierda escribes Markdown y a la derecha ves el resultado. Se guarda sola.
+Esto es una nota del **Tablón**. Pulsa **Editar** (o la tecla \`E\`) para cambiarla: la ves formateada mientras escribes y el Markdown solo aparece donde está el cursor. Se guarda sola.
 
 ## Lo básico
 
 - [ ] Añade una tarea con la tecla \`N\` o el botón **Nueva tarea**
 - [ ] Abre **Semana** y arrastra tareas de un día a otro
 - [ ] Crea tu primer proyecto desde la barra lateral
-- [ ] Registra una reunión con la tecla \`M\`
+- [ ] Registra una reunión con la tecla \`M\`; si se repite, márcalo y no tendrás que crearla cada vez
+- [ ] Crea fichas de las personas con las que trabajas (tecla \`U\`)
 - [ ] Busca lo que sea con \`Ctrl/⌘ + K\`
 
 > [!tip] Consejo
@@ -141,14 +162,15 @@ updated: {{today}}
 
 # Welcome to Panel
 
-This is a note on your **Board**. Press **Edit** (or the \`E\` key) to change it: write Markdown on the left and see the result on the right. It saves itself.
+This is a note on your **Board**. Press **Edit** (or the \`E\` key) to change it: it looks formatted while you write and the Markdown only shows where the cursor is. It saves itself.
 
 ## The basics
 
 - [ ] Add a task with the \`N\` key or the **New task** button
 - [ ] Open **Week** and drag tasks from one day to another
 - [ ] Create your first project from the sidebar
-- [ ] Log a meeting with the \`M\` key
+- [ ] Log a meeting with the \`M\` key; if it repeats, say so and you won't have to create it every time
+- [ ] Add cards for the people you work with (\`U\` key)
 - [ ] Find anything with \`Ctrl/⌘ + K\`
 
 > [!tip] Tip
@@ -164,6 +186,51 @@ All your data lives in the vault folder as \`.md\` files. Read [[README]] to see
 `,
 };
 
+const ROUTINES = {
+  es: `# Rutinas
+
+Lo que mi IA hace cuando le digo estas frases. Cámbialas o añade las tuyas cuando quieras.
+
+## «Buenos días»
+1. Procesa lo pendiente (reuniones sin procesar y fuentes).
+2. Dame el día: reuniones en orden con lo abierto con cada asistente, tareas, atrasadas
+   y lo que espero de otros desde hace más de 3 días.
+3. Dime las 3 cosas más importantes de hoy.
+
+## «Prepara la reunión de …»
+Lo abierto de la sesión anterior, lo que me deben los asistentes, sus fichas y el contexto
+del proyecto. Añade a «Para comentar» lo que debería sacar yo.
+
+## «Cierre del día»
+1. Procesa las reuniones de hoy.
+2. Lista lo que quedó sin hacer y propón a qué día moverlo (sin moverlo hasta que lo diga).
+
+## «Revisión semanal»
+Lo hecho, lo que se retrasó, decisiones de la semana, lo que espero de otros y lo de la semana que viene.
+`,
+  en: `# Routines
+
+What my AI does when I say these phrases. Change them or add your own whenever you like.
+
+## "Good morning"
+1. Process what's pending (unprocessed meetings and sources).
+2. Give me the day: meetings in order with what's open with each attendee, tasks, overdue
+   and what I've been waiting on from others for more than 3 days.
+3. Tell me the 3 most important things today.
+
+## "Prepare the meeting with …"
+What's open from the previous session, what the attendees owe me, their cards and the
+project's context. Add to "To discuss" what I should bring up.
+
+## "End of day"
+1. Process today's meetings.
+2. List what's left undone and suggest a day for each (don't move anything until I say so).
+
+## "Weekly review"
+What got done, what slipped, this week's decisions, what I'm waiting on and what's coming next week.
+`,
+};
+
 async function ensure(path, text) {
   if (!exists(path) && content(path) === null) await create(path, text);
 }
@@ -176,6 +243,7 @@ export async function scaffold(lang, { welcome = true } = {}) {
   await ensure("templates/meeting.md", builtinMeetingTemplate());
   await ensure("templates/note.md", builtinNoteTemplate());
   await ensure("templates/project.md", builtinProjectTemplate());
+  await ensure("routines.md", ROUTINES[l]);
   const wk = weekPath(weekId(today()));
   await ensure(wk, weekTemplate(mondayOf(today())));
   if (welcome) await ensure(l === "es" ? "notes/bienvenida.md" : "notes/welcome.md", WELCOME[l].replace(/\{\{today\}\}/g, today()));

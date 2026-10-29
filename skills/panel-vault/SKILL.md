@@ -1,94 +1,89 @@
 ---
 name: panel-vault
-description: Read and update a Panel vault — a folder of Markdown files with weekly task plans (weeks/2026-W40.md), an inbox.md, meeting notes, projects and notes. Use this skill whenever the user asks about their tasks, day or week plan, agenda, meetings, meeting notes or action items, project status, or wants a daily/weekly brief, a recap or a summary of their work notes — and whenever they want to add, complete, reschedule or move tasks, or log a new meeting in their vault, even if they don't say "Panel" or "vault" (e.g. "what do I have tomorrow?", "resúmeme la semana", "turn today's meeting next steps into tasks").
+description: The user's work memory — a Panel vault of plain Markdown with their week plans, meetings (one-off and recurring), people, knowledge notes (procedures, resources, facts), projects, notes and sources waiting to be processed. Use this skill whenever the user asks about their day, week, tasks, meetings, people, projects or anything they may have noted or learned at work ("how do I…", "who handles…", "where is…", "what did we decide with…"), wants a brief, a recap or a meeting prepared, says "process my meetings" / "process what's pending", wants to add, plan, move or complete tasks, log a meeting, or clean up and migrate their notes — even if they don't say "Panel" or "vault" (e.g. "¿qué tengo mañana?", "buenos días", "¿a quién le pido esto?", "procesa la reunión de hoy").
 ---
 
-# Panel vault
+# Panel vault — the user's work memory
 
-Panel is a local app that keeps tasks, meetings, projects and notes as plain Markdown in a folder (the *vault*). You can read and edit those files directly — the app picks up changes within seconds and never overwrites them. Your job is usually one of two things: **brief the user** from what's in the vault, or **change it** the way the Panel app would, so the files stay valid for the app, Obsidian and other agents.
+Panel keeps tasks, meetings, people, knowledge and projects as plain Markdown in a folder (the *vault*). The Panel app shows it visually; you read and write the same files. Changes appear in the app within seconds and the app never overwrites them.
+
+Your job: **keep the memory structured and up to date so the user can spend their time doing, not organising**. Turn raw meeting notes and captured sources into summaries, tasks and knowledge; brief and prepare them; answer questions from what is written, citing where it is.
 
 ## Find the vault
 
-The vault is the folder containing `inbox.md`, `weeks/`, `meetings/`, `projects/`, `notes/`. Typical places: `./vault` next to Panel's `server.py`, the current folder, `$PANEL_VAULT`, or whatever the user says. If a `README.md` in the vault describes the layout, trust it.
+The folder that contains `inbox.md`, `weeks/`, `meetings/`… Usually `vault/` next to Panel's `server.py`, `$PANEL_VAULT`, the current folder, or where the user says. Its `README.md` describes it.
 
 ## Layout
 
 ```
-inbox.md                            tasks with no date yet
-weeks/2026-W40.md                   one file per ISO week; one "## <Weekday> · YYYY-MM-DD" section per day
-meetings/2026-09-29-sync.md         meetings that belong to no project
-projects/<slug>/README.md           project overview (type: project, status: active|paused|done)
-projects/<slug>/meetings/*.md       the project's meetings
-projects/<slug>/*.md                other project documents
-notes/*.md                          general notes ("Board"); pinned: true = pinned
-templates/meeting.md, meeting-*.md  meeting templates (note.md / note-*.md for notes)
-assets/                             pasted images
-.trash/                             deleted files (ignore)
+inbox.md                       tasks without a date
+weeks/2026-W44.md              one file per ISO week; "## <Weekday> · YYYY-MM-DD" per day = that day's plan, in order
+meetings/YYYY-MM-DD-title.md   meetings (projects/<slug>/meetings/ for a project's)
+series/<name>.md               recurring meetings (repeat rule, usual attendees); each session is a normal meeting with `series: <name>`
+people/<name>.md               one card per person: role, team, what to ask them for, notes
+knowledge/<title>.md           small notes of what was learned: kind howto | resource | fact
+projects/<slug>/README.md      project overview and context
+notes/*.md                     free notes
+sources/*.md                   things captured for you to process (transcripts, emails, chats); delete once used
+routines.md                    the user's routines: "when I say X, do Y"
+templates/                     templates for meetings and notes
 ```
 
-A day in a week file is the **plan of that day, in order**. It holds tasks and, as plain `- [[file-name]]` lines, the meetings of that day placed where they happen:
+Full format of every file, and how to migrate unstructured notes into it: **[references/format.md](references/format.md)**.
 
-```markdown
-## Martes · 2026-09-29
+## Rules
 
-- [ ] 09:30 Daily del equipo
-- [ ] Preparar la demo            ← things to do before the meeting
-- [[2026-09-29-sync-con-el-proveedor-cloud]]
-- [ ] Enviar acta #migracion-cloud
-  - detail lines are indented under their task and move with it
-- [[2026-09-28-retro#^k3x9pa]]       ← an action item of another meeting, planned for this day
-```
+1. **Nothing invented.** Every fact comes from a file; cite it as `[[file-name]]` or the path. If it isn't written, say so.
+2. **You only read and write the vault.** Never send messages, emails or invitations, and never act in other apps on the user's behalf.
+3. **Small, safe edits.** Use the script (it keeps frontmatter, bumps `updated` and writes atomically). Never rewrite a whole file to change a part; never remove what the user wrote; re-read before writing.
+4. **The user's language and words.** Write in the language of the vault, briefly, without corporate filler.
+5. **Ask before big changes** (migrations, merging or deleting notes). Processing sources and meetings is expected and needs no confirmation.
+6. Keep `^blockid` endings and `[[links]]` intact when editing lines.
 
-`- [[meeting#^id]]` is an action item **planned** on that day: the task itself stays in the meeting
-(`- [ ] Pedir presupuesto ^k3x9pa`, an Obsidian block id) and the day only links to it, so checking it in either
-place is the same checkbox. The script shows these as tasks (`(action of: …)`) and handles them for you.
+## Routines
 
-Conventions worth knowing (the app relies on them):
-- Every file starts with YAML frontmatter: `type` (week, meeting, project, note, inbox), `title`, `date`, `time`, `project`, `attendees`, `tags`, `created`, `updated`. Unknown keys must be kept.
-- The ISO date in the day heading is what counts; the weekday word is decoration (can be Spanish or English — match the existing files).
-- Tasks are `- [ ]` / `- [x]`. A leading `HH:MM` is the task time. `#<project-slug>` links a task to a project.
-- A meeting's date comes from its `date` field (or the `YYYY-MM-DD-` file prefix). Open `- [ ]` lines inside meetings are **action items**.
-- Links are `[[file-name]]` (without `.md`). A ` ^abc123` at the end of a task line is a block id that day plans link to — keep it when editing that line.
+Before acting on a short trigger ("buenos días", "cierre del día", "prepara la semana"…) read `routines.md` at the vault root and follow the matching routine. If it doesn't exist and the user wants routines, create it from the template in [references/format.md](references/format.md#routinesmd) and let them edit it.
 
-## Use the helper script
+## Common jobs
 
-`scripts/panel_vault.py` (Python 3 standard library) reads and writes the vault exactly like the app does. Prefer it over hand-editing: it creates missing week files, inserts into the right day, keeps frontmatter and bumps `updated`, and orders meetings by time. Every listed item ends with `<path:line>` so you can open the source for detail.
+**Process what's pending** ("procesa mis reuniones", "procesa lo pendiente") → follow **[references/processing.md](references/processing.md)**. In short: `pending`, then for each meeting `meeting REF`, write a summary, complete tasks and decisions, update people and knowledge, `mark-processed`, `source-done` each source used, and report.
+
+**Answer from memory** ("¿cómo se pide…?", "¿quién lleva…?", "¿dónde está…?", "¿qué acordamos con…?") → `search "words"` (try synonyms), `knowledge`, `people`, `person NAME`; open the hits; answer briefly with citations. If the answer was buried in a meeting or source and is reusable, offer to save it as a knowledge note.
+
+**Prepare a meeting** → `meeting REF` (or the series' next session): open items from the previous session, what attendees owe (`waiting NAME`), their cards, the project's README and related knowledge. Add the points to bring up to its agenda (`write REF --section agenda --text "- [ ] …"`) and give the user a 5-line brief.
+
+**Daily brief** → `day`, `waiting`, `pending`. The day in order (meetings with time and what's open with their attendees), overdue, what others owe them for more than a few days, and the 2–3 things that matter most.
+
+**Weekly review** → `week`, `meetings --from -7`, `actions --since -7`, `waiting`: done, slipped, decisions, open loops, next week.
+
+**Tasks** → `add-task`, `done`, `move`, `plan` (a meeting's action item on a day without copying it). A task for someone else starts with `@Name`; it is something the user is waiting on.
+
+**Migrate / tidy** the user's own notes into people, knowledge and projects → [references/format.md#migrating-existing-notes](references/format.md#migrating-existing-notes). Propose the plan first, then do it in small steps.
+
+## Script
+
+`scripts/panel_vault.py` (Python 3, standard library only). Every listed item ends with `<path:line>`.
 
 ```bash
-python3 scripts/panel_vault.py --vault PATH day [DATE]        # plan of a day + overdue + inbox count
-python3 scripts/panel_vault.py --vault PATH week [DATE]       # the whole week
-python3 scripts/panel_vault.py --vault PATH overdue | inbox | projects
-python3 scripts/panel_vault.py --vault PATH meetings --from -7 [--to DATE] [--project SLUG]
-python3 scripts/panel_vault.py --vault PATH actions [--since -14] [--project SLUG]
-python3 scripts/panel_vault.py --vault PATH project SLUG
+P="python3 scripts/panel_vault.py --vault PATH"
+$P day [DATE] | week [DATE] | overdue | inbox | projects | project SLUG
+$P meetings [--from -7] [--to D] [--project SLUG]
+$P actions [--since -14] [--project SLUG]        # open action items for the user
+$P pending [--since -14]                       # meetings to process (last 2 weeks by default) + sources
+$P meeting REF                                 # a meeting in full: sections, attendees with roles, sources, previous session
+$P people [QUERY] | person NAME | waiting [NAME] | knowledge [QUERY] | series
+$P search "words" [--limit 12]
 
-python3 scripts/panel_vault.py --vault PATH add-task "Text #slug" --date tomorrow   # or --inbox
-python3 scripts/panel_vault.py --vault PATH done "part of the task text" [--date D] [--reopen]
-python3 scripts/panel_vault.py --vault PATH move "part of the text" --to 2026-10-06   # or --to-inbox
-python3 scripts/panel_vault.py --vault PATH plan "part of a meeting action" --date tomorrow   # schedule an action item
-python3 scripts/panel_vault.py --vault PATH new-meeting --title "Retro" --date D --time 09:00 \
-        [--project SLUG] [--attendees "Ana, Luis"] [--template retro] [--notes "..."]
+$P add-task "Text #project" --date tomorrow    # or --inbox; "@Name text" = waiting on Name
+$P done "part of the text" [--date D] [--reopen]
+$P move "part of the text" --to D              # or --to-inbox
+$P plan "part of a meeting action" --date D
+$P new-meeting --title T --date D [--time HH:MM] [--project SLUG] [--attendees "A, B"] [--template NAME]
+$P write REF --section summary|agenda|notes|tasks|decisions --text "- line\n- line"   # or --text - (stdin)
+$P mark-processed REF
+$P source-done sources/FILE.md
+$P add-person --name "Full Name" [--role R] [--team T] [--org O] [--email E] [--aliases "A, B"] [--ask-for "x, y"] [--notes TEXT]
+$P add-knowledge --title T --kind howto|resource|fact [--project SLUG] [--people "A, B"] [--source "[[meeting]]"] [--tags "a, b"] --body TEXT
 ```
 
-Dates accept `YYYY-MM-DD`, `today`, `tomorrow`, `yesterday`, `+3`, `-7`. If `done`/`move` finds several matches it lists them — narrow the text or add `--date` rather than guessing. If Python isn't available, edit the files by hand following the conventions above.
-
-## Briefs and summaries
-
-Read first (`day`, `week`, `meetings`, `actions`, then open the meeting files you need), then write for the user in their language. Good briefs are short and actionable:
-
-- **Daily brief**: the day in order (meetings with time, what to do before/after), overdue items, and the 2–3 things that matter most. Mention meeting action items that are still open.
-- **Weekly recap**: what got done (checked tasks), what slipped, meetings held with their key decisions (read the *Decisions/Acuerdos* and *Next steps/Próximos pasos* sections), and what's coming next week.
-- **Meeting recap**: attendees, decisions, and open action items with who/when if stated.
-- **Project status**: description, recent meetings and decisions, planned tasks (`#slug`) and open action items, risks noted in the README.
-
-Quote file names when it helps the user find things. Don't invent tasks, dates or decisions that aren't in the files.
-
-## Changing the vault safely
-
-- Edit the smallest thing possible; never rewrite a whole file just to change one line. Other tools may be editing too — re-read a file right before writing it.
-- Keep the frontmatter intact and set `updated: <today>` on files you change.
-- New tasks go at the end of their day (or into `inbox.md` when undated) unless the user says where. Keep a task's indented details with it when moving it.
-- New meetings: `meetings/YYYY-MM-DD-slug.md` or `projects/<slug>/meetings/…`, filled from `templates/meeting*.md`, and placed in the day plan as `- [[file-name]]`. The script does all of that.
-- Turning meeting next steps into tasks: **plan** them (`plan "text" --date D`), which links the action item from the day without copying it, so the meeting keeps its record and there is a single checkbox. `move` on a planned action moves its link; `done` checks it in the meeting.
-- Don't delete files; if the user wants something removed, move it to `.trash/` or ask.
-- After changing things, tell the user briefly what you changed and where.
+Dates: `YYYY-MM-DD`, `today`, `tomorrow`, `yesterday`, `+3`, `-7`. `REF` is a path, a file name or part of a meeting title. When a command finds several matches it lists them: narrow it instead of guessing. Without Python, edit the files by hand following references/format.md.

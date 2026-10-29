@@ -34,7 +34,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
-VERSION = "2.5.0"
+VERSION = "3.0.0"
 APP_NAME = "panel"
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_DIR = os.path.join(ROOT_DIR, "app")
@@ -336,6 +336,45 @@ def api_write_bytes(payload):
     return {"path": rel_of(full)}
 
 
+def _yaml(v):
+    v = str(v)
+    return json.dumps(v, ensure_ascii=False) if re.search(r'^[\s\-?:,\[\]{}#&*!|>\'"%@`]|: | #|^$', v) else v
+
+
+def api_source(payload):
+    """Something for your AI to process (transcript, email, pasted chat): stored as sources/<date>-<title>.md."""
+    import sources
+    name = str(payload.get("name") or "").strip()
+    try:
+        if payload.get("text") is not None:
+            src = sources.to_markdown(name or "pasted.txt", text=str(payload["text"]))
+        else:
+            data = base64.b64decode(payload.get("data") or "", validate=False)
+            if not data or len(data) > MAX_UPLOAD:
+                raise ApiError("file too large or empty")
+            src = sources.to_markdown(name, data)
+    except ValueError as e:
+        raise ApiError(str(e))
+    if not src["text"].strip():
+        raise ApiError("nothing to save: the file has no text")
+    if payload.get("kind") in ("transcript", "email", "chat", "document", "note"):
+        src["kind"] = payload["kind"]
+    title = str(payload.get("title") or "").strip() or src["title"] or src["kind"]
+    day = src["date"] or datetime.now().strftime("%Y-%m-%d")
+    fm = ["---", "type: source", "kind: " + src["kind"], "title: " + _yaml(title), "date: " + day]
+    if src["from"]:
+        fm.append("from: " + _yaml(src["from"]))
+    for key in ("meeting", "project"):
+        if payload.get(key):
+            fm.append("%s: %s" % (key, _yaml(payload[key])))
+    fm += ["created: " + datetime.now().strftime("%Y-%m-%d"), "---", "", "# " + title, "", src["text"], ""]
+    base = re.sub(r"[^a-z0-9]+", "-", title.lower().encode("ascii", "ignore").decode()).strip("-")[:50] or src["kind"]
+    with WRITE_LOCK:
+        full = unique_path(safe_path("sources/%s-%s.md" % (day, base)))
+        atomic_write(full, "\n".join(fm).encode("utf-8"))
+    return {"path": rel_of(full), "kind": src["kind"], "title": title}
+
+
 def backup_dir(cfg=None):
     cfg = load_config() if cfg is None else cfg
     return os.path.realpath(os.path.expanduser(cfg.get("backup_dir") or os.path.join(ROOT_DIR, "backups")))
@@ -514,6 +553,7 @@ POST_ROUTES = {
     "/api/delete": api_delete,
     "/api/upload": api_upload,
     "/api/write-bytes": api_write_bytes,
+    "/api/source": api_source,
     "/api/mkdir": api_mkdir,
     "/api/migrate": api_migrate,
 }

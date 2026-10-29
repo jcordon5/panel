@@ -43,6 +43,12 @@ export function entityChips(doc) {
     if (doc.fm.status === "paused") chips.push(h("span", { class: "chip chip-warn" }, t("series.pausedChip")));
     for (const a of attendeesOf(doc)) chips.push(personChip(a.name, { person: a.person }));
   }
+  if (doc.kind === "source") {
+    chips.push(h("span", { class: "chip chip-warn", title: t("cap.pendingHint") }, icon("sparkles", 12), t("cap.kind." + (doc.fm.kind || "note")) + " · " + t("cap.pending")));
+    if (typeof doc.fm.from === "string" && doc.fm.from) chips.push(h("span", { class: "chip" }, icon("user", 12), doc.fm.from));
+    const mt = typeof doc.fm.meeting === "string" ? resolveLink(doc.fm.meeting.replace(/^\[\[|\]\]$/g, "")) : null;
+    if (mt) chips.push(h("a", { class: "chip", href: route.doc(mt) }, icon("users", 12), vault().docs.get(mt)?.title || mt));
+  }
   if (doc.kind === "knowledge") {
     const kind = KNOWLEDGE_KINDS.includes(doc.fm.kind) ? doc.fm.kind : "fact";
     chips.push(h("span", { class: "chip know-kind", "data-kind": kind }, icon(KIND_ICON[kind], 12), t("know.kind." + kind)));

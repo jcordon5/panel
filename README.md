@@ -4,14 +4,14 @@
 
 # Panel
 
-**Your week, your meetings and your notes — in plain Markdown files that belong to you.**
+**Your work memory: your week, meetings, people and what you learn along the way — in Markdown that belongs to you,
+with an AI that does the paperwork.**
 
-No account. No cloud you have to trust. No install required.<br>
-Works on Windows, macOS, Linux, iPhone and Android.
+No accounts. No cloud you have to trust. No admin rights.<br>
+Windows, macOS and Linux.
 
-[**Open the web app**](https://panel.yous.dev) ·
-[Download for Windows](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip) ·
-[macOS / Linux](#desktop-version) ·
+[**Download for Windows**](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip) ·
+[macOS / Linux](#get-started) ·
 [Español](README.es.md)
 
 <img src="docs/img/week.png" alt="Panel: the week board" width="100%">
@@ -20,223 +20,166 @@ Works on Windows, macOS, Linux, iPhone and Android.
 
 ---
 
-## Why another task app?
+## The problem
 
-There are a thousand task and note apps. Panel doesn't try to out-feature them. It exists because of a few convictions:
+Whole days going from meeting to meeting. The next day, the free slot goes into re-reading notes, scrolling chats for what was said,
+rebuilding the task list… *tasks to create tasks*. And things still slip: who said they would send what, how that access was requested,
+where that document was.
 
-**Your data should outlive the app.** Everything you write in Panel is a `.md` file in a folder you choose. There is no database, no
-proprietary format and no export step: open the folder with any text editor, Obsidian, VS Code or Git and it's all there. If Panel
-disappeared tomorrow you would lose nothing.
+Panel is built so you can **be in the meeting** and then **do the work**, not organise it.
 
-**Private by architecture, not by promise.** Panel has no servers and no accounts. The app runs in your browser (or as a tiny local
-program) and reads and writes your files directly — on your disk or in *your* private GitHub repository. There is no company in the
-middle that can be breached, sold, shut down, raise prices or train on your notes.
+## How it works
 
-**Simple on purpose.** A week, a day plan, meetings, projects and notes. That's it. No databases to design, no plugins to
-configure, no 40 views to maintain. You open it and plan your week; the structure is already there.
+1. **Plan your week** on a board: tasks and meetings in the order they happen.
+2. **Join the meeting in meeting mode**: what you wanted to bring up on the left; at the bottom you type a line and press Enter.
+   `!` makes it your task, `@Ana` something you are waiting on from Ana, `>` a decision, `?` an open question.
+   Is there a transcript? Drop it on top.
+3. **When it ends**, plan your tasks across the week in one click each.
+4. **Your AI processes it** (Claude or another agent, with the included [skill](skills/panel-vault)): "process my meetings" and it
+   writes the summary, adds the tasks and decisions you missed, updates people's cards and keeps as knowledge what is worth
+   remembering. The sources it used are deleted: no junk piles up.
+5. **Ask your memory**: "how do we register a new supplier?", "what does Luis owe me?", "prepare Thursday's meeting". The answer
+   comes from your notes, with its source.
 
-**It works where other tools are not allowed.** Many companies block cloud tools like Notion and don't let you install apps like
-Obsidian. Panel runs in the browser on a local folder and nothing leaves the computer — an easy conversation with IT. Put the folder
-in your corporate OneDrive and it syncs like any other document.
-
-**Meetings are first-class.** Most task apps treat meetings as an afterthought. In Panel your meetings sit *inside* your day plan,
-between the things to do before and after them; notes follow a template; *next steps* become action items you'll see tomorrow; and
-your calendar can feed it automatically.
-
-**Ready for AI.** A structured Markdown vault is the native language of AI agents. Point Claude (or any agent) at the folder and ask
-*“what did we decide with the vendor this week?”* or *“plan my Thursday”*. A ready-made [skill](skills/panel-vault) teaches agents the format.
-
-## Who is it for?
-
-- **People with many meetings and several projects** — consultants, engineers, managers, researchers — who need one place for
-  *what I have to do* and *what was said*.
-- **Anyone who plans by the week**: drop tasks on days, drag them around, bring overdue work to today with one click.
-- **Team leads** keeping 1:1 notes and following up on action items across weeks.
-- **Privacy-conscious people**, and anyone whose company won't allow cloud note apps.
-- **Obsidian users** who want a planner on top of their vault, and **AI tinkerers** who want their assistant to read their work notes.
-
-## How it compares
-
-| | Panel | Notion | Obsidian | Typical to-do app |
-| --- | --- | --- | --- | --- |
-| Where your data lives | Your folder or your private repo | Their servers | Your folder | Their servers |
-| Account needed | No | Yes | No (sync is paid) | Yes |
-| Plain files you can read anywhere | ✅ Markdown | ❌ export needed | ✅ Markdown | ❌ |
-| Install needed | No (browser); optional desktop app | No | Yes | Usually |
-| Week planning + meetings + projects out of the box | ✅ | Build it yourself | With plugins | Tasks only |
-| Works on a locked-down work PC | ✅ | Often blocked | Often blocked | Varies |
-| Phone | ✅ web app + GitHub | ✅ | ✅ | ✅ |
-| Price | Free, open source | Freemium | Free / paid sync | Freemium |
-
-Notion is great for team wikis and databases; Obsidian is a superb knowledge tool with a huge plugin ecosystem. Panel is deliberately
-smaller: a fast daily/weekly workspace that keeps your files compatible with both.
-
-## Get started
-
-### Web app — nothing to install
-
-Open **[panel.yous.dev](https://panel.yous.dev)** and choose where your vault lives:
-
-- **A folder on this computer** (Chrome, Edge or Brave on desktop). Your files never leave the machine. Use *Install app* in the browser
-  menu to get a Panel icon on your desktop or dock.
-- **A private GitHub repository** — works on every device, **your phone included**, with the full history of every change. Panel walks
-  you through creating the repository and a token that can only touch that repository. The token stays in your browser.
-- **Try it with sample data** — a demo vault in memory; nothing is saved.
-
-### Desktop version
-
-For Firefox/Safari, fully offline use, or to read your **Outlook desktop calendar** automatically.
-
-- **Windows** — [download `Panel-Windows.zip`](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip), unzip it
-  and double-click **`panel.bat`**. Python is included: nothing else to install, no admin rights.
-- **macOS / Linux** — [download `panel.zip`](https://github.com/jcordon5/panel/releases/latest/download/panel.zip), unzip and double-click
-  `panel.command` (macOS; the first time, right-click → *Open*) or run `./panel.sh`. Needs Python 3.7+ (built into Linux; on macOS the
-  system offers to install it). Or in one line:
-  `curl -fsSL https://raw.githubusercontent.com/jcordon5/panel/main/install.sh | sh`
-
-The desktop version opens in your browser at `http://127.0.0.1:8765` and keeps a small window open while it runs.
-`python3 server.py --demo` starts it with sample data.
+Everything is plain `.md` files in a folder of yours. You can read them, Panel shows them with structure, and your AI reads and edits them.
 
 ## What you get
 
 <table>
 <tr>
 <td><img src="docs/img/today.png" alt="Today"></td>
-<td><img src="docs/img/meeting.png" alt="Meeting notes"></td>
+<td><img src="docs/img/meeting.png" alt="Meeting"></td>
 </tr>
 <tr>
-<td><img src="docs/img/editor.png" alt="Editor with live preview"></td>
+<td><img src="docs/img/editor.png" alt="Editor"></td>
 <td><img src="docs/img/calendar.png" alt="Calendar"></td>
-</tr>
-<tr>
-<td><img src="docs/img/project.png" alt="Project"></td>
-<td><img src="docs/img/week-dark.png" alt="Dark mode"></td>
 </tr>
 </table>
 
-- **Week board** — one column per day plus your inbox. Drag tasks between days and reorder them; click to edit; bring overdue tasks to today in one click.
-- **Day plan with meetings in it** — meetings sit among your tasks, in the order things happen. Drag a meeting to another day to reschedule it.
-- **Today** — the day in order, overdue work, upcoming days and open action items from recent meetings.
-- **Meetings** — press <kbd>M</kbd> and start writing. Editable templates (retro, 1:1, interview…). `- [ ]` lines become action items:
-  drag them onto a day (or *Plan for → Today*) and they show up in your plan while staying in the meeting notes — check them in either place.
-- **Projects** — overview, meetings, tasks (`#project` tags plus open items in its documents) and documents. Paused and done projects stay one click away.
-- **Calendar** — month view; your Outlook/Google/iCloud meetings appear on their own (desktop version); one click creates the note.
-- **Notes board** — pinned and recent notes as cards.
-- **Write the way Obsidian does** — the editor shows your notes formatted as you type, and reveals the Markdown only where the
-  cursor is (live preview). There's also a Markdown source mode and a reading mode.
-- **Real Markdown** — tables, callouts, `[[links]]` with autocomplete, `#tags`, highlights, code, images (paste or drop), interactive checkboxes.
-- **Search everything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **undo anything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>), keyboard shortcuts, light/dark, English/Spanish.
-- **Plays well with others** — edit the files in Obsidian, a script or with an AI agent while Panel is open: it notices within seconds and never overwrites those changes.
+- **Week and day plan** — one column per day plus the inbox; drag tasks and meetings around; bring overdue work to today in one click.
+- **Recurring meetings** — a daily, a fortnightly sync, the first Monday of the month… with their usual attendees. Each session shows up
+  on its day and its note is created when you join, with whatever was left to discuss last time.
+- **Meeting mode** — an agenda to tick off, quick notes that sort themselves, tasks and decisions in view, and context: what is still
+  open from the previous session and what the attendees owe you. No scrolling up and down a document.
+- **People** — cards with role, team and *what to go to them for*; each shows their meetings and what they owe you. Panel lists who
+  appears in your meetings without a card and creates it in one click. Attendee picker with autocomplete.
+- **Knowledge** — small notes of *procedures* (how something is done), *resources* (where something is) and *facts* (worth
+  remembering), linked to projects and people.
+- **For your AI** — drop or paste transcripts (.vtt, .docx), emails (.eml, or .msg dragged out of Outlook) or chats; Today shows what is
+  waiting to be processed.
+- **Waiting on others** — any task starting with `@Name`; it shows in Today, on the person's card and in their meetings.
+- **An editor like Obsidian's** — formatted as you type; the Markdown only shows where the cursor is. Source and reading modes too.
+- **Calendar** — your Outlook/Google/iCloud meetings show up on their own; one click creates the note.
+- **Projects, a notes board, search everything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **undo anything**, keyboard shortcuts,
+  light/dark, English/Spanish.
+- **Encrypted backups** of the whole vault with your password, also automatic to a cloud folder.
+
+## Why this way
+
+**Your data outlives the app.** It's all Markdown in a folder you choose. No database, no proprietary format: open it with any editor,
+Obsidian, VS Code or Git. If Panel disappeared tomorrow you would lose nothing.
+
+**The AI works on what you control.** Panel doesn't connect to your email or read your chats on its own: you decide what to hand it,
+and your AI agent (the one you already use, with your account) distils it into the vault. Nothing leaves your computer except what you
+ask your AI to do.
+
+**Private by design.** No servers, accounts or analytics. A small program that only listens on your own computer.
+
+**Works on a work laptop.** No admin install, no extensions, no access to other applications. Put the vault in your company OneDrive
+and it syncs like any other document.
+
+**Simple on purpose.** Week, meetings, people, knowledge and projects. No databases to design, no plugins to configure.
+
+## Get started
+
+- **Windows** — [download `Panel-Windows.zip`](https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip), unzip it and
+  double-click **`panel.bat`**. Python is included: nothing else to install, no admin rights.
+- **macOS / Linux** — [download `panel.zip`](https://github.com/jcordon5/panel/releases/latest/download/panel.zip), unzip and double-click
+  `panel.command` (macOS; the first time, right-click → *Open*) or run `./panel.sh`. Needs Python 3.7+. Or in one line:
+  `curl -fsSL https://raw.githubusercontent.com/jcordon5/panel/main/install.sh | sh`
+
+Panel opens in your browser at `http://127.0.0.1:8765`. `python3 server.py --demo` starts it with sample data.
+
+**Connect your AI**: copy [`skills/panel-vault`](skills/panel-vault) to `~/.claude/skills/` (Claude Code, the VS Code extension too) or add
+it as a skill in the Claude app; point other agents to `skills/panel-vault/SKILL.md`. Then: "process my meetings".
+
+## Your AI and your routines
+
+The skill teaches your agent the vault format and gives it a script (Python standard library only) to do everything the way the app
+does: see what's pending, read a meeting with its context, write the summary, create people cards and knowledge notes, plan and move
+tasks, search everything.
+
+The vault has a `routines.md` with your routines in plain words: *when I say "good morning", process what's pending and give me the
+day*. You edit it; your AI follows it.
 
 ## Your data
 
-- **Sync**: put the vault folder in OneDrive, Dropbox, iCloud or Syncthing (desktop version or folder mode), or use a private GitHub repository (web).
-- **Export**: *Settings → Vault → Export vault (.zip)* — everything, in one file.
-- **Encrypted backups**: *Settings → Backups* makes one file with your whole vault, encrypted with your password (AES-256-GCM, key
-  from PBKDF2-SHA256 with 600,000 iterations). Keep it in the cloud or on a USB stick — without the password nobody can read it.
-  Panel can make one a day into a folder you choose (pick a OneDrive/Google Drive/Dropbox folder for an encrypted copy in the cloud);
-  this works in the desktop version and in folder mode. Restoring asks for the password and puts the replaced files in `.trash`, or
-  gives you a plain `.zip`. If you let the device remember the password, it keeps a key that can only *encrypt*: automatic copies
-  work, but nobody with access to that browser can open them.
-- **Safety nets**: deletes go to a `.trash` folder inside the vault. The desktop version also zips your vault before every update and
-  cleans up after itself (it keeps the last 5 automatic and 10 manual backups).
-- **Updates**: the web app is always the latest version. The desktop version checks GitHub when it starts and updates with one click —
-  only the app code is replaced; your vault and settings are never touched. The vault format stays backwards compatible; if it ever
-  evolves, Panel migrates your files safely after making a backup.
+- **Sync**: put the vault folder in OneDrive, Dropbox, iCloud or Syncthing.
+- **Export**: *Settings → Vault → Export vault (.zip)*.
+- **Encrypted backups**: *Settings → Backups* makes one file with the whole vault, encrypted with your password (AES-256-GCM, key from
+  PBKDF2-SHA256 with 600,000 iterations). Panel can make one a day into a folder you choose (a OneDrive one, for instance). Restoring asks
+  for the password and puts replaced files in `.trash`, or gives you a `.zip`. If the computer remembers the password, it keeps a key that
+  can only *encrypt*: nobody with access to that computer can open the backups.
+- **Safety nets**: deletes go to `.trash` inside the vault; a backup is made before every update.
+- **Updates**: Panel checks GitHub when it starts and updates with one click. Only the app code is replaced; your vault and settings are
+  never touched. **Older vaults keep working as they are**: everything new is optional and your AI can migrate your notes when you like.
 
 ## Calendar
 
-*Desktop version → Settings → Calendar.* Two ways; use whichever your organisation allows:
-
-- **Calendar subscription link (.ics)** — one link for your *whole* calendar (not one per meeting), refreshed automatically every few
-  minutes. Works with any system: Outlook on the web (*Settings → Calendar → Shared calendars → Publish a calendar → ICS link*),
-  Google Calendar (*Settings → your calendar → Secret address in iCal format*), iCloud, Nextcloud…
-- **Outlook desktop (Windows)** — reads the Outlook app installed on your PC directly, for companies that disable calendar publishing.
-
-Meetings then appear in *Today*, *Week* and *Calendar*; click one and Panel creates its note (title, time, attendees, place) in your day
-plan. Calendars are only read, never changed. Browsers don't let a web page read other sites' calendars, so this lives in the desktop version.
+*Settings → Calendar.* A calendar subscription link (**.ics**: Outlook on the web, Google Calendar, iCloud, Nextcloud…), refreshed
+automatically, or **Outlook desktop** on Windows for companies that don't allow publishing calendars. Meetings appear in Today, Week and
+Calendar; one click creates the note. Calendars are only read.
 
 ## The vault
 
 ```
 vault/
-├── README.md                         how the vault is organised (for humans and AIs)
-├── inbox.md                          tasks without a date
-├── weeks/2026-W40.md                 one file per ISO week, one "## " section per day
-├── meetings/2026-09-29-sync.md       meetings that belong to no project
-├── projects/<project>/README.md      project overview
-├── projects/<project>/meetings/…     project meetings
-├── projects/<project>/*.md           other project documents
-├── notes/*.md                        general notes (the Board)
-├── templates/meeting.md …            templates you can customise
-└── assets/2026-09/…                  pasted images
+├── README.md                     how it is organised (for people and AIs)
+├── routines.md                   your routines for the AI
+├── inbox.md                      tasks without a date
+├── weeks/2026-W44.md             one file per week, one section per day (that day's plan, in order)
+├── meetings/2026-10-29-….md      meetings (projects/<p>/meetings/ for a project's)
+├── series/<name>.md              recurring meetings
+├── people/<name>.md              people
+├── knowledge/<title>.md          knowledge: procedures, resources, facts
+├── projects/<project>/README.md  projects
+├── notes/*.md                    notes (the Board)
+├── sources/*.md                  what you leave for your AI (deleted once processed)
+└── templates/, assets/           templates and images
 ```
-
-A week file is just Markdown:
 
 ```markdown
----
-type: week
-week: 2026-W40
-start: 2026-09-28
----
+## Thursday · 2026-10-29
 
-# Week 40 · 28 Sep – 4 Oct 2026
-
-## Tuesday · 2026-09-29
-
-- [ ] 09:30 Team daily
-- [ ] Prepare the demo              ← before the meeting
-- [[2026-09-29-sync-with-vendor]]   ← the meeting, where it happens
-- [ ] Send the minutes #cloud-migration
-  - details are indented under their task
-- [[2026-09-28-retro#^k3x9pa]]      ← an action item of another meeting, planned here
+- [ ] 09:00 Review the report #project-alpha
+- [[2026-10-29-alpha-sync]]            ← the meeting, where it happens
+- [ ] @Ana send the quote               ← waiting on Ana
+- [[2026-10-28-alpha-sync#^k3x9pa]]    ← a task of another meeting, planned for today
 ```
 
-Conventions: YAML frontmatter (`type`, `title`, `date`, `time`, `project`, `attendees`, `tags`, `created`, `updated`; unknown keys are
-kept) · tasks are `- [ ]` / `- [x]` · a leading `HH:MM` is the task time · `#project-folder` links a task to a project · the ISO date
-in the day heading is what counts · `[[meeting#^id]]` in a day plans that meeting's task ending in ` ^id` (Obsidian block id) · templates in `templates/` (`meeting.md` is the default, `meeting-<name>.md` are alternatives) use
-`{{title}}`, `{{date}}`, `{{time}}`, `{{project}}`, `{{attendees}}`, `{{today}}`. Fully compatible with Obsidian.
+The full format of every file is in [`skills/panel-vault/references/format.md`](skills/panel-vault/references/format.md). Compatible
+with Obsidian.
 
-**Coming from Panel v1 (`boveda/`)?** Put your `boveda` folder next to `server.py` of the desktop version before the first start and
-Panel offers to migrate it (the original is never modified), or run `python3 tools/migrate_v1.py path/to/boveda path/to/vault es`.
-
-## For AI agents
-
-[`skills/panel-vault`](skills/panel-vault) is a skill for Claude (and a guide for any agent) plus a small script, `panel_vault.py`
-(standard library only), to read the day or week, list meetings and action items, get a project status, and add, complete or move
-tasks and create meetings exactly like the app does.
-
-- Claude Code: copy the folder to `~/.claude/skills/panel-vault` (or `.claude/skills/` in a project).
-- Claude apps: zip the folder and add it in *Settings → Capabilities → Skills*.
-- Other agents: point them to `skills/panel-vault/SKILL.md`.
+**Coming from Panel v1 (`boveda/`)?** Put your `boveda` folder next to `server.py` before the first start and Panel offers to migrate it
+(the original is never modified), or run `python3 tools/migrate_v1.py path/to/boveda path/to/vault es`.
 
 ## Privacy & security
 
-- No servers, accounts, analytics or tracking. The web app is static files; your vault goes straight from your browser to your disk or to `api.github.com`.
-- The desktop server only listens on `127.0.0.1`, rejects requests from other websites and can only touch files inside the vault.
+- No servers, accounts, analytics or tracking.
+- The server only listens on `127.0.0.1`, rejects requests from other websites and can only touch files inside the vault.
 - Rendered Markdown is sanitised (no raw HTML, no `javascript:` links) and a strict Content Security Policy is applied.
-- The only outbound requests are the ones you configure: your GitHub repository, your calendar links and the update check.
+- What you drop for your AI goes through a filter that hides obvious passwords and tokens, and is deleted once processed.
+- The only outbound requests are the ones you configure: your calendars and the update check.
 
 ## Development
 
-No build step and no dependencies: plain HTML/CSS/ES modules in `app/` (the same files are the web app), `server.py` for the desktop
-version (standard library only), [marked](https://github.com/markedjs/marked) and [CodeMirror 6](https://codemirror.net) vendored
-(`tools/vendor/build-codemirror.sh` rebuilds the CodeMirror bundle; only needed to update it).
+No build step and no dependencies: plain HTML/CSS/ES modules in `app/`, `server.py` (standard library only), and
+[marked](https://github.com/markedjs/marked) and [CodeMirror 6](https://codemirror.net) vendored (`tools/vendor/build-codemirror.sh`
+rebuilds CodeMirror; only needed to update it).
 
 ```bash
-python3 server.py --demo   # desktop version with sample data
+python3 server.py --demo   # with sample data
 npm test                   # node --test tests/*.test.js && python3 -m unittest discover -s tests
-```
-
-```
-app/js/backends.js   where the vault lives: local server, browser folder, GitHub repository, demo
-app/js/store.js      file cache, conflict-safe writes, undo, live reload
-app/js/model.js      parses the vault: docs, projects, weeks, tasks
-app/js/ops.js        pure text operations on Markdown
-app/js/views/        one module per screen
-server.py            desktop server (API, calendar, updates)
-tools/               calendar reader, updater, v1 migration, demo generator
 ```
 
 Contributions are welcome — especially translations (`app/js/strings.js`).

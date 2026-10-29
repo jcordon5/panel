@@ -23,6 +23,8 @@ import { projectChip } from "./common.js";
 import { personChip, peoplePicker } from "../picker.js";
 import { modal, emptyState, toast } from "../ui.js";
 import * as A from "../actions.js";
+import { captureDialog } from "./capture.js";
+import { sourcesOf } from "../model.js";
 
 export const title = (r) => vault().docs.get(r.arg)?.title || t("mtg.mode");
 
@@ -67,12 +69,14 @@ export function render(root, r) {
           doc.project ? projectChip(doc.project) : null),
         h("h1", { class: "page-title" }, doc.title)),
       h("div", { class: "page-actions" },
+        h("button", { class: "btn btn-ghost", type: "button", title: t("cap.forMeetingHint"), onclick: () => captureDialog({ meeting: path }) }, icon("upload", 15), h("span", {}, t("cap.forMeeting"))),
         h("a", { class: "btn btn-ghost", href: route.doc(path), title: t("mtg.openNote") }, icon("file", 15), h("span", {}, t("mtg.openNote"))),
         h("button", { class: "btn btn-primary", type: "button", onclick: () => finishDialog(path) }, icon("check", 15), h("span", {}, t("mtg.finish"))))),
     h("div", { class: "meet-people" },
       picker ? picker.el : people.map((a) => personChip(a.name, { person: a.person })),
       h("button", { class: "btn btn-sm btn-ghost", type: "button", onclick: () => { editingPeople = !editingPeople; state.render(); } },
-        icon(editingPeople ? "check" : "pencil", 13), editingPeople ? t("common.done") : people.length ? t("mtg.editPeople") : t("mtg.addPeople")))));
+        icon(editingPeople ? "check" : "pencil", 13), editingPeople ? t("common.done") : people.length ? t("mtg.editPeople") : t("mtg.addPeople")),
+      sourcesOf(doc).map((s) => h("a", { class: "chip chip-source-file", href: route.doc(s.path), title: t("cap.attached") }, icon("upload", 12), s.title)))));
 
   /* ---------- columns */
   const agenda = itemsOf(lines, secs, "agenda");

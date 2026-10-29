@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.0.0 — 2026-10-29
+
+Panel becomes a work memory: be in the meeting, let your AI do the paperwork.
+
+- **Meeting mode**: agenda to tick off, quick notes (`!` your task, `@Name` someone else's, `>` decision, `?` question), tasks and
+  decisions in view, and context — what's still open from the previous session and what the attendees owe you. *Finish* plans your
+  tasks in one click each.
+- **Recurring meetings** (`series/`): daily, weekdays, every N weeks on chosen days, monthly by date or by Nth weekday, with usual
+  attendees. Sessions appear on their day and are created when you join, carrying over what was left to discuss.
+- **People** (`people/`): cards with role, team and what to go to them for; their meetings and what they owe you. An attendee picker
+  everywhere, and the names in your meetings without a card, created in one click.
+- **Knowledge** (`knowledge/`): procedures, resources and facts, linked to projects and people.
+- **Waiting on others**: a task starting with `@Name` belongs to someone else; shown in Today, on their card and in meetings.
+- **For your AI**: drop or paste transcripts (.vtt, .docx), emails (.eml, Outlook .msg) or chats into `sources/`; Today lists what is
+  waiting to be processed. Obvious secrets are hidden before saving.
+- **Skill v2**: process meetings and sources (summary, tasks, decisions, people, knowledge; sources deleted once used), answer from memory
+  with citations, prepare meetings, follow your `routines.md`. New script commands: `pending`, `meeting`, `write`, `mark-processed`,
+  `source-done`, `people`, `person`, `knowledge`, `search`, `waiting`, `series`, `add-person`, `add-knowledge`.
+- **Desktop only**: the web app and its browser storages (folder, GitHub, demo) are gone; panel.yous.dev is now a download page.
+  `python3 server.py --demo` keeps the sample vault.
+- Backwards compatible: existing vaults work as they are. Meeting sections are recognised by name in your own templates; old meetings
+  are not flagged as unprocessed.
+
 ## 2.5.0 — 2026-10-27
 
 - New editor with **live preview**, like Obsidian: notes look formatted while you write, and the Markdown of whatever is under the

@@ -1006,3 +1006,14 @@ a.chip-person:hover { background: var(--active); }
   .profile { flex-direction: column; align-items: flex-start; }
   .meet-quick { font-size: 16px; }
 }
+
+/* ------------------------------------------------------------ capture */
+.cap-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px; border: 2px dashed var(--border-strong); border-radius: var(--radius); color: var(--text-2); cursor: pointer; text-align: center; margin-bottom: 8px; }
+.cap-drop:hover, .cap-drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.cap-files { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.cap-file { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-sm); font-size: 13.5px; }
+.cap-file span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-source-file { color: var(--warn); background: var(--warn-soft); }
+body.drop-capture::after { content: ""; position: fixed; inset: 10px; border: 3px dashed var(--accent); border-radius: 18px; background: color-mix(in srgb, var(--accent) 6%, transparent); pointer-events: none; z-index: 80; }
+.section-ai .rows + .rows { margin-top: 8px; }
+.process-hint { display: flex; align-items: flex-start; gap: 4px; margin: -2px 0 10px; }
