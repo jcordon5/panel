@@ -18,8 +18,8 @@ T = {
         "week": "Semana", "inbox": "Bandeja",
         "tasks": {
             -3: ["- [x] Revisar presupuesto Q4 #migracion-cloud", "- [ ] Enviar acta de la reunión con proveedores"],
-            -1: ["- [x] 09:30 Daily del equipo", "- [x] Preparar demo para dirección", "  - Datos de uso del último mes", "  - Capturas del nuevo panel", "- [ ] Responder a Marta sobre las vacaciones"],
-            0: ["- [ ] 09:30 Daily del equipo", "- [x] Revisar PR de autenticación #migracion-cloud", "- [ ] Preparar la retro del sprint", "  - [ ] Recopilar métricas", "  - [ ] Proponer 3 temas", "- [ ] Llamar al banco", "- [ ] Leer el informe de seguridad [[auditoria-seguridad]]"],
+            -1: ["- [x] Preparar demo para dirección", "  - Datos de uso del último mes", "  - Capturas del nuevo panel", "- [ ] Responder a Marta sobre las vacaciones"],
+            0: ["- [x] Revisar PR de autenticación #migracion-cloud", "- [ ] @Luis enviar el inventario de servicios", "- [ ] Preparar la retro del sprint", "  - [ ] Recopilar métricas", "  - [ ] Proponer 3 temas", "- [ ] Llamar al banco", "- [ ] Leer el informe de seguridad [[auditoria-seguridad]]"],
             1: ["- [ ] 10:00 Workshop de arquitectura #migracion-cloud", "- [ ] Actualizar la documentación del API"],
             2: ["- [ ] Entrega del informe mensual", "- [ ] Comprar regalo cumpleaños Lucía"],
             4: ["- [ ] Planificar la semana que viene", "- [ ] Cerrar tickets pendientes #portal-clientes"],
@@ -33,13 +33,31 @@ T = {
              "## Objetivos\n\n- Lanzar la beta con 20 clientes\n- NPS > 40\n\n> [!warning] Riesgo\n> El equipo de diseño solo está disponible hasta noviembre.\n"),
         ],
         "meetings": [
-            (0, "10:30", "Sync con el proveedor cloud", "migracion-cloud", ["Ana", "Luis", "Proveedor"],
-             "## Notas\n\n- El piloto va con **dos semanas de retraso** por permisos de red.\n- Proponen usar su servicio gestionado de base de datos.\n\n## Acuerdos\n\n- Abrir ticket con redes hoy mismo\n- Revisar costes del servicio gestionado\n\n## Próximos pasos\n\n- [ ] Abrir ticket de red #migracion-cloud\n- [ ] Pedir presupuesto del servicio gestionado\n- [x] Compartir el inventario actualizado\n"),
-            (-2, "16:00", "Kickoff portal de clientes", "portal-clientes", ["Marta", "Jorge", "Sara"],
+            (0, "10:30", "Sync con el proveedor cloud", "migracion-cloud", ["Ana García", "Luis Pérez", "Proveedor"],
+             "## Para comentar\n\n- [x] Retraso del piloto\n- [ ] Coste del servicio gestionado\n\n## Notas\n\n- El piloto va con **dos semanas de retraso** por permisos de red.\n- Proponen usar su servicio gestionado de base de datos.\n- ? ¿Quién aprueba el cambio de red?\n\n## Tareas\n\n- [ ] Abrir ticket de red #migracion-cloud\n- [ ] Pedir presupuesto del servicio gestionado\n- [ ] @Ana revisar el contrato marco\n- [x] Compartir el inventario actualizado\n\n## Decisiones\n\n- Abrir ticket con redes hoy mismo\n- Revisar costes del servicio gestionado\n"),
+            (-2, "16:00", "Kickoff portal de clientes", "portal-clientes", ["Marta Ruiz", "Jorge", "Sara Gómez"],
              "## Notas\n\nArrancamos con un alcance mínimo: consulta de pedidos y descarga de facturas.\n\n## Acuerdos\n\n- Sprints de 2 semanas\n- Demo cada viernes\n\n## Próximos pasos\n\n- [ ] Preparar backlog inicial\n- [ ] Invitar a los 20 clientes beta\n"),
             (-7, "09:00", "1:1 con Javi", None, ["Javi"],
              "## Notas\n\n- Feedback muy positivo sobre la demo.\n- Hablar de formación en Kubernetes.\n\n## Próximos pasos\n\n- [ ] Buscar cursos de Kubernetes\n"),
             (3, "12:00", "Comité de seguridad", None, ["Seguridad", "Legal"], "## Notas\n\n\n## Acuerdos\n\n\n## Próximos pasos\n\n"),
+        ],
+        "people": [
+            ("ana-garcia", "Ana García", "Responsable de compras", "Compras", "ana.garcia@example.com", ["contratos con proveedores", "presupuestos"], "Lleva los contratos marco. Prefiere que le escribas por correo con todo el contexto."),
+            ("luis-perez", "Luis Pérez", "Ingeniero de sistemas", "Infraestructura", "luis.perez@example.com", ["accesos a servidores", "inventario"], ""),
+            ("marta-ruiz", "Marta Ruiz", "Product owner", "Portal de clientes", "marta.ruiz@example.com", ["prioridades del portal"], ""),
+            ("sara-gomez", "Sara Gómez", "Diseñadora", "Portal de clientes", "sara.gomez@example.com", [], ""),
+        ],
+        "series": [
+            ("daily-del-equipo", "Daily del equipo", "weekdays", "09:30", ["Ana García", "Luis Pérez", "Sara Gómez"], None,
+             (-1, "## Para comentar\n\n- [x] Estado del piloto\n- [ ] Vacaciones de diciembre\n\n## Notas\n\n- Todo en verde salvo el piloto.\n\n## Tareas\n\n- [ ] @Luis revisar los permisos de red\n\n## Decisiones\n\n")),
+        ],
+        "knowledge": [
+            ("pedir-acceso-a-un-entorno", "Cómo pedir acceso a un entorno", "howto", "migracion-cloud", ["Luis Pérez"],
+             "1. Abre una solicitud en el portal de servicio, categoría «Accesos».\n2. Indica el entorno y para qué lo necesitas.\n3. Pide a tu responsable que la apruebe.\n\n> [!tip]\n> Si es urgente, avisa a Luis en cuanto la abras.\n"),
+            ("documentacion-del-api", "Documentación del API", "resource", "portal-clientes", ["Marta Ruiz"],
+             "- Referencia: https://example.com/api\n- Entorno de pruebas: https://sandbox.example.com\n"),
+            ("presupuestos-antes-del-dia-20", "Los presupuestos se aprueban antes del día 20", "fact", None, ["Ana García"],
+             "Lo que llega después del día 20 pasa al mes siguiente.\n"),
         ],
         "notes": [
             ("plan-de-carrera", "Plan de carrera", True, "## Este año\n\n- [x] Certificación cloud\n- [ ] Liderar un proyecto transversal\n- [ ] Mentorizar a alguien del equipo\n\n## Ideas\n\n> [!tip] Recordatorio\n> Revisar este plan cada trimestre.\n"),
@@ -54,8 +72,8 @@ T = {
         "week": "Week", "inbox": "Inbox",
         "tasks": {
             -3: ["- [x] Review Q4 budget #cloud-migration", "- [ ] Send minutes of the vendor meeting"],
-            -1: ["- [x] 09:30 Team daily", "- [x] Prepare demo for management", "  - Usage data from last month", "  - Screenshots of the new dashboard", "- [ ] Reply to Marta about holidays"],
-            0: ["- [ ] 09:30 Team daily", "- [x] Review authentication PR #cloud-migration", "- [ ] Prepare the sprint retro", "  - [ ] Gather metrics", "  - [ ] Propose 3 topics", "- [ ] Call the bank", "- [ ] Read the security report [[security-audit]]"],
+            -1: ["- [x] Prepare demo for management", "  - Usage data from last month", "  - Screenshots of the new dashboard", "- [ ] Reply to Marta about holidays"],
+            0: ["- [x] Review authentication PR #cloud-migration", "- [ ] @Luis send the service inventory", "- [ ] Prepare the sprint retro", "  - [ ] Gather metrics", "  - [ ] Propose 3 topics", "- [ ] Call the bank", "- [ ] Read the security report [[security-audit]]"],
             1: ["- [ ] 10:00 Architecture workshop #cloud-migration", "- [ ] Update the API docs"],
             2: ["- [ ] Deliver the monthly report", "- [ ] Buy Lucy's birthday present"],
             4: ["- [ ] Plan next week", "- [ ] Close pending tickets #customer-portal"],
@@ -69,13 +87,31 @@ T = {
              "## Goals\n\n- Launch the beta with 20 customers\n- NPS > 40\n\n> [!warning] Risk\n> The design team is only available until November.\n"),
         ],
         "meetings": [
-            (0, "10:30", "Sync with the cloud vendor", "cloud-migration", ["Ana", "Luis", "Vendor"],
-             "## Notes\n\n- The pilot is **two weeks late** because of network permissions.\n- They suggest their managed database service.\n\n## Decisions\n\n- Open a ticket with networking today\n- Review managed service costs\n\n## Next steps\n\n- [ ] Open network ticket #cloud-migration\n- [ ] Ask for a managed service quote\n- [x] Share the updated inventory\n"),
-            (-2, "16:00", "Customer portal kickoff", "customer-portal", ["Marta", "Jorge", "Sara"],
+            (0, "10:30", "Sync with the cloud vendor", "cloud-migration", ["Ana García", "Luis Pérez", "Vendor"],
+             "## To discuss\n\n- [x] Pilot delay\n- [ ] Managed service cost\n\n## Notes\n\n- The pilot is **two weeks late** because of network permissions.\n- They suggest their managed database service.\n- ? Who approves the network change?\n\n## Tasks\n\n- [ ] Open network ticket #cloud-migration\n- [ ] Ask for a managed service quote\n- [ ] @Ana review the framework contract\n- [x] Share the updated inventory\n\n## Decisions\n\n- Open a ticket with networking today\n- Review managed service costs\n"),
+            (-2, "16:00", "Customer portal kickoff", "customer-portal", ["Marta Ruiz", "Jorge", "Sara Gómez"],
              "## Notes\n\nWe start with a minimal scope: order lookup and invoice download.\n\n## Decisions\n\n- 2-week sprints\n- Demo every Friday\n\n## Next steps\n\n- [ ] Prepare the initial backlog\n- [ ] Invite the 20 beta customers\n"),
             (-7, "09:00", "1:1 with Javi", None, ["Javi"],
              "## Notes\n\n- Very positive feedback on the demo.\n- Talk about Kubernetes training.\n\n## Next steps\n\n- [ ] Look for Kubernetes courses\n"),
             (3, "12:00", "Security committee", None, ["Security", "Legal"], "## Notes\n\n\n## Decisions\n\n\n## Next steps\n\n"),
+        ],
+        "people": [
+            ("ana-garcia", "Ana García", "Purchasing manager", "Purchasing", "ana.garcia@example.com", ["supplier contracts", "quotes"], "Owns the framework contracts. Prefers an email with all the context."),
+            ("luis-perez", "Luis Pérez", "Systems engineer", "Infrastructure", "luis.perez@example.com", ["server access", "inventory"], ""),
+            ("marta-ruiz", "Marta Ruiz", "Product owner", "Customer portal", "marta.ruiz@example.com", ["portal priorities"], ""),
+            ("sara-gomez", "Sara Gómez", "Designer", "Customer portal", "sara.gomez@example.com", [], ""),
+        ],
+        "series": [
+            ("team-daily", "Team daily", "weekdays", "09:30", ["Ana García", "Luis Pérez", "Sara Gómez"], None,
+             (-1, "## To discuss\n\n- [x] Pilot status\n- [ ] December holidays\n\n## Notes\n\n- All green except the pilot.\n\n## Tasks\n\n- [ ] @Luis review the network permissions\n\n## Decisions\n\n")),
+        ],
+        "knowledge": [
+            ("request-access-to-an-environment", "How to request access to an environment", "howto", "cloud-migration", ["Luis Pérez"],
+             "1. Open a request in the service portal, category “Access”.\n2. Say which environment and what you need it for.\n3. Ask your manager to approve it.\n\n> [!tip]\n> If it's urgent, tell Luis as soon as you open it.\n"),
+            ("api-documentation", "API documentation", "resource", "customer-portal", ["Marta Ruiz"],
+             "- Reference: https://example.com/api\n- Sandbox: https://sandbox.example.com\n"),
+            ("quotes-before-the-20th", "Quotes are approved before the 20th", "fact", None, ["Ana García"],
+             "Anything that arrives after the 20th moves to the next month.\n"),
         ],
         "notes": [
             ("career-plan", "Career plan", True, "## This year\n\n- [x] Cloud certification\n- [ ] Lead a cross-team project\n- [ ] Mentor someone in the team\n\n## Ideas\n\n> [!tip] Reminder\n> Review this plan every quarter.\n"),
@@ -154,6 +190,24 @@ def make(dest, lang="es"):
             fm.append("project: " + proj)
         fm += ["attendees: [%s]" % ", ".join(people), "created: " + stamp, "updated: " + stamp, "---", "", "# " + title, "", body]
         w(os.path.join(folder, "%s-%s.md" % (d, slug(title))), "\n".join(fm))
+
+    for s, title, role, team, email, ask, about in L["people"]:
+        w(os.path.join(dest, "people", s + ".md"), "---\ntype: person\ntitle: %s\nrole: %s\nteam: %s\nemail: %s\nask_for: [%s]\ncreated: %s\nupdated: %s\n---\n\n# %s\n\n%s" % (
+            title, role, team, email, ", ".join(ask), stamp, stamp, title, about + "\n" if about else ""))
+
+    for s, title, repeat, time, people, proj, (off, body) in L["series"]:
+        start = (today - timedelta(days=14)).isoformat()
+        w(os.path.join(dest, "series", s + ".md"), "---\ntype: series\ntitle: %s\nrepeat: %s\nstart: %s\ntime: \"%s\"\nattendees: [%s]\ncreated: %s\nupdated: %s\n---\n\n# %s\n\n" % (
+            title, repeat, start, time, ", ".join(people), start, stamp, title))
+        d = today + timedelta(days=off)
+        while d.weekday() > 4:  # the last session was on a weekday
+            d -= timedelta(days=1)
+        w(os.path.join(dest, "meetings", "%s-%s.md" % (d.isoformat(), s)), "\n".join(["---", "type: meeting", "title: " + title, "date: " + d.isoformat(),
+            'time: "%s"' % time, "attendees: [%s]" % ", ".join(people), "series: " + s, "created: " + stamp, "updated: " + stamp, "---", "", "# " + title, "", body]))
+
+    for s, title, kind, proj, people, body in L["knowledge"]:
+        w(os.path.join(dest, "knowledge", s + ".md"), "---\ntype: knowledge\nkind: %s\ntitle: %s\n%speople: [%s]\ncreated: %s\nupdated: %s\n---\n\n# %s\n\n%s" % (
+            kind, title, "project: %s\n" % proj if proj else "", ", ".join(people), stamp, stamp, title, body))
 
     for s, title, pinned, body in L["notes"]:
         fm = "---\ntype: note\ntitle: %s\n%screated: %s\nupdated: %s\n---\n\n# %s\n\n" % (title, "pinned: true\n" if pinned else "", stamp, stamp, title)

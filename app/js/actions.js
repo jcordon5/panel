@@ -10,6 +10,8 @@ import { slugify, today, mondayOf, weekId, dirname, basename, stripExt } from ".
 import { findSection, meetingSections, SECTION_ORDER } from "./meeting.js";
 import { ruleToFm } from "./series.js";
 
+export { ruleToFm as seriesFm };
+
 export class TaskGone extends Error {}
 
 export function targetPath(target) {

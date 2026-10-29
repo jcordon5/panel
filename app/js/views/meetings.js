@@ -4,7 +4,8 @@ import { h, today, fold } from "../util.js";
 import { t, fmtDate, cap } from "../i18n.js";
 import { vault } from "../model.js";
 import { pageHeader, btn, section, meetingRow } from "./common.js";
-import { newMeetingDialog } from "./dialogs.js";
+import { newMeetingDialog, seriesDialog } from "./dialogs.js";
+import { seriesRow } from "./entity.js";
 import { emptyState } from "../ui.js";
 
 let filter = { q: "", project: "" };
@@ -16,8 +17,14 @@ export function render(root) {
   root.append(pageHeader({
     title: t("nav.meetings"),
     subtitle: t("meetings.subtitle", { n: v.meetings.length }),
-    actions: [btn(t("meeting.new"), "plus", () => newMeetingDialog({ project: filter.project && filter.project !== "-" ? filter.project : "" }), "btn-primary")],
+    actions: [
+      btn(t("series.new"), "clock", () => seriesDialog()),
+      btn(t("meeting.new"), "plus", () => newMeetingDialog({ project: filter.project && filter.project !== "-" ? filter.project : "" }), "btn-primary"),
+    ],
   }));
+  if (v.series.length) {
+    root.append(section(t("nav.series"), h("div", { class: "rows" }, v.series.map(seriesRow)), { icon: "clock", count: v.series.length }));
+  }
 
   const list = h("div", { class: "meetings-list" });
   const search = h("input", { class: "input", type: "search", placeholder: t("meetings.searchPh"), value: filter.q, "data-focus-key": "meetings-q" });

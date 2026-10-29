@@ -3,8 +3,8 @@
 import { h, today, addDays, weekId, weekStart, mondayOf, isoWeek } from "../util.js";
 import { icon } from "../icons.js";
 import { t, fmtDate, weekdayName, cap } from "../i18n.js";
-import { vault, dayItems, overdueTasks, unplacedMeetings, weekPath, pendingActions, isTask } from "../model.js";
-import { taskList, run, dropZone, meetingPill, eventPill } from "../tasks.js";
+import { vault, dayItems, overdueTasks, unplacedMeetings, weekPath, pendingActions, isTask, seriesDue } from "../model.js";
+import { taskList, run, dropZone, meetingPill, eventPill, seriesPill } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
 import { pageHeader, btn, iconBtn, progress } from "./common.js";
@@ -86,6 +86,7 @@ export function render(root, r) {
     const tasks = items.filter(isTask);
     const doneN = tasks.filter((x) => x.done).length;
     const meetings = unplacedMeetings(d);
+    const due = seriesDue(d);
     const events = eventsOn(d);
     const isToday = d === tdy;
     const head = dropZone(h("div", { class: "col-head" },
@@ -97,7 +98,8 @@ export function render(root, r) {
     { kind: "day", date: d });
     return [
       head,
-      meetings.length || events.length ? h("div", { class: "col-meetings" },
+      meetings.length || events.length || due.length ? h("div", { class: "col-meetings" },
+        due.map((sd) => seriesPill(sd, d, sd.project ? v.projects.get(sd.project)?.color : null)),
         meetings.map((m) => meetingPill(m, m.project ? v.projects.get(m.project)?.color : null)), events.map(eventPill)) : null,
       h("div", { class: "col-body" }, taskList(items, { target: { kind: "day", date: d }, compact: true, placeholder: t("task.addShort") })),
     ];

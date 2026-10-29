@@ -3,8 +3,8 @@
 import { h, today, addDays } from "../util.js";
 import { icon } from "../icons.js";
 import { t, fmtDate, cap, relDay, relTime } from "../i18n.js";
-import { vault, dayItems, dayTasks, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask } from "../model.js";
-import { taskList, run, quickAdd, meetingPill, eventPill } from "../tasks.js";
+import { vault, dayItems, dayTasks, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue } from "../model.js";
+import { taskList, run, quickAdd, meetingPill, eventPill, seriesPill } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
 import { pageHeader, section, btn, meetingRow, progress } from "./common.js";
@@ -23,9 +23,12 @@ function greeting() {
 export function unplaced(date) {
   const ms = unplacedMeetings(date);
   const evs = eventsOn(date);
-  if (!ms.length && !evs.length) return null;
+  const due = seriesDue(date);
+  if (!ms.length && !evs.length && !due.length) return null;
   const v = vault();
   return h("div", { class: "unplaced" },
+    due.length ? h("div", { class: "unplaced-hint" }, icon("clock", 12), t("series.dueHint")) : null,
+    due.length ? h("div", { class: "col-meetings" }, due.map((sd) => seriesPill(sd, date, sd.project ? v.projects.get(sd.project)?.color : null))) : null,
     ms.length ? h("div", { class: "unplaced-hint" }, icon("grip", 12), t("meeting.dragHint")) : null,
     ms.length ? h("div", { class: "col-meetings" }, ms.map((m) => meetingPill(m, m.project ? v.projects.get(m.project)?.color : null))) : null,
     evs.length ? h("div", { class: "unplaced-hint" }, icon("calendar", 12), t("event.hint")) : null,

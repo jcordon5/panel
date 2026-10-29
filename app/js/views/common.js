@@ -2,8 +2,8 @@
 
 import { h, today, fold } from "../util.js";
 import { icon } from "../icons.js";
-import { t, fmtDate, relDay, relTime, cap } from "../i18n.js";
-import { projectBySlug, vault } from "../model.js";
+import { t, fmtDate, relDay, relTime, cap, weekdayName } from "../i18n.js";
+import { projectBySlug, vault, needsProcessing } from "../model.js";
 import { route } from "../nav.js";
 import { excerpt, renderMarkdown } from "../markdown.js";
 
@@ -57,6 +57,7 @@ export function meetingRow(m, opts = {}) {
         m.time ? h("span", { class: "meta-time" }, icon("clock", 12), m.time) : null,
         m.attendees.length ? h("span", { class: "meta-people" }, icon("users", 12), m.attendees.slice(0, 3).join(", ") + (m.attendees.length > 3 ? " +" + (m.attendees.length - 3) : "")) : null,
         opts.hideProject ? null : projectChip(m.project, { short: true }))),
+    needsProcessing(m, today()) ? h("span", { class: "badge badge-ai", title: t("mtg.unprocessedHint") }, icon("sparkles", 12)) : null,
     n ? h("span", { class: "badge", title: t("meeting.openActions", { n }) }, icon("list-checks", 12), String(n)) : null);
 }
 
@@ -98,4 +99,27 @@ export function bodyWithoutTitle(doc) {
     }
   }
   return { body: doc.body, offset: doc.bodyLine };
+}
+
+/* ------------------------------------------------------------ series */
+
+/** "Weekdays", "Every 2 weeks: Tuesday and Thursday", "Every month, on the first Monday"… */
+export function describeRule(rule) {
+  if (!rule) return "";
+  const names = (days) => {
+    const ws = days.map((i) => weekdayName(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08"][i]));
+    return ws.length > 1 ? ws.slice(0, -1).join(", ") + " " + t("common.and") + " " + ws[ws.length - 1] : ws[0] || "";
+  };
+  const n = rule.interval;
+  switch (rule.repeat) {
+    case "weekdays": return t("series.desc.weekdays");
+    case "daily": return n > 1 ? t("series.desc.everyNDays", { n }) : t("series.desc.daily");
+    case "weekly": return (n > 1 ? t("series.desc.everyNWeeks", { n }) : t("series.desc.weekly")) + ": " + names(rule.days);
+    case "monthly": {
+      const every = n > 1 ? t("series.desc.everyNMonths", { n }) : t("series.desc.monthly");
+      if (!rule.nth) return every + ", " + t("series.desc.onDay", { d: rule.start ? +rule.start.slice(8) : "?" });
+      return every + ", " + t("series.desc.onNth", { n: t("series.nth." + (rule.nth === -1 ? "last" : rule.nth)), day: names(rule.days) });
+    }
+    default: return "";
+  }
 }

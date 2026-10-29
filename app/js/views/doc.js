@@ -10,6 +10,7 @@ import * as A from "../actions.js";
 import { pageHeader, btn, iconBtn, projectChip, bodyWithoutTitle } from "./common.js";
 import { propertiesDialog } from "./dialogs.js";
 import { state } from "../state.js";
+import { entityChips, entityActions, entitySections, personHeader } from "./entity.js";
 import { go, route } from "../nav.js";
 import { menu, confirmDialog, emptyState, toast } from "../ui.js";
 import { store } from "../store.js";
@@ -39,7 +40,9 @@ export function crumbs(doc) {
     out.push(h("a", { href: route.projects() }, t("nav.projects")));
     out.push(h("a", { href: route.project(pm[1]) }, v.projects.get(pm[1])?.title || pm[1]));
     if (doc.kind === "meeting") out.push(h("a", { href: route.project(pm[1], "meetings") }, t("nav.meetings")));
-  } else if (doc.kind === "meeting") out.push(h("a", { href: route.meetings() }, t("nav.meetings")));
+  } else if (doc.kind === "meeting" || doc.kind === "series") out.push(h("a", { href: route.meetings() }, t("nav.meetings")));
+  else if (doc.kind === "person") out.push(h("a", { href: route.people() }, t("nav.people")));
+  else if (doc.kind === "knowledge") out.push(h("a", { href: route.knowledge() }, t("nav.knowledge")));
   else if (doc.kind === "note") out.push(h("a", { href: route.notes() }, t("nav.notes")));
   else if (doc.kind === "week") out.push(h("a", { href: route.week(doc.fm.start || undefined) }, t("nav.week")));
   else if (doc.kind === "inbox") out.push(h("a", { href: route.inbox() }, t("nav.inbox")));
@@ -74,7 +77,9 @@ export function render(root, r) {
   const chips = [];
   if (doc.date) chips.push(h("span", { class: "chip" }, icon("calendar", 12), cap(fmtDate(doc.date, "long")) + (doc.time ? " · " + doc.time : "")));
   if (doc.project && doc.kind !== "project") chips.push(projectChip(doc.project));
-  if (doc.attendees.length) chips.push(h("span", { class: "chip" }, icon("users", 12), doc.attendees.join(", ")));
+  const special = ["meeting", "series", "knowledge"].includes(doc.kind);
+  if (doc.attendees.length && !special) chips.push(h("span", { class: "chip" }, icon("users", 12), doc.attendees.join(", ")));
+  chips.push(...entityChips(doc));
   for (const tg of doc.tags) chips.push(h("a", { class: "chip tag", href: "#", "data-tag": tg }, "#" + tg));
   chips.push(h("span", { class: "chip chip-ghost", title: path }, icon("clock", 12), t("doc.updated", { when: relTime(doc.mtime) })));
 
@@ -92,12 +97,13 @@ export function render(root, r) {
   ], { align: "end" }));
 
   root.append(h("div", { class: "doc-top" }, crumbs(doc), h("div", { class: "page-actions" },
-    btn(t("common.edit"), "pencil", () => editHere(path), "btn-primary"), more)));
+    ...entityActions(doc), btn(t("common.edit"), "pencil", () => editHere(path), entityActions(doc).length ? "" : "btn-primary"), more)));
 
   const { body, offset } = bodyWithoutTitle(doc);
   const article = h("article", { class: "doc" },
     h("h1", { class: "doc-title" }, doc.title),
     h("div", { class: "doc-meta" }, chips),
+    doc.kind === "person" ? personHeader(doc) : null,
     body.trim() ? h("div", { class: "md", html: renderMarkdown(body, { path, lineOffset: offset }) })
       : h("button", { class: "doc-empty", type: "button", onclick: () => go(route.edit(path)) }, icon("pencil", 16), t("doc.emptyBody")));
   article.addEventListener("dblclick", (e) => {
@@ -105,6 +111,8 @@ export function render(root, r) {
     editHere(path, e);
   });
   root.append(article);
+
+  for (const sec of entitySections(doc)) root.append(sec);
 
   const sib = siblings(doc);
   if (sib) root.append(sib);

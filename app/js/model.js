@@ -439,7 +439,7 @@ export function meetingsOn(date) {
 
 /** Open action items of meetings since `since` that are not planned on a day yet. */
 export function pendingActions(since) {
-  return vault().docTasks.filter((x) => !x.done && !x.planned && x.docKind === "meeting" && (!x.date || x.date >= since))
+  return vault().docTasks.filter((x) => !x.done && !x.planned && !x.who && x.docKind === "meeting" && (!x.date || x.date >= since))
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 }
 

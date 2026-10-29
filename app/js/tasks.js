@@ -11,6 +11,7 @@ import { menu, modal, field, toast, errorToast, autoGrow } from "./ui.js";
 import { state, setBusy } from "./state.js";
 import { go, route } from "./nav.js";
 import { undo } from "./store.js";
+import { personChip } from "./picker.js";
 
 const keyOf = (task) => task.path + "\u0000" + task.raw;
 
@@ -64,7 +65,10 @@ export function taskRow(task, opts = {}) {
 
   const title = h("div", { class: "task-title" });
   if (task.time) title.append(h("span", { class: "chip chip-time" }, task.time + (task.timeEnd ? "–" + task.timeEnd : "")));
-  title.append(h("span", { class: "task-text", html: renderInline(task.text) }));
+  // "@Name …": a task someone else has to do (you are waiting on them)
+  const who = task.who ? /^@(?:\[\[[^\]]+\]\]|\S+)\s*[:,-]?\s*/.exec(task.text) : null;
+  if (who) title.append(personChip(task.who, { person: task.assignee }), " ");
+  title.append(h("span", { class: "task-text", html: renderInline(who ? task.text.slice(who[0].length) : task.text) }));
   title.addEventListener("click", (e) => {
     if (e.target.closest("a, button, input")) return;
     startEdit(el, task);
@@ -313,7 +317,8 @@ export function refRow(item, opts = {}) {
     title: d ? d.path : item.target,
   });
   el._task = item;
-  const open = () => { if (d) go(route.doc(d.path)); };
+  // today's meetings open in meeting mode, the rest as documents
+  const open = () => { if (d) go(isMeeting && d.date === today() && !d.fm.processed ? route.meet(d.path) : route.doc(d.path)); };
   const more = h("button", { class: "icon-btn task-more", type: "button", "aria-label": t("common.more"), onclick: (e) => {
     e.stopPropagation();
     menu(more, [
@@ -340,6 +345,16 @@ export function meetingPill(m, color) {
     m.time ? h("span", { class: "meeting-pill-time" }, m.time) : icon("users", 12), h("span", { class: "meeting-pill-title" }, m.title));
   el._meeting = m;
   return el;
+}
+
+/** A session of a recurring meeting whose note doesn't exist yet: one click creates it and opens meeting mode. */
+export function seriesPill(sd, date, color) {
+  return h("button", {
+    class: "meeting-pill series-pill", type: "button", "data-color": color, title: t("series.pillHint"),
+    onclick: async () => {
+      try { go(route.meet(await A.createSession(sd, date))); } catch (e) { errorToast(e); }
+    },
+  }, sd.fm.time ? h("span", { class: "meeting-pill-time" }, String(sd.fm.time)) : icon("clock", 12), h("span", { class: "meeting-pill-title" }, sd.title), icon("clock", 11, "series-mark"));
 }
 
 /** Event from an external calendar without notes yet: one click creates the meeting note. */

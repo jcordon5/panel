@@ -15,6 +15,9 @@ export const route = {
   project: (slug, tab) => "#/project/" + encodeURIComponent(slug) + (tab ? "/" + tab : ""),
   doc: (path) => "#/doc/" + enc(path),
   edit: (path) => "#/edit/" + enc(path),
+  meet: (path) => "#/meet/" + enc(path),
+  people: () => "#/people",
+  knowledge: () => "#/knowledge",
 };
 
 export function go(hash) {

@@ -8,7 +8,7 @@ import { vault, dayTasks, overdueTasks, isTask } from "./model.js";
 import { startAutoBackups } from "./backup.js";
 import { state, requestRender, applyTheme } from "./state.js";
 import { parseRoute, route, go, trackNavigation, setNavTitle, navBack, navForward } from "./nav.js";
-import { toast, errorToast, isModalOpen, closeMenus } from "./ui.js";
+import { toast, errorToast, isModalOpen, closeMenus, closeModals } from "./ui.js";
 import { quickAdd, dropZone, run, doUndo } from "./tasks.js";
 import * as A from "./actions.js";
 import { openPalette } from "./views/palette.js";
@@ -26,9 +26,12 @@ import * as project from "./views/project.js";
 import * as doc from "./views/doc.js";
 import * as editor from "./views/editor.js";
 import * as welcome from "./views/welcome.js";
+import * as people from "./views/people.js";
+import * as knowledge from "./views/knowledge.js";
+import * as meet from "./views/meet.js";
 import { backend, setBackend, detectBackend } from "./backends.js";
 
-const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor };
+const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet };
 
 let current = { key: null, view: null };
 
@@ -64,7 +67,9 @@ function renderSidebar(r) {
       navItem(route.inbox(), "inbox", t("nav.inbox"), inboxOpen, is("inbox"), { drop: { kind: "inbox" } }),
       navItem(route.week(), "week", t("nav.week"), 0, is("week")),
       navItem(route.calendar(), "calendar", t("nav.calendar"), 0, is("calendar")),
-      navItem(route.meetings(), "users", t("nav.meetings"), 0, is("meetings") || (docPath && v.docs.get(docPath)?.kind === "meeting" && !v.docs.get(docPath)?.project)),
+      navItem(route.meetings(), "users", t("nav.meetings"), 0, is("meetings") || is("meet") || (docPath && ["meeting", "series"].includes(v.docs.get(docPath)?.kind) && !v.docs.get(docPath)?.project)),
+      navItem(route.people(), "user", t("nav.people"), 0, is("people") || docPath.startsWith("people/")),
+      navItem(route.knowledge(), "book", t("nav.knowledge"), 0, is("knowledge") || docPath.startsWith("knowledge/")),
       navItem(route.notes(), "note", t("nav.notes"), 0, is("notes") || docPath.startsWith("notes/"))),
     h("div", { class: "sb-section" },
       h("a", { class: "sb-section-title" + (is("projects") ? " active" : ""), href: route.projects() }, h("span", {}, t("nav.projects"))),
@@ -135,7 +140,7 @@ state.render = render;
 /* ------------------------------------------------------------ events */
 
 function bindGlobal() {
-  window.addEventListener("hashchange", () => { closeMenus(); trackNavigation(); render(); $("#view").scrollTop = 0; });
+  window.addEventListener("hashchange", () => { closeMenus(); closeModals(); trackNavigation(); render(); $("#view").scrollTop = 0; });
   $("#nav-back").addEventListener("click", () => history.back());
   $("#nav-fwd").addEventListener("click", () => history.forward());
   onChange(() => requestRender());
