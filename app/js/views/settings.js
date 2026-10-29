@@ -8,10 +8,7 @@ import { state, savePrefs, applyTheme } from "../state.js";
 import { modal, field, closeModals, errorToast, promptDialog, confirmDialog, toast } from "../ui.js";
 import { apiGet, apiPost, waitForServerAndReload } from "../store.js";
 import { resetEvents } from "../events.js";
-import { backend } from "../backends.js";
-import { makeZip } from "../zip.js";
-import { backupPane, vaultFiles } from "../backup.js";
-import { DOWNLOAD_WIN, DOWNLOAD_ZIP } from "./connect.js";
+import { backupPane } from "../backup.js";
 import * as A from "../actions.js";
 import { go, route } from "../nav.js";
 
@@ -73,11 +70,6 @@ const PANES = {
 
   calendar() {
     const wrap = h("div", { class: "settings-block" }, h("p", { class: "muted small" }, t("cal.settingsHelp")));
-    if (!backend.features.calendar) {
-      wrap.append(h("div", { class: "settings-info" }, t("cal.webOnly")),
-        h("div", { class: "row-actions" }, h("a", { class: "btn", href: DOWNLOAD_WIN }, "Windows"), h("a", { class: "btn", href: DOWNLOAD_ZIP }, "macOS / Linux")));
-      return wrap;
-    }
     apiGet("/api/settings").then((cfg) => {
       const isWin = cfg.platform.startsWith("win");
       const hasOutlook = cfg.calendars.some((c) => c.toLowerCase() === "outlook");
@@ -114,21 +106,6 @@ const PANES = {
 
   vault() {
     const wrap = h("div", { class: "settings-block" });
-    if (backend.kind !== "server") {
-      const d = backend.describe();
-      wrap.append(
-        h("div", { class: "settings-info" },
-          h("div", {}, h("span", { class: "muted" }, t(backend.kind === "github" ? "storage.github" : backend.kind === "memory" ? "demo.title" : "storage.folder") + ": "),
-            d.url ? h("a", { href: d.url, target: "_blank", rel: "noopener" }, d.label) : h("code", {}, d.label)),
-          h("div", { class: "muted small" }, t(backend.kind === "github" ? "storage.githubHelp" : backend.kind === "memory" ? "demo.text" : "storage.folderHelp"))),
-        h("div", { class: "row-actions" },
-          h("button", { class: "btn btn-primary", type: "button", onclick: () => exportZip().catch(errorToast) }, icon("archive", 14), t("vault.export")),
-          h("button", { class: "btn", type: "button", onclick: async () => {
-            if (!(await confirmDialog(t("storage.disconnectConfirm"), { ok: t("storage.disconnect"), danger: false }))) return;
-            await backend.forget(); location.reload();
-          } }, t("storage.disconnect"))));
-      return wrap;
-    }
     const path = h("input", { class: "input mono", type: "text", value: store.info?.vault || "" });
     const move = async () => {
       if (!path.value.trim() || path.value.trim() === store.info?.vault) return;
@@ -154,10 +131,6 @@ const PANES = {
 
   updates() {
     const wrap = h("div", { class: "settings-block" });
-    if (!backend.features.updates) {
-      wrap.append(h("div", { class: "settings-info" }, h("div", {}, "Panel ", h("strong", {}, store.info?.version || "")), h("div", { class: "text-ok" }, icon("check", 14), " ", t("upd.web"))));
-      return wrap;
-    }
     const status = h("div", { class: "update-status" }, t("upd.checking"));
     wrap.append(h("div", { class: "settings-info" }, h("div", {}, "Panel ", h("strong", {}, store.info?.version || ""))), status);
     apiGet("/api/settings").then((cfg) => {
@@ -228,15 +201,4 @@ function templatesBlock() {
       } }, icon("plus", 13), t("tpl.new." + kind))));
   }
   return wrap;
-}
-
-/** Export the whole vault as a .zip from the browser (web backends). */
-export async function exportZip() {
-  const files = await vaultFiles();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(makeZip(files));
-  a.download = "panel-vault-" + today() + ".zip";
-  document.body.append(a);
-  a.click();
-  a.remove();
 }

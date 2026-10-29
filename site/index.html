@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel</title>
+  <meta name="description" content="Your week, meetings, people and notes in plain Markdown files that belong to you.">
+  <link rel="icon" href="favicon.svg">
+  <style>
+    :root { --bg: #fafaf9; --text: #1c1917; --muted: #57534e; --card: #ffffff; --border: #e7e5e4; --accent: #5b5bd6; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #161616; --text: #ececec; --muted: #a1a1aa; --card: #1f1f1f; --border: #2e2e2e; --accent: #8b8bf0; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 860px; margin: 0 auto; padding: 56px 16px 64px; }
+    header { text-align: center; }
+    header img { width: 64px; height: 64px; }
+    h1 { font-size: clamp(30px, 6vw, 44px); margin: 12px 0 8px; letter-spacing: -0.02em; }
+    .lead { color: var(--muted); font-size: 18px; max-width: 620px; margin: 0 auto 28px; }
+    .buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 11px 18px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); text-decoration: none; font-weight: 600; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .shot { width: 100%; border-radius: 14px; border: 1px solid var(--border); margin: 40px 0 8px; display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 28px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+    .card h2 { font-size: 16px; margin: 0 0 4px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    footer { text-align: center; color: var(--muted); font-size: 14px; margin-top: 40px; }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon-192.png" alt="">
+    <h1>Panel</h1>
+    <p class="lead">Your week, meetings, people and what you learn at work — in plain Markdown files that belong to you, ready for your AI assistant.<br>
+      <span lang="es">Tu semana, tus reuniones, tu gente y lo que aprendes en el trabajo, en Markdown que es solo tuyo.</span></p>
+    <div class="buttons">
+      <a class="btn primary" href="https://github.com/jcordon5/panel/releases/latest/download/Panel-Windows.zip">Download for Windows</a>
+      <a class="btn" href="https://github.com/jcordon5/panel/releases/latest/download/panel.zip">macOS / Linux</a>
+      <a class="btn" href="https://github.com/jcordon5/panel">GitHub</a>
+    </div>
+  </header>
+  <img class="shot" src="https://raw.githubusercontent.com/jcordon5/panel/main/docs/img/week.png" alt="Panel: the week board">
+  <div class="grid">
+    <div class="card"><h2>Plan the week</h2><p>Tasks and meetings in one day plan. Drag things around, bring overdue work to today.</p></div>
+    <div class="card"><h2>Meetings that write themselves</h2><p>Recurring meetings, attendees from your people, a focused meeting mode, and your AI turns quick notes into minutes and tasks.</p></div>
+    <div class="card"><h2>A memory you can ask</h2><p>People, procedures and links you pick up at work, connected and searchable — by you or by Claude.</p></div>
+    <div class="card"><h2>Yours, private</h2><p>A small local program and a folder of Markdown. No accounts, no cloud you have to trust. Encrypted backups.</p></div>
+  </div>
+  <footer>Free and open source · <a href="https://github.com/jcordon5/panel">github.com/jcordon5/panel</a></footer>
+</main>
+</body>
+</html>

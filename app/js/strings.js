@@ -4,29 +4,18 @@
 export const STRINGS = {
   es: {
     "nav.back": "Volver a {to} (Alt+←)", "nav.forward": "Ir a {to} (Alt+→)", "nav.backShort": "Atrás", "nav.forwardShort": "Adelante",
-    "connect.demo": "Probar con datos de ejemplo (sin guardar nada)", "demo.title": "Modo demo", "demo.text": "Los cambios no se guardan.", "demo.connect": "Usar mi bóveda",
-    "err.offlineWeb": "Sin conexión con tu bóveda. Revisa tu conexión a internet o el permiso de la carpeta.", "err.backend": "No se puede abrir tu bóveda",
-    "storage.github": "Repositorio de GitHub", "storage.folder": "Carpeta de este ordenador", "storage.disconnect": "Desconectar",
-    "storage.githubHelp": "Cada cambio es un commit en tu repositorio privado: tienes el historial completo y puedes abrirlo desde cualquier dispositivo. El token solo se guarda en este navegador.",
-    "storage.folderHelp": "Tus archivos no salen de este ordenador. Pon la carpeta en OneDrive/Dropbox/iCloud si quieres tenerla sincronizada.",
-    "storage.disconnectConfirm": "Panel olvidará esta bóveda en este navegador (tus archivos no se borran). ¿Continuar?",
-    "cal.webOnly": "En la versión web no se pueden leer calendarios (los navegadores lo impiden por seguridad). Usa la versión de escritorio para ver tus reuniones de Outlook, Google o iCloud automáticamente.",
-    "upd.web": "La versión web se actualiza sola: siempre tienes la última.",
-    "connect.lead": "Tareas, reuniones, proyectos y notas en archivos Markdown que son solo tuyos. ¿Dónde quieres guardarlos?",
-    "connect.recommended": "Recomendado", "connect.folderTitle": "Una carpeta de este ordenador",
-    "connect.folderText": "Tus datos no salen de tu equipo. Ideal para el trabajo. Puedes ponerla en OneDrive o Dropbox para sincronizarla.",
-    "connect.folderUnsupported": "Tu navegador no permite abrir carpetas. Usa Chrome, Edge o Brave en el ordenador, o elige GitHub / la versión de escritorio.",
-    "connect.folderBtn": "Elegir carpeta", "connect.ghTitle": "Un repositorio privado de GitHub",
-    "connect.ghText": "Sincronizado en todos tus dispositivos, también el móvil, con historial de cada cambio. Gratis.",
-    "connect.ghBtn": "Conectar GitHub", "connect.gh1": "Crea un repositorio privado vacío.", "connect.gh1link": "Crear repositorio →",
-    "connect.gh2": "Crea un token con permiso «Contents: Read and write» solo para ese repositorio.", "connect.gh2link": "Crear token →",
-    "connect.gh3": "Pega aquí el repositorio y el token.", "connect.repo": "Repositorio", "connect.token": "Token",
-    "connect.tokenHint": "Se guarda solo en este navegador y solo se envía a api.github.com.",
-    "connect.ghConnect": "Conectar", "connect.repoInvalid": "Escribe el repositorio como usuario/nombre", "connect.tokenMissing": "Falta el token",
-    "connect.desktopTitle": "Versión de escritorio", "connect.desktopText": "Para Firefox o Safari, sin conexión, o para ver automáticamente tu calendario de Outlook. Descarga, descomprime y doble clic.",
-    "connect.privacy": "Panel no tiene servidores ni cuentas: la app se ejecuta en tu navegador y tus datos van directamente a tu carpeta o a tu GitHub.",
-    "connect.about": "Código abierto · GitHub", "connect.reopen": "Abrir «{name}»",
-    "connect.reopenText": "Por seguridad, el navegador pide permiso cada cierto tiempo para volver a abrir tu carpeta.", "connect.other": "Usar otra bóveda",
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
     "event.allDay": "Todo el día", "event.takeNotes": "Crear las notas de esta reunión", "event.hint": "De tu calendario · clic para tomar notas",
     "settings.tab.general": "General", "settings.tab.calendar": "Calendario", "settings.tab.vault": "Bóveda", "settings.tab.updates": "Actualizaciones",
     "cal.settingsHelp": "Las reuniones de tu calendario aparecen solas en Hoy, Semana y Calendario. Un clic en una crea su nota (con título, hora y asistentes) y la coloca en el plan del día. Panel solo lee el calendario, nunca lo modifica.",
@@ -192,15 +181,14 @@ export const STRINGS = {
     "backup.encrypting": "Cifrando la bóveda…", "backup.downloaded_one": "Copia cifrada descargada (1 archivo)", "backup.downloaded_other": "Copia cifrada descargada ({n} archivos)",
     "backup.autoTitle": "Copias automáticas", "backup.autoDaily": "Una copia cifrada al día",
     "backup.autoHint": "mientras Panel está abierto, en la carpeta de abajo. Elige una carpeta de OneDrive, Google Drive o Dropbox y tendrás la copia en la nube, cifrada.",
-    "backup.autoHintWeb": "mientras Panel está abierto, en la carpeta que elijas (por ejemplo una de OneDrive o Google Drive: la copia llega cifrada a la nube).",
-    "backup.autoGithub": "Tu bóveda está en GitHub, que ya guarda el historial de cada cambio. Si quieres una copia más, descárgala cifrada desde aquí.",
-    "backup.autoUnavailable": "Las copias automáticas no están disponibles en el modo de prueba.",
+
+    
     "backup.needPassword": "Para las copias automáticas, elige una contraseña y deja que este dispositivo la recuerde.",
     "backup.folder": "Carpeta de copias", "backup.folderHint": "Ruta en este ordenador. Se guardan las últimas copias y las antiguas se borran solas.",
     "backup.keep": "Copias que se conservan", "backup.now": "Hacer copia ahora", "backup.savedTo": "Copia cifrada guardada en {path}",
     "backup.last": "Última copia: {when}", "backup.never": "Todavía no hay copias automáticas",
-    "backup.noFolder": "Sin carpeta elegida", "backup.pickFolder": "Elegir carpeta", "backup.changeFolder": "Cambiar carpeta",
-    "backup.noPermission": "El navegador no da acceso a la carpeta de copias", "backup.autoDone": "Copia cifrada del día guardada",
+
+    "backup.autoDone": "Copia cifrada del día guardada",
     "backup.restoreTitle": "Restaurar una copia cifrada", "backup.restoreHelp": "Elige un archivo .panelbackup y escribe su contraseña. Podrás restaurarlo en esta bóveda o guardarlo como .zip.",
     "backup.file": "Archivo de copia", "backup.pickFile": "Elige un archivo de copia", "backup.open": "Abrir copia",
     "backup.fileInfo": "Copia de «{vault}» del {date} · {n} archivos · Panel {version}",
@@ -208,7 +196,7 @@ export const STRINGS = {
     "backup.decrypting": "Descifrando…", "backup.opened_one": "Copia abierta: 1 archivo", "backup.opened_other": "Copia abierta: {n} archivos",
     "backup.plan": "Al restaurar: {add} nuevos, {replace} sustituirán a la versión actual, {same} ya están igual.",
     "backup.replaceTrash": "Las versiones actuales que se sustituyan irán a la papelera de la bóveda (.trash).",
-    "backup.replaceGithub": "Se hará un único commit: el historial de GitHub conserva las versiones actuales.",
+
     "backup.restore": "Restaurar en esta bóveda", "backup.restoreConfirm_one": "1 archivo de la bóveda se sustituirá por su versión de la copia. ¿Seguir?", "backup.restoreConfirm_other": "{n} archivos de la bóveda se sustituirán por su versión de la copia. ¿Seguir?",
     "backup.restoring": "Restaurando…", "backup.restored_one": "Copia restaurada: 1 archivo", "backup.restored_other": "Copia restaurada: {n} archivos",
     "backup.saveZip": "Guardar como .zip", "backup.saveZipHint": "El .zip no va cifrado: guárdalo en un sitio seguro",
@@ -236,29 +224,18 @@ export const STRINGS = {
 
   en: {
     "nav.back": "Back to {to} (Alt+←)", "nav.forward": "Forward to {to} (Alt+→)", "nav.backShort": "Back", "nav.forwardShort": "Forward",
-    "connect.demo": "Try it with sample data (nothing is saved)", "demo.title": "Demo mode", "demo.text": "Changes are not saved.", "demo.connect": "Use my vault",
-    "err.offlineWeb": "Cannot reach your vault. Check your internet connection or the folder permission.", "err.backend": "Your vault cannot be opened",
-    "storage.github": "GitHub repository", "storage.folder": "Folder on this computer", "storage.disconnect": "Disconnect",
-    "storage.githubHelp": "Every change is a commit in your private repository: full history, and you can open it from any device. The token is only stored in this browser.",
-    "storage.folderHelp": "Your files never leave this computer. Put the folder in OneDrive/Dropbox/iCloud to keep it in sync.",
-    "storage.disconnectConfirm": "Panel will forget this vault in this browser (your files are not deleted). Continue?",
-    "cal.webOnly": "The web version cannot read calendars (browsers block it for security). Use the desktop version to see your Outlook, Google or iCloud meetings automatically.",
-    "upd.web": "The web version updates itself: you always have the latest one.",
-    "connect.lead": "Tasks, meetings, projects and notes in Markdown files that are yours alone. Where do you want to keep them?",
-    "connect.recommended": "Recommended", "connect.folderTitle": "A folder on this computer",
-    "connect.folderText": "Your data never leaves your computer. Great for work. Put it in OneDrive or Dropbox to sync it.",
-    "connect.folderUnsupported": "Your browser cannot open folders. Use Chrome, Edge or Brave on a computer, or choose GitHub / the desktop version.",
-    "connect.folderBtn": "Choose folder", "connect.ghTitle": "A private GitHub repository",
-    "connect.ghText": "In sync on all your devices, phone included, with the history of every change. Free.",
-    "connect.ghBtn": "Connect GitHub", "connect.gh1": "Create an empty private repository.", "connect.gh1link": "Create repository →",
-    "connect.gh2": "Create a token with “Contents: Read and write” for that repository only.", "connect.gh2link": "Create token →",
-    "connect.gh3": "Paste the repository and the token here.", "connect.repo": "Repository", "connect.token": "Token",
-    "connect.tokenHint": "Stored only in this browser and only sent to api.github.com.",
-    "connect.ghConnect": "Connect", "connect.repoInvalid": "Write the repository as user/name", "connect.tokenMissing": "The token is missing",
-    "connect.desktopTitle": "Desktop version", "connect.desktopText": "For Firefox or Safari, offline use, or to see your Outlook calendar automatically. Download, unzip, double-click.",
-    "connect.privacy": "Panel has no servers and no accounts: the app runs in your browser and your data goes straight to your folder or your GitHub.",
-    "connect.about": "Open source · GitHub", "connect.reopen": "Open “{name}”",
-    "connect.reopenText": "For security, the browser asks every now and then for permission to open your folder again.", "connect.other": "Use another vault",
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
     "event.allDay": "All day", "event.takeNotes": "Create the notes for this meeting", "event.hint": "From your calendar · click to take notes",
     "settings.tab.general": "General", "settings.tab.calendar": "Calendar", "settings.tab.vault": "Vault", "settings.tab.updates": "Updates",
     "cal.settingsHelp": "Meetings from your calendar show up by themselves in Today, Week and Calendar. Click one to create its note (with title, time and attendees), placed in the day plan. Panel only reads your calendar, it never changes it.",
@@ -424,15 +401,14 @@ export const STRINGS = {
     "backup.encrypting": "Encrypting the vault…", "backup.downloaded_one": "Encrypted backup downloaded (1 file)", "backup.downloaded_other": "Encrypted backup downloaded ({n} files)",
     "backup.autoTitle": "Automatic backups", "backup.autoDaily": "One encrypted backup a day",
     "backup.autoHint": "while Panel is open, into the folder below. Pick a OneDrive, Google Drive or Dropbox folder and you get an encrypted copy in the cloud.",
-    "backup.autoHintWeb": "while Panel is open, into a folder you choose (e.g. a OneDrive or Google Drive one: the copy reaches the cloud encrypted).",
-    "backup.autoGithub": "Your vault lives on GitHub, which already keeps the history of every change. For one more copy, download an encrypted backup here.",
-    "backup.autoUnavailable": "Automatic backups are not available in demo mode.",
+
+    
     "backup.needPassword": "For automatic backups, choose a password and let this device remember it.",
     "backup.folder": "Backup folder", "backup.folderHint": "A folder on this computer. The latest backups are kept; older ones are removed automatically.",
     "backup.keep": "Backups to keep", "backup.now": "Back up now", "backup.savedTo": "Encrypted backup saved to {path}",
     "backup.last": "Last backup: {when}", "backup.never": "No automatic backups yet",
-    "backup.noFolder": "No folder chosen", "backup.pickFolder": "Choose folder", "backup.changeFolder": "Change folder",
-    "backup.noPermission": "The browser didn't allow access to the backup folder", "backup.autoDone": "Today's encrypted backup saved",
+
+    "backup.autoDone": "Today's encrypted backup saved",
     "backup.restoreTitle": "Restore an encrypted backup", "backup.restoreHelp": "Choose a .panelbackup file and type its password. You can restore it into this vault or save it as a .zip.",
     "backup.file": "Backup file", "backup.pickFile": "Choose a backup file", "backup.open": "Open backup",
     "backup.fileInfo": "Backup of “{vault}” from {date} · {n} files · Panel {version}",
@@ -440,7 +416,7 @@ export const STRINGS = {
     "backup.decrypting": "Decrypting…", "backup.opened_one": "Backup opened: 1 file", "backup.opened_other": "Backup opened: {n} files",
     "backup.plan": "Restoring adds {add} new files, replaces {replace} with their backed-up version, and {same} are already the same.",
     "backup.replaceTrash": "Current versions that get replaced go to the vault's trash (.trash).",
-    "backup.replaceGithub": "It's a single commit: the GitHub history keeps the current versions.",
+
     "backup.restore": "Restore into this vault", "backup.restoreConfirm_one": "1 file of the vault will be replaced by its version in the backup. Continue?", "backup.restoreConfirm_other": "{n} files of the vault will be replaced by their version in the backup. Continue?",
     "backup.restoring": "Restoring…", "backup.restored_one": "Backup restored: 1 file", "backup.restored_other": "Backup restored: {n} files",
     "backup.saveZip": "Save as .zip", "backup.saveZipHint": "The .zip is not encrypted: keep it somewhere safe",

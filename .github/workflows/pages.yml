@@ -1,10 +1,10 @@
-# Publishes the web version (the app/ folder) to GitHub Pages.
-name: Web app
+# Publishes the download page (the site/ folder) to GitHub Pages: panel.yous.dev
+name: Website
 
 on:
   push:
     branches: [main]
-    paths: ["app/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -27,6 +27,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: app
+          path: site
       - id: deploy
         uses: actions/deploy-pages@v4

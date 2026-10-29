@@ -276,7 +276,7 @@ export function render(root, r) {
     const target = resolveLink(wiki ? href : joinPath(dirname(path), decodeURIComponent(href.split("#")[0]))) || resolveLink(href);
     if (!target) { toast(t("editor.linkMissing", { name: href }), { error: true }); return; }
     if (/\.md$/i.test(target)) go(route.doc(target));
-    else backend.assetBlobUrl(target).then((u) => u && window.open(u, "_blank", "noopener"));
+    else window.open(backend.assetUrl(target), "_blank", "noopener");
   }
 
   const modeConf = new Compartment();

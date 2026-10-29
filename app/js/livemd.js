@@ -68,8 +68,7 @@ class ImageWidget extends WidgetType {
     if (/^(https?:|data:image\/)/i.test(this.src)) img.src = this.src;
     else {
       const path = resolveLink(decodeURIComponent(this.src.split(/[?#]/)[0])) || this.src;
-      const url = backend && backend.assetUrl(path);
-      if (url) img.src = url; else img.setAttribute("data-asset", path); // filled in by the app (web backends)
+      img.src = backend ? backend.assetUrl(path) : path;
     }
     return img;
   }

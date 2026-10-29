@@ -32,7 +32,7 @@ async function call(fn) {
     setOnline(true);
     return r;
   } catch (e) {
-    if (e.status === 0 || (e.data && e.data.offline)) { setOnline(false); throw new ApiError(t(backend && backend.kind === "server" ? "err.offline" : "err.offlineWeb"), 0, e.data); }
+    if (e.status === 0 || (e.data && e.data.offline)) { setOnline(false); throw new ApiError(t("err.offline"), 0, e.data); }
     throw e;
   }
 }

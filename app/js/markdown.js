@@ -19,11 +19,9 @@ function safeUrl(href) {
 }
 const isExternal = (href) => /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("//");
 
-/** src/href attributes for a vault file: a URL (local server) or a data-asset hook filled in later. */
+/** src/href attribute for a vault file, served by the local server. */
 function assetAttr(path, attr) {
-  const url = backend && backend.assetUrl(path);
-  if (url) return `${attr}="${esc(url)}"`;
-  return `${attr}="${attr === "src" ? "data:," : "#"}" data-asset="${esc(path)}"`;
+  return `${attr}="${esc(backend ? backend.assetUrl(path) : path)}"`;
 }
 
 function resolveRelative(href) {

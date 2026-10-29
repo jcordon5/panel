@@ -1,6 +1,6 @@
 // Encrypted backups of the vault: download one, restore one, and a daily automatic copy to a
 // folder you choose (e.g. one synced by OneDrive or Google Drive). Everything is encrypted in
-// the browser; the password never leaves it. See crypt.js for the file format.
+// the browser; the server only stores the result and never sees the password. See crypt.js.
 
 import { h, slugify } from "./util.js";
 import { icon } from "./icons.js";
@@ -14,7 +14,6 @@ import { modal, field, toast, errorToast, confirmDialog } from "./ui.js";
 import { state } from "./state.js";
 
 const DAY = 24 * 3600 * 1000;
-const NAME_RE = /^panel-backup-[\w.-]{1,120}\.panelbackup$/;
 const RESTORE_EXT = /\.(md|txt|csv|json|png|jpe?g|gif|webp|svg|pdf|bmp)$/i; // same list as the desktop server
 const KEEP_DEFAULT = 14;
 
@@ -37,8 +36,8 @@ export async function vaultFiles() {
   const enc = new TextEncoder();
   const files = [...store.files.entries()].map(([p, f]) => ({ name: "vault/" + p, data: enc.encode(f.content) }));
   for (const p of store.others.keys()) {
-    const url = await backend.assetBlobUrl(p);
-    if (url) files.push({ name: "vault/" + p, data: new Uint8Array(await (await fetch(url)).arrayBuffer()) });
+    const res = await fetch(backend.assetUrl(p));
+    if (res.ok) files.push({ name: "vault/" + p, data: new Uint8Array(await res.arrayBuffer()) });
   }
   return files;
 }
@@ -120,54 +119,19 @@ export async function downloadBackup() {
 
 /* ------------------------------------------------------------ automatic copies */
 
-/** Where automatic copies go: the desktop server's backup folder, or a folder picked in the browser. */
-export function autoSupported() { return backend.kind === "server" || backend.kind === "folder"; }
-
-export async function folderDest() { return backend.kind === "folder" ? idbGet("backupDest").catch(() => null) : null; }
-
-export async function pickFolderDest() {
-  const handle = await window.showDirectoryPicker({ id: "panel-backups", mode: "readwrite" });
-  const cur = (await folderDest()) || {};
-  await idbSet("backupDest", { ...cur, handle, auto: cur.auto ?? true });
-  return handle;
-}
-
-async function saveToFolder(handle, name, bytes, keep) {
-  const fh = await handle.getFileHandle(name, { create: true });
-  const w = await fh.createWritable();
-  await w.write(bytes);
-  await w.close();
-  const names = [];
-  for await (const [n, e] of handle.entries()) if (e.kind === "file" && NAME_RE.test(n)) names.push(n);
-  names.sort();
-  for (const old of names.slice(0, Math.max(0, names.length - keep))) await handle.removeEntry(old).catch(() => {});
-}
-
 /** Make a copy now into the automatic-backup folder. */
 export async function backupNowToFolder() {
   const keyInfo = await savedKey();
   if (!keyInfo) throw new Error(t("backup.needPassword"));
   const b = await buildBackup(keyInfo);
-  if (backend.kind === "server") return (await backend.saveBackup(b.name, b.bytes)).path;
-  const dest = await folderDest();
-  if (!dest?.handle) throw new Error(t("backup.noFolder"));
-  if ((await dest.handle.queryPermission({ mode: "readwrite" })) !== "granted" && (await dest.handle.requestPermission({ mode: "readwrite" })) !== "granted") throw new Error(t("backup.noPermission"));
-  await saveToFolder(dest.handle, b.name, b.bytes, dest.keep || KEEP_DEFAULT);
-  await idbSet("backupDest", { ...dest, last: Date.now() });
-  return dest.handle.name + "/" + b.name;
+  return (await backend.saveBackup(b.name, b.bytes)).path;
 }
 
 /** Called when Panel starts and every few hours: one encrypted copy a day, silently. */
 export async function maybeAutoBackup() {
-  if (!autoSupported() || !(await savedKey())) return;
-  if (backend.kind === "server") {
-    const s = await apiGet("/api/settings");
-    if (!s.autoBackup || (s.lastBackup && Date.now() - s.lastBackup < DAY * 0.95)) return;
-  } else {
-    const dest = await folderDest();
-    if (!dest?.auto || !dest.handle || (dest.last && Date.now() - dest.last < DAY * 0.95)) return;
-    if ((await dest.handle.queryPermission({ mode: "readwrite" })) !== "granted") return; // asked again on the next click
-  }
+  if (!(await savedKey())) return;
+  const s = await apiGet("/api/settings");
+  if (!s.autoBackup || (s.lastBackup && Date.now() - s.lastBackup < DAY * 0.95)) return;
   await backupNowToFolder();
   toast(t("backup.autoDone"));
 }
@@ -179,14 +143,6 @@ export function startAutoBackups() {
   const go = () => maybeAutoBackup().catch((e) => console.warn("automatic backup:", e));
   setTimeout(go, 8000);
   setInterval(go, 3 * 3600 * 1000);
-}
-
-/** After a click (the browser needs one), ask again for access to the backup folder. */
-export async function regrantFolderDest() {
-  const dest = await folderDest();
-  if (dest?.auto && dest.handle && (await dest.handle.queryPermission({ mode: "readwrite" })) === "prompt") {
-    await dest.handle.requestPermission({ mode: "readwrite" }).catch(() => {});
-  }
 }
 
 /* ------------------------------------------------------------ restore */
@@ -216,12 +172,8 @@ export function planRestore(entries) {
 }
 
 export async function applyRestore(plan) {
-  const files = [...plan.replace, ...plan.add];
-  if (backend.writeMany) await backend.writeMany(files, "Panel: restore backup"); // GitHub: one commit, history keeps the rest
-  else {
-    for (const f of plan.replace) await backend.remove(f.path); // current version -> .trash
-    for (const f of files) await backend.writeBytes(f.path, f.data);
-  }
+  for (const f of plan.replace) await backend.remove(f.path); // current version -> .trash
+  for (const f of [...plan.replace, ...plan.add]) await backend.writeBytes(f.path, f.data);
   await sync();
   state.render();
 }
@@ -252,7 +204,7 @@ export function restoreDialog() {
     result.replaceChildren(
       h("p", { class: "text-ok small" }, icon("check", 14), " ", t("backup.opened", { n: entries.length })),
       h("p", { class: "small" }, t("backup.plan", { add: plan.add.length, replace: plan.replace.length, same: plan.same })),
-      plan.replace.length ? h("p", { class: "muted small" }, t(backend.writeMany ? "backup.replaceGithub" : "backup.replaceTrash")) : null,
+      plan.replace.length ? h("p", { class: "muted small" }, t("backup.replaceTrash")) : null,
       h("div", { class: "row-actions" },
         h("button", { class: "btn btn-primary", type: "button", disabled: !(plan.add.length + plan.replace.length), onclick: async () => {
           if (plan.replace.length && !(await confirmDialog(t("backup.restoreConfirm", { n: plan.replace.length }), { ok: t("backup.restore"), danger: false }))) return;
@@ -317,39 +269,25 @@ export function backupPane() {
   }
 
   async function paintAuto() {
-    if (!autoSupported()) { auto.replaceChildren(h("p", { class: "muted small" }, t(backend.kind === "github" ? "backup.autoGithub" : "backup.autoUnavailable"))); return; }
     const hasKey = !!(await savedKey());
     const nowBtn = h("button", { class: "btn btn-sm", type: "button", disabled: !hasKey, onclick: async () => {
       try { const p = await busy(t("backup.encrypting"), backupNowToFolder); toast(t("backup.savedTo", { path: p })); paintAuto(); } catch (e) { errorToast(e); }
     } }, t("backup.now"));
-    if (backend.kind === "server") {
-      const s = await apiGet("/api/settings");
-      const enabled = h("input", { type: "checkbox", checked: s.autoBackup, disabled: !hasKey, onchange: () => backend.api("/api/settings", { autoBackup: enabled.checked }).catch(errorToast) });
-      const dir = h("input", { class: "input mono", type: "text", value: s.backupDir });
-      const keep = h("input", { class: "input input-auto", type: "number", min: "1", max: "365", value: String(s.backupKeep) });
-      auto.replaceChildren(
-        h("label", { class: "check-field" }, enabled, h("span", {}, h("strong", {}, t("backup.autoDaily")), " — ", t("backup.autoHint"))),
-        hasKey ? null : h("p", { class: "muted small" }, t("backup.needPassword")),
-        field(t("backup.folder"), dir, t("backup.folderHint")),
-        field(t("backup.keep"), keep),
-        h("div", { class: "row-actions" },
-          h("button", { class: "btn btn-sm btn-primary", type: "button", onclick: async () => {
-            try { await backend.api("/api/settings", { backupDir: dir.value.trim(), backupKeep: +keep.value || KEEP_DEFAULT }); toast(t("common.saved")); paintAuto(); } catch (e) { errorToast(e); }
-          } }, t("common.save")),
-          nowBtn),
-        h("p", { class: "muted small" }, s.lastBackup ? t("backup.last", { when: relTime(s.lastBackup) }) : t("backup.never")));
-      return;
-    }
-    const dest = await folderDest();
-    const enabled = h("input", { type: "checkbox", checked: !!dest?.auto, disabled: !hasKey || !dest?.handle, onchange: async () => { await idbSet("backupDest", { ...(await folderDest()), auto: enabled.checked }); } });
+    const s = await apiGet("/api/settings");
+    const enabled = h("input", { type: "checkbox", checked: s.autoBackup, disabled: !hasKey, onchange: () => backend.api("/api/settings", { autoBackup: enabled.checked }).catch(errorToast) });
+    const dir = h("input", { class: "input mono", type: "text", value: s.backupDir });
+    const keep = h("input", { class: "input input-auto", type: "number", min: "1", max: "365", value: String(s.backupKeep) });
     auto.replaceChildren(
-      h("label", { class: "check-field" }, enabled, h("span", {}, h("strong", {}, t("backup.autoDaily")), " — ", t("backup.autoHintWeb"))),
+      h("label", { class: "check-field" }, enabled, h("span", {}, h("strong", {}, t("backup.autoDaily")), " — ", t("backup.autoHint"))),
       hasKey ? null : h("p", { class: "muted small" }, t("backup.needPassword")),
-      h("div", { class: "settings-info" }, h("div", {}, h("span", { class: "muted" }, t("backup.folder") + ": "), dest?.handle ? h("code", {}, dest.handle.name) : h("span", { class: "muted" }, t("backup.noFolder")))),
+      field(t("backup.folder"), dir, t("backup.folderHint")),
+      field(t("backup.keep"), keep),
       h("div", { class: "row-actions" },
-        h("button", { class: "btn btn-sm", type: "button", onclick: async () => { try { await pickFolderDest(); paintAuto(); } catch (e) { if (e.name !== "AbortError") errorToast(e); } } }, icon("folder", 14), dest?.handle ? t("backup.changeFolder") : t("backup.pickFolder")),
-        dest?.handle ? nowBtn : null),
-      h("p", { class: "muted small" }, dest?.last ? t("backup.last", { when: relTime(dest.last) }) : t("backup.never")));
+        h("button", { class: "btn btn-sm btn-primary", type: "button", onclick: async () => {
+          try { await backend.api("/api/settings", { backupDir: dir.value.trim(), backupKeep: +keep.value || KEEP_DEFAULT }); toast(t("common.saved")); paintAuto(); } catch (e) { errorToast(e); }
+        } }, t("common.save")),
+        nowBtn),
+      h("p", { class: "muted small" }, s.lastBackup ? t("backup.last", { when: relTime(s.lastBackup) }) : t("backup.never")));
   }
 
   paintKey();

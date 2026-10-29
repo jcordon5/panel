@@ -28,7 +28,7 @@ function commands() {
     { label: t("settings.shortcuts"), icon: "keyboard", hint: "?", run: () => openSettings("shortcuts") },
     { label: t("tpl.title"), icon: "file", run: () => openSettings("templates") },
     { label: t("settings.tab.calendar"), icon: "calendar", run: () => openSettings("calendar") },
-    { label: t("vault.export"), icon: "archive", run: () => (backend.kind === "server" ? (location.href = "/api/export") : import("./settings.js").then((m) => m.exportZip())) },
+    { label: t("vault.export"), icon: "archive", run: () => { location.href = "/api/export"; } },
     { label: t("upd.check"), icon: "sparkles", run: () => openSettings("updates") },
   ];
 }

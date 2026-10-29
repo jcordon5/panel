@@ -26,7 +26,6 @@ import * as project from "./views/project.js";
 import * as doc from "./views/doc.js";
 import * as editor from "./views/editor.js";
 import * as welcome from "./views/welcome.js";
-import * as connect from "./views/connect.js";
 import { backend, setBackend, detectBackend } from "./backends.js";
 
 const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor };
@@ -75,13 +74,11 @@ function renderSidebar(r) {
         h("span", { class: "dot", "data-color": p.color }), h("span", { class: "nav-label" }, p.title)))
         : h("button", { class: "sb-empty", onclick: () => newProjectDialog() }, t("project.createFirst")),
       closedProjects ? h("a", { class: "sb-more", href: route.projects() }, t("project.closedLink", { n: closedProjects })) : null),
-    backend && backend.kind === "memory" ? h("div", { class: "sb-demo" }, h("strong", {}, t("demo.title")), h("span", {}, t("demo.text")),
-      h("button", { class: "btn btn-sm btn-primary", type: "button", onclick: () => location.reload() }, t("demo.connect"))) : null,
     state.update && state.update.newer ? h("button", { class: "sb-update", type: "button", onclick: () => applyUpdate(state.update) },
       icon("sparkles", 15), h("span", {}, t("upd.banner", { v: state.update.latest }))) : null,
     h("div", { class: "sb-foot" },
       h("span", { class: "status-dot" + (store.online ? "" : " off"), title: store.online ? t("status.online") : t("err.offline") }),
-      h("span", { class: "sb-vault", title: store.info?.vault || "" }, backend ? icon(backend.kind === "github" ? "link" : backend.kind === "folder" ? "folder" : "monitor", 12) : null, store.info?.vaultName || ""),
+      h("span", { class: "sb-vault", title: store.info?.vault || "" }, icon("folder", 12), store.info?.vaultName || ""),
       h("button", { class: "icon-btn", "aria-label": t("settings.title"), title: t("settings.title"), onclick: () => openSettings() }, icon("settings", 16))),
   ].filter(Boolean));
 }
@@ -197,19 +194,7 @@ async function boot() {
   applyTheme();
   setLang(lang());
   bindGlobal();
-  const found = await detectBackend();
-  if (!found.backend) {
-    // web version without a vault yet: choose where it lives
-    document.body.classList.remove("booting");
-    connect.render($("#view"), start);
-    return;
-  }
-  setBackend(found.backend);
-  if (found.needsPermission) {
-    document.body.classList.remove("booting");
-    connect.renderReconnect($("#view"), found.backend, start);
-    return;
-  }
+  setBackend((await detectBackend()).backend);
   await start();
 }
 
@@ -220,12 +205,10 @@ async function start() {
     await loadInfo();
   } catch (e) {
     document.body.classList.remove("booting");
-    const server = backend && backend.kind === "server";
     $("#view").replaceChildren(h("div", { class: "page" }, h("div", { class: "empty" },
       h("div", { class: "empty-icon" }, icon("alert", 22)),
-      h("div", { class: "empty-title" }, server ? t("err.noServer") : t("err.backend")),
-      h("div", { class: "empty-text" }, server ? t("err.noServerHint") : e.message),
-      server ? null : h("button", { class: "btn", type: "button", onclick: async () => { await backend.forget?.(); location.reload(); } }, t("storage.disconnect")))));
+      h("div", { class: "empty-title" }, t("err.noServer")),
+      h("div", { class: "empty-text" }, t("err.noServerHint")))));
     return;
   }
   document.body.classList.remove("booting");
@@ -238,28 +221,14 @@ async function start() {
   try { await sync(); } catch (e) { errorToast(e); }
   startPolling();
   render();
-  if (backend.features.updates) lookForUpdates();
+  lookForUpdates();
   startAutoBackups();
 }
 
 /** Open a vault file that is not Markdown (image, PDF...) in a new tab. */
 async function openAsset(path) {
-  const win = window.open("", "_blank");
-  const url = await backend.assetBlobUrl(path);
-  if (win && url) win.location = url; else if (win) win.close();
+  window.open(backend.assetUrl(path), "_blank", "noopener");
 }
-
-/** Web backends: fill <img data-asset> with blob URLs once rendered. */
-function hydrateAssets(root) {
-  root.querySelectorAll("img[data-asset]").forEach(async (img) => {
-    const path = img.dataset.asset;
-    img.removeAttribute("data-asset");
-    const url = await backend.assetBlobUrl(path).catch(() => null);
-    if (url) img.src = url;
-  });
-}
-new MutationObserver(() => { if (backend && backend.kind !== "server") hydrateAssets(document.body); })
-  .observe(document.documentElement, { childList: true, subtree: true });
 
 /** Once per start (the server caches GitHub's answer for an hour). */
 async function lookForUpdates() {
@@ -276,8 +245,5 @@ async function lookForUpdates() {
 }
 
 window.addEventListener("unhandledrejection", (e) => console.error(e.reason));
-if ("serviceWorker" in navigator && location.protocol === "https:") {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
-}
 boot();
 
