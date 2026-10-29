@@ -42,6 +42,8 @@ Write (atomic, keeps frontmatter, bumps `updated`)
 DATE accepts YYYY-MM-DD, "today", "tomorrow", "yesterday" or +N / -N days.
 """
 import argparse
+import contextlib
+import io
 import os
 import random
 import re
@@ -632,10 +634,49 @@ def cmd_add_task(v, a):
     print("Added to %s (%s): %s" % (rel, d.isoformat(), block[0]))
 
 
+def doc_tasks(v):
+    """Every task line inside meetings, notes, people, knowledge and project documents (open and done)."""
+    out = []
+    for rel in v.md_files():
+        if rel.startswith(("weeks/", "templates/", "sources/")) or rel == "inbox.md":
+            continue
+        text = v.read(rel) or ""
+        fm, body = frontmatter(text)
+        lines = text.split("\n")
+        skip = agenda_lines(lines, body) if fm.get("type") == "meeting" or "/meetings/" in "/" + rel else set()
+        info = None
+        for i in range(body, len(lines)):
+            m = TASK_RE.match(lines[i])
+            if m and i not in skip:
+                info = info or meeting_info(v, rel)
+                e = block_end(lines, i)
+                out.append({"type": "task", "path": rel, "line": i, "done": m.group(2) != " ", "text": BLOCK_RE.sub("", m.group(3)),
+                            "details": [x for x in lines[i + 1:e] if x.strip()], "date": None, "via": info["title"],
+                            "project": info["project"] or None})
+    return out
+
+
+def task_pool(v, d=None):
+    return day_items(v, d) if d else all_day_tasks(v) + inbox_items(v) + doc_tasks(v)
+
+
 def find_task(v, pattern, d=None, want_open=None):
+    if re.match(r"^.+\.md:\d+$", pattern or ""):  # exact PATH:LINE (as printed by every command)
+        rel, n = pattern.rsplit(":", 1)
+        hit = [t for t in task_pool(v) if t["type"] == "task" and t["path"] == rel and t["line"] == int(n) - 1]
+        if not hit:
+            sys.exit("No task at %s." % pattern)
+        return hit[0]
     pat = fold(pattern)
-    pool = day_items(v, d) if d else all_day_tasks(v) + inbox_items(v)
+    pool = task_pool(v, d)
     hits = [t for t in pool if t.get("type") == "task" and pat in fold(t["text"]) and (want_open is None or (not t["done"]) == want_open)]
+    # a planned meeting action shows up twice (in its day and in its meeting): keep one
+    seen, uniq = set(), []
+    for t in hits:
+        if (t["path"], t["line"]) not in seen:
+            seen.add((t["path"], t["line"]))
+            uniq.append(t)
+    hits = uniq
     if not hits:
         sys.exit("No task matches '%s'." % pattern)
     if len(hits) > 1:
@@ -1225,6 +1266,219 @@ def cmd_add_knowledge(v, a):
     print("Created " + rel)
 
 
+# --------------------------------------------------------------------------- natural requests: remind, log, learn, prepare
+
+def score_words(words, text):
+    t = fold(text)
+    return sum(1 for w in words if w in t)
+
+
+def cmd_find_task(v, a):
+    """Tasks related to some words (open first), across days, inbox and meetings — to find what to close or move."""
+    words = [fold(w) for w in re.findall(r"\w+", a.query, re.U) if len(w) > 2]
+    pool = [t for t in task_pool(v) if t.get("type") == "task" and (a.all or not t["done"])]
+    if a.project:
+        pool = [t for t in pool if ("#" + a.project) in t["text"] or t.get("project") == a.project]
+    ranked = sorted(((score_words(words, t["text"] + " " + " ".join(t.get("details", []))), t) for t in pool), key=lambda x: (-x[0], x[1]["done"]))
+    seen, n = set(), 0
+    for sc, t in ranked:
+        if sc == 0 and words or (t["path"], t["line"]) in seen:
+            continue
+        seen.add((t["path"], t["line"]))
+        when = t["date"].isoformat() if t.get("date") else ("inbox" if t["path"] == "inbox.md" else "in " + (t.get("via") or t["path"]))
+        print("- [%s] %s   (%s)   <%s:%d>" % ("x" if t["done"] else " ", t["text"], when, t["path"], t["line"] + 1))
+        n += 1
+        if n >= a.limit:
+            break
+    if not n:
+        print("(no related tasks)")
+
+
+def cmd_log(v, a):
+    """Record something already done, as a checked task on its day (traceability)."""
+    text = a.text.strip()
+    if a.project and ("#" + a.project) not in text:
+        text += " #" + a.project
+    d = parse_date(a.date)
+    rel = insert_in_day(v, d, ["- [x] " + text])
+    print("Logged as done on %s (%s): %s" % (d.isoformat(), rel, text))
+
+
+def cmd_tasks(v, a):
+    """Tasks of a project (#slug in days and inbox, and action items of its meetings/documents)."""
+    out = []
+    for t in task_pool(v):
+        if t.get("type") != "task" or (t["done"] and not a.done) or (not t["done"] and a.done):
+            continue
+        if a.project and not (("#" + a.project) in t["text"] or t.get("project") == a.project):
+            continue
+        if a.since and t.get("date") and t["date"].isoformat() < parse_date(a.since).isoformat():
+            continue
+        out.append(t)
+    for t in sorted(out, key=lambda t: (t["date"].isoformat() if t.get("date") else "9999", t["path"], t["line"])):
+        when = t["date"].isoformat() if t.get("date") else ("inbox" if t["path"] == "inbox.md" else "in " + (t.get("via") or t["path"]))
+        print("- [%s] %s   (%s)   <%s:%d>" % ("x" if t["done"] else " ", t["text"], when, t["path"], t["line"] + 1))
+    if not out:
+        print("(no tasks)")
+
+
+def cmd_person_set(v, a):
+    """Update a person card: role/team/org/email, add what to ask them for or an alias, append a dated note."""
+    p = find_person(v, a.name)
+    if not p:
+        sys.exit("No person card for '%s' (create it with add-person)." % a.name)
+    text = v.read(p["path"])
+    fm, _ = frontmatter(text)
+    for key in ("role", "team", "org", "email", "phone"):
+        val = getattr(a, key, None)
+        if val:
+            text = set_fm(text, key, yaml_scalar(val))
+    for key, val in (("ask_for", a.ask_for), ("aliases", a.alias)):
+        if val:
+            cur = as_list(fm.get(key))
+            for x in as_list(val):
+                if fold(x) not in [fold(c) for c in cur]:
+                    cur.append(x)
+            text = set_fm(text, key, flow(cur))
+    if a.note:
+        line = "- %s: %s%s" % (date.today().isoformat(), a.note.strip(), " (%s)" % a.source if a.source else "")
+        text = text.rstrip("\n") + "\n" + ("\n" if not text.rstrip("\n").split("\n")[-1].startswith("- ") else "") + line + "\n"
+    v.write(p["path"], touch(text))
+    print("Updated " + p["path"])
+
+
+def series_by_ref(v, ref):
+    k = fold(unlink(ref))
+    hits = [sd for sd in all_series(v) if fold(sd["slug"]) == k or fold(sd["title"]) == k or k in fold(sd["title"])]
+    return hits[0] if len(hits) == 1 else None
+
+
+def create_session(v, sd, d):
+    """The session note of a series on date d (like the app): same title, time, attendees, project, template,
+    with the unticked "to discuss" items of the previous session."""
+    existing = [m for m in sessions_of(v, sd["slug"]) if m["date"] == d.isoformat()]
+    if existing:
+        return existing[0]["path"], False
+    prev = [m for m in sessions_of(v, sd["slug"]) if (m["date"] or "") < d.isoformat()]
+    carry = []
+    if prev:
+        lines = (v.read(prev[-1]["path"]) or "").split("\n")
+        for i in sorted(agenda_lines(lines)):
+            m = re.match(r"^\s*[-*+]\s+\[ \]\s+(.+)$", lines[i])
+            if m:
+                carry.append("- [ ] " + m.group(1))
+    fm = sd["fm"]
+    args = argparse.Namespace(title=sd["title"], date=d.isoformat(), time=fm.get("time") or None, project=fm.get("project") or None,
+                              attendees=", ".join(as_list(fm.get("attendees"))), template=(fm.get("template") or "").replace("templates/", "").replace(".md", "") or None, notes=None)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        cmd_new_meeting(v, args)
+    rel = re.search(r"Created (\S+)", out.getvalue()).group(1)
+    text = set_fm(v.read(rel), "series", sd["slug"])
+    if carry:
+        text = section_insert(v, text, "agenda", carry)
+    v.write(rel, text)
+    return rel, True
+
+
+def cmd_new_session(v, a):
+    sd = series_by_ref(v, a.series)
+    if not sd:
+        sys.exit("No single recurring meeting matches '%s' (see `series`)." % a.series)
+    d = parse_date(a.date) if a.date else next((date.today() + timedelta(days=i) for i in range(400) if occurs_on(sd["rule"], date.today() + timedelta(days=i))), None)
+    rel, created = create_session(v, sd, d)
+    print(("Created %s" if created else "Already exists: %s") % rel)
+
+
+def cmd_prepare(v, a):
+    """Everything needed to prepare the next session of a meeting: what was said and left open last time,
+    who owes what, what the user has done since on that project, and the agenda so far."""
+    sd = series_by_ref(v, a.ref)
+    rel = None
+    if sd:
+        today = date.today()
+        d = parse_date(a.date) if a.date else next((today + timedelta(days=i) for i in range(400) if occurs_on(sd["rule"], today + timedelta(days=i))), today)
+        target = next((m for m in sessions_of(v, sd["slug"]) if m["date"] == d.isoformat()), None)
+        prev = [m for m in sessions_of(v, sd["slug"]) if (m["date"] or "") < d.isoformat()]
+        attendees, project = as_list(sd["fm"].get("attendees")), sd["fm"].get("project") or ""
+        print("# Preparing: %s on %s%s" % (sd["title"], d.isoformat(), "   <%s>" % target["path"] if target else "   (session note not created yet: `new-session \"%s\" --date %s`)" % (sd["title"], d.isoformat())))
+        last = prev[-1] if prev else None
+    else:
+        rel = find_meeting(v, a.ref)
+        last = meeting_info(v, rel)
+        attendees, project = last["attendees"], last["project"]
+        d = parse_date(a.date) if a.date else date.today()
+        print("# Preparing the follow-up of: %s (%s)" % (last["title"], last["date"]))
+    if not last:
+        print("\n(no previous session yet)")
+        return
+    text = v.read(last["path"])
+    fm, body = frontmatter(text)
+    lines = text.split("\n")
+    print("\n## Last session: %s %s   <%s>" % (last["title"], last["date"], last["path"]))
+    for sec in sections(lines, body):
+        if sec["kind"] in ("summary", "decisions", "agenda", "notes"):
+            chunk = "\n".join(l for l in lines[sec["start"]:sec["end"]] if l.strip())
+            if chunk:
+                print("\n### %s\n%s" % (sec["title"], chunk))
+    print("\n## Its tasks now (done = closed since)")
+    for t in doc_tasks(v):
+        if t["path"] == last["path"]:
+            w = WHO_RE.match(t["text"])
+            print("- [%s] %s%s   <%s:%d>" % ("x" if t["done"] else " ", t["text"], "  (owner: %s)" % (w.group(1) or w.group(2)) if w else "  (owner: you)", t["path"], t["line"] + 1))
+    since = last["date"] or "0000"
+    if project:
+        print("\n## Done on #%s since %s" % (project, since))
+        done = [t for t in all_day_tasks(v) if t["done"] and t.get("date") and t["date"].isoformat() >= since and ("#" + project) in t["text"]]
+        for t in done:
+            print("- [x] %s (%s)" % (t["text"], t["date"].isoformat()))
+        if not done:
+            print("(nothing logged)")
+        print("\n## Still open on #%s" % project)
+        for t in [t for t in task_pool(v) if t.get("type") == "task" and not t["done"] and (("#" + project) in t["text"] or t.get("project") == project)][:20]:
+            print("- [ ] %s   <%s:%d>" % (t["text"], t["path"], t["line"] + 1))
+    idx = person_index(v)
+    owed = [t for n in attendees for t in waiting(v, find_person(v, n, idx)) if find_person(v, n, idx)]
+    if owed:
+        print("\n## Attendees owe you")
+        for t in owed:
+            print("- [ ] %s   <%s:%d>" % (t["text"], t["path"], t["line"] + 1))
+    print("\nWrite the points to bring up with: write <session> --section agenda --text \"- [ ] …\"")
+
+
+def cmd_docs(v, a):
+    """Documents in the folders listed in documents.md (outside the vault): name, folder, path."""
+    text = v.read("documents.md") or ""
+    _, body = frontmatter(text)
+    folders = []
+    for m in re.finditer(r"^\s*[-*]\s+`?([^`\n]+?)`?\s*$", "\n".join(text.split("\n")[body:]), re.M):
+        f = os.path.expanduser(m.group(1).strip())
+        if os.path.isdir(f):
+            folders.append(f)
+        else:
+            print("(folder not found: %s)" % f)
+    if not folders:
+        print("(no document folders: list them in documents.md, one '- /path' per line)")
+        return
+    words = [fold(w) for w in (a.query or "").split() if w]
+    n = 0
+    for root in folders:
+        for dp, dn, fn in os.walk(root):
+            dn[:] = sorted(x for x in dn if not x.startswith((".", "~$")))
+            for name in sorted(fn):
+                if name.startswith((".", "~$")):
+                    continue
+                rel = os.path.relpath(os.path.join(dp, name), root)
+                if words and not all(w in fold(rel) for w in words):
+                    continue
+                print("- %s   <%s>" % (rel.replace(os.sep, "/"), os.path.join(dp, name)))
+                n += 1
+                if n >= a.limit:
+                    return
+    if not n:
+        print("(no documents match)")
+
+
 # --------------------------------------------------------------------------- main
 
 def find_vault(arg):
@@ -1270,6 +1524,14 @@ def main(argv=None):
     s.add_argument("--email"); s.add_argument("--aliases"); s.add_argument("--ask-for", dest="ask_for"); s.add_argument("--notes"); s.set_defaults(fn=cmd_add_person)
     s = sub.add_parser("add-knowledge"); s.add_argument("--title", required=True); s.add_argument("--kind", choices=["howto", "resource", "fact"], default="fact")
     s.add_argument("--project"); s.add_argument("--people"); s.add_argument("--source"); s.add_argument("--tags"); s.add_argument("--body"); s.set_defaults(fn=cmd_add_knowledge)
+    s = sub.add_parser("find-task"); s.add_argument("query"); s.add_argument("--project"); s.add_argument("--all", action="store_true"); s.add_argument("--limit", type=int, default=12); s.set_defaults(fn=cmd_find_task)
+    s = sub.add_parser("log"); s.add_argument("text"); s.add_argument("--date", default="today"); s.add_argument("--project"); s.set_defaults(fn=cmd_log)
+    s = sub.add_parser("tasks"); s.add_argument("--project"); s.add_argument("--done", action="store_true"); s.add_argument("--since"); s.set_defaults(fn=cmd_tasks)
+    s = sub.add_parser("person-set"); s.add_argument("name"); s.add_argument("--role"); s.add_argument("--team"); s.add_argument("--org"); s.add_argument("--email"); s.add_argument("--phone")
+    s.add_argument("--ask-for", dest="ask_for"); s.add_argument("--alias"); s.add_argument("--note"); s.add_argument("--source"); s.set_defaults(fn=cmd_person_set)
+    s = sub.add_parser("new-session"); s.add_argument("series"); s.add_argument("--date"); s.set_defaults(fn=cmd_new_session)
+    s = sub.add_parser("prepare"); s.add_argument("ref"); s.add_argument("--date"); s.set_defaults(fn=cmd_prepare)
+    s = sub.add_parser("docs"); s.add_argument("query", nargs="?"); s.add_argument("--limit", type=int, default=40); s.set_defaults(fn=cmd_docs)
     a = ap.parse_args(argv)
     if not getattr(a, "fn", None):
         ap.print_help()

@@ -34,12 +34,15 @@ Panel está hecho para que **atiendas a la reunión** y luego **hagas**, no para
 2. **Entras a la reunión en modo reunión**: lo que querías comentar a la izquierda; abajo escribes una línea y Enter.
    `!` la convierte en tarea tuya, `@Ana` en algo que esperas de Ana, `>` en una decisión, `?` en una duda.
    ¿Hay transcripción? La sueltas encima.
-3. **Al terminar** repartes tus tareas por días en un clic.
-4. **Tu IA lo procesa** (Claude u otro agente, con la [skill](skills/panel-vault) incluida): «procesa mis reuniones» y escribe el
+3. **Tu IA lo procesa** (Claude u otro agente, con la [skill](skills/panel-vault) incluida): «procesa mis reuniones» y escribe el
    resumen, completa tareas y decisiones que se te escaparon, actualiza las fichas de las personas y guarda como conocimiento lo que
    vale la pena recordar. Las fuentes que usó se borran: no se acumula basura.
-5. **Preguntas a tu memoria**: «¿cómo se daba de alta a un proveedor?», «¿qué me debe Luis?», «prepárame la reunión del jueves». La
-   respuesta sale de tus notas, con la fuente.
+4. **Le hablas como a un compañero**: «recuérdame que para el proyecto Alfa tengo que pedir el presupuesto», «registra que hemos cerrado
+   la migración» (busca la tarea relacionada y la cierra, o lo apunta como hecho), «he aprendido que los presupuestos se aprueban antes del
+   día 20», «Ana se encarga de las facturas», «prepara la próxima daily» (mira la anterior, lo pendiente de cada uno y lo que has hecho
+   desde entonces, y te rellena «Para comentar»).
+5. **Preguntas a tu memoria**: «¿cómo se daba de alta a un proveedor?», «¿qué me debe Luis?», «¿dónde está la plantilla del informe?».
+   La respuesta sale de tus notas y documentos, con la fuente.
 
 Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel con estructura y los lee y edita tu IA.
 
@@ -47,12 +50,12 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
 
 <table>
 <tr>
+<td><img src="docs/img/meeting.png" alt="Modo reunión"></td>
 <td><img src="docs/img/today.png" alt="Hoy"></td>
-<td><img src="docs/img/meeting.png" alt="Reunión"></td>
 </tr>
 <tr>
-<td><img src="docs/img/editor.png" alt="Editor"></td>
-<td><img src="docs/img/search.png" alt="Búsqueda"></td>
+<td><img src="docs/img/people.png" alt="Ficha de una persona"></td>
+<td><img src="docs/img/knowledge.png" alt="Conocimiento"></td>
 </tr>
 </table>
 
@@ -65,6 +68,8 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
   quién aparece en tus reuniones sin ficha y la crea con un clic. Selector de asistentes con autocompletado.
 - **Conocimiento** — notas pequeñas de *procedimientos* (cómo se hace algo), *recursos* (dónde está) y *datos* (lo que conviene
   recordar), enlazadas con proyectos y personas.
+- **Documentos fuera de la bóveda** — indica las carpetas con tus plantillas, guías o documentación (por ejemplo en OneDrive): Panel los
+  lista y abre con su programa, y tu IA sabe que existen. No se copia nada.
 - **Para tu IA** — suelta o pega transcripciones (.vtt, .docx), correos (.eml, o .msg arrastrado desde Outlook) o chats; Hoy te dice
   qué está pendiente de procesar.
 - **Esperando a otros** — cualquier tarea que empieza por `@Nombre`; aparece en Hoy, en la ficha de la persona y en sus reuniones.

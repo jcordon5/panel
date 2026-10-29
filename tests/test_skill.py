@@ -72,6 +72,32 @@ class SkillTest(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.vault, "sources", "2026-10-29-chat.md")))
         self.assertTrue(any("chat" in n for n in os.listdir(os.path.join(self.vault, ".trash"))))
 
+    def test_everyday_requests(self):
+        # "we finished X": find the related task anywhere and close it; otherwise log it as done
+        found = self.run_cmd("find-task", "presupuesto servicio")
+        self.assertIn("Pedir presupuesto del servicio gestionado", found)
+        loc = found.split("<")[1].split(">")[0]
+        self.assertIn("Done:", self.run_cmd("done", loc))
+        self.assertIn("[x] Pedir presupuesto del servicio gestionado", self.run_cmd("tasks", "--project", "migracion-cloud", "--done"))
+        self.run_cmd("log", "Revisado el contrato", "--project", "migracion-cloud")
+        self.assertIn("[x] Revisado el contrato #migracion-cloud", self.run_cmd("tasks", "--project", "migracion-cloud", "--done"))
+        # "Ana also handles invoices"
+        self.run_cmd("person-set", "ana", "--ask-for", "facturas", "--note", "Lleva también las facturas", "--source", "[[x]]")
+        card = self.read("people/ana-garcia.md")
+        self.assertIn("ask_for: [contratos con proveedores, presupuestos, facturas]", card)
+        self.assertRegex(card, r"- \d{4}-\d{2}-\d{2}: Lleva también las facturas \(\[\[x\]\]\)\n$")
+        # prepare the next daily: last session, its tasks, what attendees owe; then create the session
+        prep = self.run_cmd("prepare", "daily")
+        self.assertIn("## Last session: Daily del equipo", prep)
+        self.assertIn("@Luis revisar los permisos de red  (owner: Luis)", prep)
+        self.assertIn("## Attendees owe you", prep)
+        out = self.run_cmd("new-session", "daily")
+        rel = out.split()[-1]
+        self.assertRegex(self.read(rel), r"series: daily-del-equipo[\s\S]*## Para comentar\n\n- \[ \] Vacaciones de diciembre")
+        self.assertIn("Already exists", self.run_cmd("new-session", "daily", "--date", rel.split("/")[1][:10]))
+        # documents outside the vault
+        self.assertIn("Plantilla de acta.md", self.run_cmd("docs", "acta"))
+
 
 if __name__ == "__main__":
     unittest.main()

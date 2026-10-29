@@ -9,6 +9,7 @@ import { modal, field, closeModals, errorToast, promptDialog, confirmDialog, toa
 import { apiGet, apiPost, waitForServerAndReload } from "../store.js";
 import { resetEvents } from "../events.js";
 import { backupPane } from "../backup.js";
+import { foldersBlock } from "../documents.js";
 import * as A from "../actions.js";
 import { go, route } from "../nav.js";
 
@@ -125,7 +126,9 @@ const PANES = {
         h("button", { class: "btn", type: "button", onclick: async () => {
           try { const r = await apiPost("/api/backup"); toast(t("vault.backupDone", { path: r.path })); } catch (e) { errorToast(e); }
         } }, t("vault.backupNow"))),
-      h("p", { class: "muted small" }, t("vault.syncHelp")));
+      h("p", { class: "muted small" }, t("vault.syncHelp")),
+      h("h3", { class: "settings-sub" }, icon("folder", 15), t("docs.title")),
+      foldersBlock());
     return wrap;
   },
 

@@ -7,7 +7,7 @@ import { vault, PROJECT_COLORS, KNOWLEDGE_KINDS } from "../model.js";
 import * as A from "../actions.js";
 import { modal, field, errorToast, toast, closeModals } from "../ui.js";
 import { go, route } from "../nav.js";
-import { peoplePicker } from "../picker.js";
+import { peoplePicker, timeField } from "../picker.js";
 import { seriesRule, weekday, DAY_KEYS, nextOccurrence } from "../series.js";
 
 function projectSelect(selected, { allowNone = true } = {}) {
@@ -58,7 +58,7 @@ function recurrenceField(initial, dateInput, { allowNone = false } = {}) {
     monthly.replaceChildren(
       h("option", { value: "date", selected: sel === "date" }, t("series.monthlyDate", { d: +start.slice(8) })),
       h("option", { value: "nth", selected: sel === "nth" }, t("series.monthlyNth", { n: t("series.nth." + Math.min(nthOf, 4)), day: weekdayName(start) })),
-      last ? h("option", { value: "last", selected: sel === "last" }, t("series.monthlyNth", { n: t("series.nth.last"), day: weekdayName(start) })) : null);
+      last ? h("option", { value: "last", selected: sel === "last" }, t("series.monthlyNth", { n: t("series.nth.last"), day: weekdayName(start) })) : "");
     box.replaceChildren(...(k ? [
       k === "weekly" ? field(t("series.days"), dayBtns) : null,
       k === "monthly" ? field(t("series.monthlyOn"), monthly) : null,
@@ -96,7 +96,7 @@ function recurrenceField(initial, dateInput, { allowNone = false } = {}) {
 export function newMeetingDialog(defaults = {}) {
   const title = h("input", { class: "input input-lg", type: "text", placeholder: t("meeting.titlePh"), required: true, autofocus: true });
   const date = h("input", { class: "input", type: "date", value: defaults.date || today(), required: true });
-  const time = h("input", { class: "input", type: "time", value: defaults.time || "" });
+  const time = timeField(defaults.time || "");
   const proj = projectSelect(defaults.project);
   const people = peoplePicker(defaults.attendees || []);
   const tpl = templateField("meeting");
@@ -140,7 +140,7 @@ export function seriesDialog(sd = null) {
   const fm = sd ? sd.fm : {};
   const title = h("input", { class: "input input-lg", type: "text", value: sd ? sd.title : "", placeholder: t("meeting.titlePh"), autofocus: !sd });
   const start = h("input", { class: "input", type: "date", value: sd && sd.rule.start ? sd.rule.start : today() });
-  const time = h("input", { class: "input", type: "time", value: typeof fm.time === "string" ? fm.time : "" });
+  const time = timeField(typeof fm.time === "string" ? fm.time : "");
   const people = peoplePicker(sd ? sd.attendees : []);
   const proj = projectSelect(typeof fm.project === "string" ? fm.project : "");
   const rec = recurrenceField(sd ? sd.rule : null, start);
@@ -273,7 +273,7 @@ export function propertiesDialog(doc, onDone) {
   let date, time, proj, people, tags, pin, status, color, extra = {};
   if (doc.kind === "meeting") {
     date = h("input", { class: "input", type: "date", value: doc.date || today() });
-    time = h("input", { class: "input", type: "time", value: doc.time || "" });
+    time = timeField(doc.time || "");
     people = peoplePicker(doc.attendees);
     fields.push(h("div", { class: "field-row" }, field(t("common.date"), date), field(t("common.time"), time)));
     fields.push(field(t("meeting.attendees"), people.el));

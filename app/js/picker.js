@@ -116,3 +116,57 @@ export function peoplePicker(initial = [], opts = {}) {
   paintChips();
   return { el, get: () => [...names] };
 }
+
+/* ------------------------------------------------------------ time */
+
+/** "930", "9:30", "9.30", "9h30", "9" -> "09:30" / "09:00"; "" -> ""; anything else -> null */
+export function normTime(s) {
+  const v = String(s || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (!v) return "";
+  let m = /^(\d{1,2})(?:[:.h,](\d{1,2})?)?$/.exec(v) || (/^(\d{3,4})$/.test(v) ? [v, v.slice(0, -2), v.slice(-2)] : null);
+  if (!m) return null;
+  const hh = +m[1], mm = m[2] === undefined || m[2] === "" ? 0 : +(m[2].length === 1 ? m[2] + "0" : m[2]);
+  return hh < 24 && mm < 60 ? String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0") : null;
+}
+
+const SLOTS = Array.from({ length: 4 * 24 }, (_, i) => String(Math.floor(i / 4)).padStart(2, "0") + ":" + String((i % 4) * 15).padStart(2, "0"));
+
+/** A time field: type it any way ("930", "9:30") or pick from a list. Behaves like an input (.value). */
+export function timeField(value = "") {
+  const input = h("input", { class: "input time-input", type: "text", inputmode: "numeric", autocomplete: "off", placeholder: "09:30", value: normTime(value) || "" });
+  const list = h("div", { class: "picker-list time-list", role: "listbox", hidden: true });
+  const wrap = h("div", { class: "time-field" }, input, list);
+  let opts = [], active = 0;
+  const open = () => {
+    opts = SLOTS;
+    const typed = normTime(input.value);
+    active = Math.max(0, opts.findIndex((x) => x >= (typed || "09:00")));
+    list.replaceChildren(...opts.map((x, i) => h("div", { class: "picker-opt" + (i === active ? " active" : ""), role: "option", onmousedown: (e) => { e.preventDefault(); pick(x); } }, x)));
+    list.hidden = false;
+    list.children[active]?.scrollIntoView({ block: "center" });
+  };
+  const pick = (x) => { input.value = x; list.hidden = true; input.dispatchEvent(new Event("change", { bubbles: true })); };
+  input.addEventListener("focus", open);
+  input.addEventListener("input", () => { active = 0; open(); });
+  input.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      active = (active + (e.key === "ArrowDown" ? 1 : opts.length - 1)) % opts.length;
+      input.value = opts[active];
+      [...list.children].forEach((c, i) => c.classList.toggle("active", i === active));
+      list.children[active]?.scrollIntoView({ block: "nearest" });
+    }
+    if (e.key === "Enter") { e.preventDefault(); pick(normTime(input.value) || opts[active]); }
+    if (e.key === "Escape") { e.stopPropagation(); list.hidden = true; }
+  });
+  input.addEventListener("blur", () => setTimeout(() => {
+    list.hidden = true;
+    const n = normTime(input.value);
+    input.value = n ?? "";
+    wrap.classList.toggle("invalid", n === null);
+  }, 120));
+  Object.defineProperty(wrap, "value", { get: () => normTime(input.value) || "", set: (v) => { input.value = normTime(v) || ""; } });
+  wrap.focus = () => input.focus();
+  return wrap;
+}

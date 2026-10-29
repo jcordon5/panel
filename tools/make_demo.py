@@ -56,12 +56,13 @@ T = {
              "1. Pide al proveedor sus datos fiscales y un certificado bancario.\n2. Rellena la ficha de proveedor y adjunta los documentos.\n3. Compras la revisa en unos tres días.\n\n> [!tip]\n> Hazlo antes de pedir el primer presupuesto: sin alta no se puede aprobar.\n"),
             ("guia-de-marca", "Guía de marca", "resource", "portal-clientes", ["Sara Gómez"],
              "- Guía: https://example.com/marca\n- Logos y colores en la carpeta compartida de diseño\n"),
+            ("enlaces-de-interes", "Enlaces de interés", "resource", None, [],
+             "- [Guía de Markdown](https://www.markdownguide.org)\n- [Obsidian](https://obsidian.md)\n- Plantillas del equipo: en *Conocimiento → Documentos*\n"),
             ("presupuestos-antes-del-dia-20", "Los presupuestos se aprueban antes del día 20", "fact", None, ["Ana García"],
              "Lo que llega después del día 20 pasa al mes siguiente.\n"),
         ],
         "notes": [
             ("plan-de-carrera", "Plan de carrera", True, "## Este año\n\n- [x] Certificación cloud\n- [ ] Liderar un proyecto transversal\n- [ ] Mentorizar a alguien del equipo\n\n## Ideas\n\n> [!tip] Recordatorio\n> Revisar este plan cada trimestre.\n"),
-            ("enlaces-de-interes", "Enlaces de interés", True, "- [Markdown Guide](https://www.markdownguide.org)\n- [Obsidian](https://obsidian.md)\n- ==Guía interna de estilo== en la wiki\n"),
             ("auditoria-seguridad", "Auditoría de seguridad", False, "Resumen del informe de la auditoría externa.\n\n## Hallazgos\n\n1. Contraseñas sin rotar en 3 servicios\n2. Logs sin centralizar\n3. Falta MFA en el VPN\n\n```bash\n# comprobar certificados\nopenssl s_client -connect example.com:443\n```\n"),
             ("ideas-offsite", "Ideas para el offsite", False, "- Taller de escritura técnica\n- Hackathon de un día\n- Ruta por la sierra 🥾\n"),
         ],
@@ -110,12 +111,13 @@ T = {
              "1. Ask the supplier for their tax details and a bank certificate.\n2. Fill in the supplier form and attach the documents.\n3. Purchasing reviews it in about three days.\n\n> [!tip]\n> Do it before asking for the first quote: it can't be approved otherwise.\n"),
             ("brand-guidelines", "Brand guidelines", "resource", "customer-portal", ["Sara Gómez"],
              "- Guide: https://example.com/brand\n- Logos and colours in the shared design folder\n"),
+            ("useful-links", "Useful links", "resource", None, [],
+             "- [Markdown Guide](https://www.markdownguide.org)\n- [Obsidian](https://obsidian.md)\n- Team templates: in *Knowledge → Documents*\n"),
             ("quotes-before-the-20th", "Quotes are approved before the 20th", "fact", None, ["Ana García"],
              "Anything that arrives after the 20th moves to the next month.\n"),
         ],
         "notes": [
             ("career-plan", "Career plan", True, "## This year\n\n- [x] Cloud certification\n- [ ] Lead a cross-team project\n- [ ] Mentor someone in the team\n\n## Ideas\n\n> [!tip] Reminder\n> Review this plan every quarter.\n"),
-            ("useful-links", "Useful links", True, "- [Markdown Guide](https://www.markdownguide.org)\n- [Obsidian](https://obsidian.md)\n- ==Internal style guide== in the wiki\n"),
             ("security-audit", "Security audit", False, "Summary of the external audit report.\n\n## Findings\n\n1. Passwords not rotated in 3 services\n2. Logs not centralised\n3. No MFA on the VPN\n\n```bash\n# check certificates\nopenssl s_client -connect example.com:443\n```\n"),
             ("offsite-ideas", "Offsite ideas", False, "- Technical writing workshop\n- One-day hackathon\n- Mountain hike 🥾\n"),
         ],
@@ -126,6 +128,18 @@ T = {
 ROUTINES = {
     "es": "# Rutinas\n\nLo que mi IA hace cuando le digo estas frases.\n\n## «Buenos días»\n1. Procesa lo pendiente.\n2. Dame el día: reuniones con lo abierto con cada asistente, tareas, atrasadas y lo que espero de otros.\n3. Las 3 cosas más importantes de hoy.\n\n## «Cierre del día»\n1. Procesa las reuniones de hoy.\n2. Lista lo que quedó sin hacer y propón a qué día moverlo.\n",
     "en": "# Routines\n\nWhat my AI does when I say these phrases.\n\n## \"Good morning\"\n1. Process what's pending.\n2. Give me the day: meetings with what's open with each attendee, tasks, overdue and what I'm waiting on.\n3. The 3 most important things today.\n\n## \"End of day\"\n1. Process today's meetings.\n2. List what's left undone and suggest a day for each.\n",
+}
+
+
+DOCS = {
+    "es": [("Plantillas/Plantilla de informe semanal.md", "# Informe semanal\n\n## Hecho\n\n## Próxima semana\n\n## Riesgos\n"),
+           ("Plantillas/Plantilla de acta.md", "# Acta\n\n## Asistentes\n\n## Acuerdos\n"),
+           ("Guías/Guía de estilo de presentaciones.txt", "Usa la plantilla corporativa, una idea por diapositiva.\n"),
+           ("Equipo/Contactos del equipo.csv", "nombre,rol\nAna García,Compras\nLuis Pérez,Infraestructura\n")],
+    "en": [("Templates/Weekly report template.md", "# Weekly report\n\n## Done\n\n## Next week\n\n## Risks\n"),
+           ("Templates/Minutes template.md", "# Minutes\n\n## Attendees\n\n## Decisions\n"),
+           ("Guides/Presentation style guide.txt", "Use the company template, one idea per slide.\n"),
+           ("Team/Team contacts.csv", "name,role\nAna García,Purchasing\nLuis Pérez,Infrastructure\n")],
 }
 
 
@@ -216,6 +230,14 @@ def make(dest, lang="es"):
             kind, title, "project: %s\n" % proj if proj else "", ", ".join(people), stamp, stamp, title, body))
 
     w(os.path.join(dest, "routines.md"), ROUTINES[lang])
+
+    # a folder of documents outside the vault (templates, guides…), listed in documents.md
+    docs = os.path.join(os.path.dirname(os.path.abspath(dest)), "documentos" if lang == "es" else "documents")
+    for name, text in DOCS[lang]:
+        w(os.path.join(docs, name), text)
+    w(os.path.join(dest, "documents.md"), "---\ntype: documents\ntitle: %s\n---\n\n# %s\n\n%s\n\n- %s\n" % (
+        "Documentos" if lang == "es" else "Documents", "Documentos" if lang == "es" else "Documents",
+        "Carpetas con documentos útiles fuera de la bóveda." if lang == "es" else "Folders with useful documents outside the vault.", docs))
 
     for s, title, pinned, body in L["notes"]:
         fm = "---\ntype: note\ntitle: %s\n%screated: %s\nupdated: %s\n---\n\n# %s\n\n" % (title, "pinned: true\n" if pinned else "", stamp, stamp, title)

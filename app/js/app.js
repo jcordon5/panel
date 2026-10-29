@@ -30,6 +30,7 @@ import * as people from "./views/people.js";
 import * as knowledge from "./views/knowledge.js";
 import * as meet from "./views/meet.js";
 import { bindGlobalDrop } from "./views/capture.js";
+import { bindFileLinks } from "./documents.js";
 import { backend, setBackend, detectBackend } from "./backends.js";
 
 const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet };
@@ -191,6 +192,7 @@ function bindGlobal() {
   });
 
   bindGlobalDrop();
+  bindFileLinks();
   $("#menu-btn").addEventListener("click", () => document.body.classList.toggle("sb-open"));
   $("#sb-backdrop").addEventListener("click", () => document.body.classList.remove("sb-open"));
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);

@@ -195,6 +195,28 @@ class SourceTest(ServerHarness, unittest.TestCase):
         self.assertEqual(self.req("POST", "/api/source", {"name": "x.exe", "data": "TVo="})[0], 400)
 
 
+class DocumentsTest(ServerHarness, unittest.TestCase):
+    def test_documents_outside_the_vault_are_listed_but_only_those_can_be_opened(self):
+        folder = os.path.join(self.tmp, "Plantillas")
+        os.makedirs(os.path.join(folder, "Informes"))
+        for rel in ("Informes/Informe semanal.docx", "Guía de estilo.pdf", "~$tmp.docx", ".oculto.txt"):
+            with open(os.path.join(folder, rel), "w") as f:
+                f.write("x")
+        with open(os.path.join(server.VAULT, "documents.md"), "w", encoding="utf-8") as f:
+            f.write("---\ntype: documents\n---\n\n# Documentos\n\n- %s\n- /no/existe\n" % folder)
+        st, res = self.req("GET", "/api/docs")
+        self.assertEqual(st, 200)
+        self.assertEqual(sorted(x["rel"] for x in res["files"]), ["Guía de estilo.pdf", "Informes/Informe semanal.docx"])
+        self.assertEqual(res["missing"], ["/no/existe"])
+        st, res = self.req("GET", "/api/docs?q=" + "informe%20sem")
+        self.assertEqual([x["name"] for x in res["files"]], ["Informe semanal.docx"])
+        outside = os.path.join(self.tmp, "secreto.txt")
+        with open(outside, "w") as f:
+            f.write("x")
+        self.assertEqual(self.req("POST", "/api/open", {"path": outside})[0], 403)
+        self.assertEqual(self.req("POST", "/api/open", {"path": folder + "/../secreto.txt"})[0], 403)
+
+
 class NetTest(unittest.TestCase):
     """Behind proxies Python's urllib can fail where the system curl works."""
 

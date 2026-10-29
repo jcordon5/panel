@@ -24,6 +24,8 @@
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
     .card h2 { font-size: 16px; margin: 0 0 4px; }
     .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 28px; }
+    .shots img { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
     footer { text-align: center; color: var(--muted); font-size: 14px; margin-top: 40px; }
     footer a { color: inherit; }
   </style>
@@ -41,12 +43,18 @@
       <a class="btn" href="https://github.com/jcordon5/panel">GitHub</a>
     </div>
   </header>
-  <img class="shot" src="https://raw.githubusercontent.com/jcordon5/panel/main/docs/img/week.png" alt="Panel: the week board">
+  <img class="shot" src="img/meeting.png" alt="Panel: meeting mode">
   <div class="grid">
     <div class="card"><h2>Plan the week</h2><p>Tasks and meetings in one day plan. Drag things around, bring overdue work to today.</p></div>
     <div class="card"><h2>Meetings that write themselves</h2><p>Recurring meetings, attendees from your people, a focused meeting mode, and your AI turns quick notes into minutes and tasks.</p></div>
-    <div class="card"><h2>A memory you can ask</h2><p>People, procedures and links you pick up at work, connected and searchable — by you or by Claude.</p></div>
+    <div class="card"><h2>A memory you can ask</h2><p>People, procedures, links and documents you pick up at work, connected and searchable — by you or by your AI.</p></div>
+    <div class="card"><h2>Just tell your AI</h2><p>"Remind me…", "we finished…", "prepare the next daily": it files, closes and prepares things in your vault.</p></div>
     <div class="card"><h2>Yours, private</h2><p>A small local program and a folder of Markdown. No accounts, no cloud you have to trust. Encrypted backups.</p></div>
+  </div>
+  <div class="shots">
+    <img src="img/week.png" alt="The week board">
+    <img src="img/people.png" alt="A person's card">
+    <img src="img/knowledge.png" alt="Knowledge">
   </div>
   <footer>Free and open source · <a href="https://github.com/jcordon5/panel">github.com/jcordon5/panel</a></footer>
 </main>

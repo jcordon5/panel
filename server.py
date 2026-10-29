@@ -25,6 +25,7 @@ import mimetypes
 import os
 import re
 import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -375,6 +376,85 @@ def api_source(payload):
     return {"path": rel_of(full), "kind": src["kind"], "title": title}
 
 
+# --------------------------------------------------------------------------- documents outside the vault
+# documents.md (in the vault) lists folders with useful documents (templates, guides…). Panel only lists
+# their file names and opens them with their own app; nothing is copied into the vault.
+
+DOC_SKIP = re.compile(r"^(~\$|\.|desktop\.ini$|thumbs\.db$)", re.I)
+
+
+def doc_folders(missing=None):
+    """Folders listed in documents.md ("- /path" lines). Paths that don't exist go to `missing`."""
+    try:
+        text = decode_text(read_bytes(os.path.join(VAULT, "documents.md")))
+    except OSError:
+        return []
+    body = text.split("\n---", 2)[-1] if text.startswith("---") else text
+    out = []
+    for m in re.finditer(r"^\s*[-*]\s+`?([^`\n]+?)`?\s*$", body, re.M):
+        path = os.path.realpath(os.path.expanduser(m.group(1).strip()))
+        if os.path.isdir(path):
+            if path not in out:
+                out.append(path)
+        elif missing is not None:
+            missing.append(m.group(1).strip())
+    return out
+
+
+def list_documents(folders, query="", limit=200, max_files=20000):
+    words = [w for w in re.split(r"\s+", fold_text(query)) if w]
+    out, seen = [], 0
+    for root in folders:
+        base_depth = root.rstrip(os.sep).count(os.sep)
+        for dp, dn, fn in os.walk(root):
+            dn[:] = sorted(d for d in dn if not DOC_SKIP.match(d))
+            if dp.count(os.sep) - base_depth >= 6:
+                dn[:] = []
+            for n in sorted(fn):
+                if DOC_SKIP.match(n):
+                    continue
+                seen += 1
+                if seen > max_files:
+                    return out
+                full = os.path.join(dp, n)
+                rel = os.path.relpath(full, root)
+                if words and not all(w in fold_text(rel) for w in words):
+                    continue
+                try:
+                    st = os.stat(full)
+                except OSError:
+                    continue
+                out.append({"name": n, "path": full, "rel": rel.replace(os.sep, "/"), "folder": root,
+                            "ext": os.path.splitext(n)[1].lower().lstrip("."), "size": st.st_size, "mtime": int(st.st_mtime * 1000)})
+                if len(out) >= limit:
+                    return out
+    return out
+
+
+def fold_text(s):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFKD", str(s or "")) if not unicodedata.combining(c)).lower()
+
+
+def api_docs(q):
+    missing = []
+    folders = doc_folders(missing)
+    return {"folders": folders, "missing": missing, "files": list_documents(folders, (q.get("q") or [""])[0])}
+
+
+def api_open(payload):
+    """Open a document of a listed folder (or of the vault) with its own app."""
+    path = os.path.realpath(os.path.expanduser(str(payload.get("path") or "")))
+    allowed = doc_folders() + [VAULT]
+    if not os.path.isfile(path) or not any(path.startswith(f.rstrip(os.sep) + os.sep) for f in allowed):
+        raise ApiError("only files in the vault or in the folders of documents.md can be opened", 403)
+    if sys.platform.startswith("win"):
+        os.startfile(path)  # noqa: S606 (the user's own file, opened with its default app)
+    else:
+        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return {"opened": path}
+
+
 def backup_dir(cfg=None):
     cfg = load_config() if cfg is None else cfg
     return os.path.realpath(os.path.expanduser(cfg.get("backup_dir") or os.path.join(ROOT_DIR, "backups")))
@@ -554,6 +634,7 @@ POST_ROUTES = {
     "/api/upload": api_upload,
     "/api/write-bytes": api_write_bytes,
     "/api/source": api_source,
+    "/api/open": api_open,
     "/api/mkdir": api_mkdir,
     "/api/migrate": api_migrate,
 }
@@ -563,6 +644,7 @@ GET_ROUTES = {
     "/api/settings": api_settings,
     "/api/calendar": api_calendar,
     "/api/update/check": api_update_check,
+    "/api/docs": api_docs,
 }
 
 APP_CSP = (

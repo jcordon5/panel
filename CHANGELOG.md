@@ -5,8 +5,8 @@
 Panel becomes a work memory: be in the meeting, let your AI do the paperwork.
 
 - **Meeting mode**: agenda to tick off, quick notes (`!` your task, `@Name` someone else's, `>` decision, `?` question), tasks and
-  decisions in view, and context — what's still open from the previous session and what the attendees owe you. *Finish* plans your
-  tasks in one click each.
+  decisions in view, and context — what's still open from the previous session and what the attendees owe you. Sections of your own
+  templates show up too.
 - **Recurring meetings** (`series/`): daily, weekdays, every N weeks on chosen days, monthly by date or by Nth weekday, with usual
   attendees. Sessions appear on their day and are created when you join, carrying over what was left to discuss.
 - **People** (`people/`): cards with role, team and what to go to them for; their meetings and what they owe you. An attendee picker
@@ -15,6 +15,12 @@ Panel becomes a work memory: be in the meeting, let your AI do the paperwork.
 - **Waiting on others**: a task starting with `@Name` belongs to someone else; shown in Today, on their card and in meetings.
 - **For your AI**: drop or paste transcripts (.vtt, .docx), emails (.eml, Outlook .msg) or chats into `sources/`; Today lists what is
   waiting to be processed. Obvious secrets are hidden before saving.
+- **Documents outside the vault**: list the folders with your templates and guides (`documents.md`, Settings → Vault); Panel lists and
+  opens them (Knowledge → Documents, `file:` links, `location:` in knowledge notes) and your AI finds them with `docs`.
+- **Everyday requests to your AI**: "remind me…", "we finished…" (closes the related task or logs it as done), "I learned…", "X handles…",
+  "prepare the next X" (last session, open items on each side, work done since → the agenda). New commands: `find-task`, `log`, `tasks`,
+  `person-set`, `prepare`, `new-session`, `docs`. *Prepare with AI* in recurring meetings copies the request.
+- A time field you can type any way ("930", "9:30") or pick; Today's side column is shorter; sub-items of a done task are struck through.
 - **Skill v2**: process meetings and sources (summary, tasks, decisions, people, knowledge; sources deleted once used), answer from memory
   with citations, prepare meetings, follow your `routines.md`. New script commands: `pending`, `meeting`, `write`, `mark-processed`,
   `source-done`, `people`, `person`, `knowledge`, `search`, `waiting`, `series`, `add-person`, `add-knowledge`.

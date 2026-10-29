@@ -9,6 +9,7 @@ import {
   autocompletion, startCompletion, search, searchKeymap, highlightSelectionMatches,
 } from "../../vendor/codemirror.js";
 import { livePreview, mdHighlight } from "../livemd.js";
+import { openDoc, fileUrlPath } from "../documents.js";
 import { h, debounce, today, dirname, relativePath, fold, basename, joinPath } from "../util.js";
 import { icon } from "../icons.js";
 import { t } from "../i18n.js";
@@ -272,6 +273,7 @@ export function render(root, r) {
 
   function openLink(href, wiki) {
     if (!href) return;
+    if (!wiki && /^file:/i.test(href)) { openDoc(fileUrlPath(href)); return; }
     if (!wiki && /^[a-z][a-z0-9+.-]*:/i.test(href)) { window.open(href, "_blank", "noopener"); return; }
     const target = resolveLink(wiki ? href : joinPath(dirname(path), decodeURIComponent(href.split("#")[0]))) || resolveLink(href);
     if (!target) { toast(t("editor.linkMissing", { name: href }), { error: true }); return; }

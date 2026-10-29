@@ -297,7 +297,8 @@ button.chip:hover, a.chip:hover { background: var(--active); color: var(--text);
 .task-title .chip-time { vertical-align: 1px; }
 .task-text a { color: var(--accent-text); }
 .task-text .tag { white-space: normal; overflow-wrap: anywhere; }
-.task.done .task-text { color: var(--text-3); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-3) 60%, transparent); }
+.task.done .task-text, .task.done .task-details { color: var(--text-3); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-3) 60%, transparent); }
+.task.done .task-details input { opacity: 0.6; }
 .task.done { background: var(--surface-2); box-shadow: none; }
 .task-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
 .task-details { margin-top: 4px; font-size: 13px; color: var(--text-2); }
@@ -520,7 +521,7 @@ body.is-dragging .task-add { opacity: 0.4; }
 .md li.task-li > input.md-task:first-child, .md li.task-li > p:first-child > input.md-task:first-child { position: absolute; left: -1.45em; top: 0.38em; margin: 0; }
 .md li.task-li.done > p, .md li.task-li.done { color: var(--text-3); }
 .md li.task-li.done > p:first-child, .md li.task-li.done:not(:has(> p)) { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-3) 60%, transparent); }
-.md li.task-li.done li { text-decoration: none; }
+.md li.task-li.done li, .md li.task-li.done p { color: var(--text-3); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-3) 60%, transparent); }
 input.md-task {
   appearance: none; -webkit-appearance: none; width: 16px; height: 16px; border-radius: 5px; border: 1.6px solid var(--border-strong);
   background: var(--surface); cursor: pointer; vertical-align: -2px; margin: 0 6px 0 0; display: inline-grid; place-items: center; transition: all 0.12s;
@@ -1017,3 +1018,24 @@ a.chip-person:hover { background: var(--active); }
 body.drop-capture::after { content: ""; position: fixed; inset: 10px; border: 3px dashed var(--accent); border-radius: 18px; background: color-mix(in srgb, var(--accent) 6%, transparent); pointer-events: none; z-index: 80; }
 .section-ai .rows + .rows { margin-top: 8px; }
 .process-hint { display: flex; align-items: flex-start; gap: 4px; margin: -2px 0 10px; }
+
+/* time field */
+.time-field { position: relative; }
+.time-field .time-input { width: 100%; font-variant-numeric: tabular-nums; }
+.time-field.invalid .time-input { border-color: var(--danger); }
+.time-list { max-height: 220px; right: auto; min-width: 100%; }
+.time-list .picker-opt { font-variant-numeric: tabular-nums; padding: 6px 12px; }
+
+/* documents outside the vault */
+.know-tabs { margin: -6px 0 16px; }
+.doc-folders { display: flex; flex-direction: column; gap: 5px; margin: 6px 0 10px; }
+.doc-folder { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-sm); }
+.doc-folder code { flex: 1; min-width: 0; font-size: 12.5px; word-break: break-all; }
+.inline-input.wide .input { width: auto; flex: 1; min-width: 0; }
+.docs-list .row-title { color: var(--text); text-decoration: none; }
+.docs-list .row-title:hover { color: var(--accent-text); }
+.docs-list .row-meta span + span::before { content: "· "; }
+.empty-inline { display: flex; align-items: center; gap: 10px; padding: 14px; color: var(--text-2); flex-wrap: wrap; }
+.show-more { margin-top: 6px; width: 100%; justify-content: center; color: var(--text-2); }
+.meet-item.done .task-check { background: var(--success); border-color: var(--success); color: #fff; }
+.doc-empty.doc-empty-sm { padding: 8px 12px; border-style: dashed; width: auto; font-size: 13px; margin-bottom: 8px; }

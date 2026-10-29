@@ -105,7 +105,8 @@ export function render(root, r) {
     h("div", { class: "doc-meta" }, chips),
     doc.kind === "person" ? personHeader(doc) : null,
     body.trim() ? h("div", { class: "md", html: renderMarkdown(body, { path, lineOffset: offset }) })
-      : h("button", { class: "doc-empty", type: "button", onclick: () => go(route.edit(path)) }, icon("pencil", 16), t("doc.emptyBody")));
+      : h("button", { class: "doc-empty" + (["person", "series", "knowledge"].includes(doc.kind) ? " doc-empty-sm" : ""), type: "button", onclick: () => go(route.edit(path)) },
+        icon("pencil", 16), ["person", "series", "knowledge"].includes(doc.kind) ? t("doc.addNotes") : t("doc.emptyBody")));
   article.addEventListener("dblclick", (e) => {
     if (e.target.closest("a, input, button, summary")) return;
     editHere(path, e);

@@ -1,6 +1,6 @@
 ---
 name: panel-vault
-description: The user's work memory — a Panel vault of plain Markdown with their week plans, meetings (one-off and recurring), people, knowledge notes (procedures, resources, facts), projects, notes and sources waiting to be processed. Use this skill whenever the user asks about their day, week, tasks, meetings, people, projects or anything they may have noted or learned at work ("how do I…", "who handles…", "where is…", "what did we decide with…"), wants a brief, a recap or a meeting prepared, says "process my meetings" / "process what's pending", wants to add, plan, move or complete tasks, log a meeting, or clean up and migrate their notes — even if they don't say "Panel" or "vault" (e.g. "¿qué tengo mañana?", "buenos días", "¿a quién le pido esto?", "procesa la reunión de hoy").
+description: The user's work memory — a Panel vault of plain Markdown with their week plans, meetings (one-off and recurring), people, knowledge notes (procedures, resources, facts), projects, documents and sources waiting to be processed. Use this skill whenever the user asks about their day, week, tasks, meetings, people, projects or anything they may have noted or learned at work ("how do I…", "who handles…", "where is…", "what did we decide with…"); wants a brief, a recap or the next meeting prepared; says "process my meetings"; or says things to remember or record in passing — "remind me to…", "I did / we finished…", "log what we did", "I learned that…", "X handles…" — even while working on something else and even if they don't say "Panel" or "vault" (e.g. "¿qué tengo mañana?", "buenos días", "apúntame que…", "registra que hemos cerrado…", "prepárame la daily").
 ---
 
 # Panel vault — the user's work memory
@@ -26,6 +26,7 @@ projects/<slug>/README.md      project overview and context
 notes/*.md                     free notes
 sources/*.md                   things captured for you to process (transcripts, emails, chats); delete once used
 routines.md                    the user's routines: "when I say X, do Y"
+documents.md                   folders with useful documents outside the vault (templates, guides…): `docs` lists them
 templates/                     templates for meetings and notes
 ```
 
@@ -46,17 +47,19 @@ Before acting on a short trigger ("buenos días", "cierre del día", "prepara la
 
 ## Common jobs
 
+**Everyday requests** — "remind me…", "I did / log that…", "I learned that…", "X handles…", "we decided…", "prepare the next X", "plan my week" → **[references/workflows.md](references/workflows.md)**. It also states the contract to follow every time you write (verb-first tasks, `#project`, `@Name`, people cards, dates, sources) so everything stays linked.
+
 **Process what's pending** ("procesa mis reuniones", "procesa lo pendiente") → follow **[references/processing.md](references/processing.md)**. In short: `pending`, then for each meeting `meeting REF`, write a summary, complete tasks and decisions, update people and knowledge, `mark-processed`, `source-done` each source used, and report.
 
 **Answer from memory** ("¿cómo se pide…?", "¿quién lleva…?", "¿dónde está…?", "¿qué acordamos con…?") → `search "words"` (try synonyms), `knowledge`, `people`, `person NAME`; open the hits; answer briefly with citations. If the answer was buried in a meeting or source and is reusable, offer to save it as a knowledge note.
 
-**Prepare a meeting** → `meeting REF` (or the series' next session): open items from the previous session, what attendees owe (`waiting NAME`), their cards, the project's README and related knowledge. Add the points to bring up to its agenda (`write REF --section agenda --text "- [ ] …"`) and give the user a 5-line brief.
+**Prepare the next meeting** → `prepare "X"`, `new-session` if needed, then write its agenda ("Done: …", "Pending from Ana: …", "Still open on my side: …") — see workflows.md.
 
 **Daily brief** → `day`, `waiting`, `pending`. The day in order (meetings with time and what's open with their attendees), overdue, what others owe them for more than a few days, and the 2–3 things that matter most.
 
 **Weekly review** → `week`, `meetings --from -7`, `actions --since -7`, `waiting`: done, slipped, decisions, open loops, next week.
 
-**Tasks** → `add-task`, `done`, `move`, `plan` (a meeting's action item on a day without copying it). A task for someone else starts with `@Name`; it is something the user is waiting on.
+**Tasks** → `add-task`, `find-task`, `done`, `log`, `move`, `plan` (a meeting's action item on a day without copying it), `tasks --project`. A task for someone else starts with `@Name`; it is something the user is waiting on.
 
 **Migrate / tidy** the user's own notes into people, knowledge and projects → [references/format.md#migrating-existing-notes](references/format.md#migrating-existing-notes). Propose the plan first, then do it in small steps.
 
@@ -73,16 +76,23 @@ $P pending [--since -14]                       # meetings to process (last 2 wee
 $P meeting REF                                 # a meeting in full: sections, attendees with roles, sources, previous session
 $P people [QUERY] | person NAME | waiting [NAME] | knowledge [QUERY] | series
 $P search "words" [--limit 12]
+$P find-task "words" [--project SLUG] [--all]  # related tasks anywhere (days, inbox, meetings)
+$P tasks [--project SLUG] [--done] [--since D]
+$P prepare "series or meeting" [--date D]      # what's needed to prepare the next session
+$P docs ["words"]                              # documents in the folders of documents.md
 
 $P add-task "Text #project" --date tomorrow    # or --inbox; "@Name text" = waiting on Name
-$P done "part of the text" [--date D] [--reopen]
+$P done "part of the text" | PATH:LINE [--date D] [--reopen]
+$P log "what was done #project" [--date D]    # a checked task: record of work done
 $P move "part of the text" --to D              # or --to-inbox
 $P plan "part of a meeting action" --date D
 $P new-meeting --title T --date D [--time HH:MM] [--project SLUG] [--attendees "A, B"] [--template NAME]
+$P new-session "series" [--date D]             # a recurring meeting's session note (carries over undiscussed items)
 $P write REF --section summary|agenda|notes|tasks|decisions --text "- line\n- line"   # or --text - (stdin)
 $P mark-processed REF
 $P source-done sources/FILE.md
 $P add-person --name "Full Name" [--role R] [--team T] [--org O] [--email E] [--aliases "A, B"] [--ask-for "x, y"] [--notes TEXT]
+$P person-set NAME [--role R] [--team T] [--ask-for "x"] [--alias A] [--note TEXT --source "[[meeting]]"]
 $P add-knowledge --title T --kind howto|resource|fact [--project SLUG] [--people "A, B"] [--source "[[meeting]]"] [--tags "a, b"] --body TEXT
 ```
 

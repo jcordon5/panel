@@ -2,7 +2,7 @@
 
 Plain Markdown with YAML frontmatter. Readable by people, the Panel app, Obsidian and agents. Unknown frontmatter keys are always kept. File names: lowercase, words joined with `-`, no accents (`ana-garcia.md`). Links: `[[file-name]]` without `.md`. All examples below are generic.
 
-Contents: [Weeks and tasks](#weeks-and-tasks) · [Meetings](#meetings) · [Recurring meetings](#recurring-meetings-series) · [People](#people) · [Knowledge](#knowledge) · [Projects](#projects) · [Sources](#sources) · [routines.md](#routinesmd) · [Migrating existing notes](#migrating-existing-notes)
+Contents: [Weeks and tasks](#weeks-and-tasks) · [Meetings](#meetings) · [Recurring meetings](#recurring-meetings-series) · [People](#people) · [Knowledge](#knowledge) · [Documents](#documentsmd) · [Projects](#projects) · [Sources](#sources) · [routines.md](#routinesmd) · [Migrating existing notes](#migrating-existing-notes)
 
 ## Weeks and tasks
 
@@ -152,7 +152,26 @@ tags: [compras]
 ```
 
 - **howto**: numbered steps, prerequisites, who to ask, pitfalls. **resource**: the link(s) and what is there. **fact**: one or two sentences.
+- A resource that is a file can say where it is with `location: "C:\\Templates\\report.docx"` (or a URL): Panel shows an *Open* button. Links like `[report](file:///C:/Templates/report.docx)` in any note open the file too.
 - One topic per note; update an existing note instead of creating a near-duplicate (search first). Add `updated` changes as dated lines if the knowledge changed.
+
+## documents.md
+
+Folders with useful documents that live outside the vault (company templates, guides, shared documentation). One folder per list line; Panel lists their files by name (Knowledge → Documents) and opens them with their own app; `docs "words"` finds them. Nothing is copied into the vault. Edited from Settings → Vault or by hand.
+
+```markdown
+---
+type: documents
+title: Documentos
+---
+
+# Documentos
+
+Carpetas con documentos útiles que viven fuera de la bóveda.
+
+- C:\Users\me\OneDrive - Acme\Plantillas
+- /Users/me/Documents/Guías
+```
 
 ## Projects
 
@@ -196,6 +215,10 @@ Lo que mi IA hace cuando le digo estas frases. Puedo cambiarlas cuando quiera.
 ## «Prepara la reunión de …»
 Lo abierto de la sesión anterior, lo que me deben los asistentes, sus fichas y el contexto
 del proyecto. Añade a «Para comentar» lo que debería sacar yo.
+
+## «Prepara la siguiente …»
+Mira la última sesión, qué quedó abierto de cada uno, qué he hecho desde entonces en el proyecto y qué me deben,
+y escríbelo en «Para comentar» de la próxima sesión («Hecho: …», «Pendiente de …», «Abierto por mi parte: …»).
 
 ## «Cierre del día»
 1. Procesa las reuniones de hoy.

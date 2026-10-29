@@ -163,7 +163,7 @@ function build(state) {
           if (marker) {
             const checked = /x/i.test(doc.sliceString(marker.from, marker.to));
             if (!touches(n.from, marker.to)) widget(new CheckboxWidget(checked, marker.from), n.from, marker.to + spaceAfter(marker.to));
-            if (checked) mark("cm-task-done", marker.to, doc.lineAt(marker.to).to);
+            if (checked) mark("cm-task-done", marker.to, item.to); // the whole item: its details and sub-items too
             return;
           }
           if (item?.parent?.name === "BulletList") {

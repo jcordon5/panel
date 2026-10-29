@@ -204,7 +204,7 @@ export function restoreDialog() {
     result.replaceChildren(
       h("p", { class: "text-ok small" }, icon("check", 14), " ", t("backup.opened", { n: entries.length })),
       h("p", { class: "small" }, t("backup.plan", { add: plan.add.length, replace: plan.replace.length, same: plan.same })),
-      plan.replace.length ? h("p", { class: "muted small" }, t("backup.replaceTrash")) : null,
+      plan.replace.length ? h("p", { class: "muted small" }, t("backup.replaceTrash")) : "",
       h("div", { class: "row-actions" },
         h("button", { class: "btn btn-primary", type: "button", disabled: !(plan.add.length + plan.replace.length), onclick: async () => {
           if (plan.replace.length && !(await confirmDialog(t("backup.restoreConfirm", { n: plan.replace.length }), { ok: t("backup.restore"), danger: false }))) return;
@@ -279,7 +279,7 @@ export function backupPane() {
     const keep = h("input", { class: "input input-auto", type: "number", min: "1", max: "365", value: String(s.backupKeep) });
     auto.replaceChildren(
       h("label", { class: "check-field" }, enabled, h("span", {}, h("strong", {}, t("backup.autoDaily")), " — ", t("backup.autoHint"))),
-      hasKey ? null : h("p", { class: "muted small" }, t("backup.needPassword")),
+      hasKey ? "" : h("p", { class: "muted small" }, t("backup.needPassword")),
       field(t("backup.folder"), dir, t("backup.folderHint")),
       field(t("backup.keep"), keep),
       h("div", { class: "row-actions" },

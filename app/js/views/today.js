@@ -2,14 +2,15 @@
 
 import { h, today, addDays } from "../util.js";
 import { icon } from "../icons.js";
-import { t, fmtDate, cap, relDay, relTime } from "../i18n.js";
-import { vault, dayItems, dayTasks, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue, needsProcessing, waitingTasks } from "../model.js";
+import { t, fmtDate, cap, relDay } from "../i18n.js";
+import { vault, dayItems, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue, needsProcessing, waitingTasks } from "../model.js";
 import { taskList, run, quickAdd, meetingPill, eventPill, seriesPill } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
 import { pageHeader, section, btn, meetingRow, progress } from "./common.js";
 import { newMeetingDialog } from "./dialogs.js";
 import { route } from "../nav.js";
+import { state } from "../state.js";
 import { emptyState } from "../ui.js";
 
 export const title = () => t("nav.today");
@@ -80,48 +81,14 @@ export function render(root) {
     ], { icon: "sparkles", count: toProcess.length + v.sources.length, cls: "section-ai" }));
   }
 
-  // --- aside: upcoming, waiting on others, meeting actions, inbox, recent
-  const upcoming = h("div", { class: "upcoming" });
-  for (let i = 1; i <= 6; i++) {
-    const day = addDays(d, i);
-    const dt = dayTasks(day);
-    const ms = [...meetingsOn(day), ...eventsOn(day)];
-    if (!dt.length && !ms.length) continue;
-    upcoming.append(h("a", { class: "upcoming-day", href: route.week(day) },
-      h("div", { class: "upcoming-head" }, h("span", { class: "upcoming-name" }, relDay(day)), h("span", { class: "upcoming-date" }, fmtDate(day, "short"))),
-      h("div", { class: "upcoming-body" },
-        ms.map((m) => h("div", { class: "upcoming-item" }, icon("users", 12), (m.time ? m.time + " · " : "") + m.title)),
-        dt.length ? h("div", { class: "upcoming-item muted" }, icon("check", 12), t("today.tasksCount", { n: dt.filter((x) => !x.done).length })) : null)));
-  }
-  aside.append(section(t("today.upcoming"), upcoming.childElementCount ? upcoming : h("div", { class: "muted small pad" }, t("today.upcomingEmpty")), { icon: "calendar" }));
-
-  // waiting on others, oldest first
+  // --- aside: short lists (5 each, "see all" expands in place)
   const waiting = waitingTasks().sort((a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")));
-  if (waiting.length) {
-    aside.append(section(t("today.waiting"), taskList(waiting.slice(0, 10), { compact: true, showDate: true, showSource: true }), { icon: "clock", count: waiting.length }));
-  }
-
+  if (waiting.length) aside.append(shortList("waiting", t("today.waiting"), "clock", waiting, { compact: true, showDate: true, showSource: true }));
   // not planned yet: drag them into the day, or use their menu
   const actions = pendingActions(addDays(d, -30));
-  if (actions.length) {
-    aside.append(section(t("today.meetingActions"), taskList(actions.slice(0, 12), { compact: true, showSource: true }), { icon: "list-checks", count: actions.length }));
-  }
-
+  if (actions.length) aside.append(shortList("actions", t("today.meetingActions"), "list-checks", actions, { compact: true, showSource: true }));
   const inboxOpen = v.inbox.items.filter((x) => isTask(x) && !x.done);
-  if (inboxOpen.length) {
-    aside.append(section(t("nav.inbox"), taskList(inboxOpen.slice(0, 8), { compact: true }), {
-      icon: "inbox", count: inboxOpen.length,
-      actions: [h("a", { class: "btn btn-sm btn-ghost", href: route.inbox() }, t("common.seeAll"))],
-    }));
-  }
-
-  const recent = [...v.docs.values()].filter((x) => !["week", "inbox", "template"].includes(x.kind))
-    .sort((a, b) => b.mtime - a.mtime).slice(0, 6);
-  if (recent.length) {
-    aside.append(section(t("today.recent"), h("div", { class: "mini-list" }, recent.map((x) =>
-      h("a", { class: "mini-item", href: route.doc(x.path) }, icon(x.kind === "meeting" ? "users" : x.kind === "project" ? "folder" : "file", 14),
-        h("span", { class: "mini-title" }, x.title), h("span", { class: "mini-aside" }, relTime(x.mtime))))), { icon: "clock" }));
-  }
+  if (inboxOpen.length) aside.append(shortList("inbox", t("nav.inbox"), "inbox", inboxOpen, { compact: true }));
 
   if (!tasks.length && !overdue.length && !meetings.length && !v.docs.size) {
     main.append(emptyState("sparkles", t("today.emptyTitle"), t("today.emptyText")));
@@ -134,4 +101,15 @@ function sourceRow(s) {
     h("div", { class: "row-main" },
       h("div", { class: "row-title" }, s.title),
       h("div", { class: "row-meta" }, h("span", {}, t("cap.kind." + (s.fm.kind || "note"))), s.date ? h("span", {}, relDay(s.date)) : null)));
+}
+
+const expanded = new Set();
+const SHORT = 5;
+
+/** A section that shows the first few items and expands in place. */
+function shortList(key, title, ic, items, opts) {
+  const all = expanded.has(key);
+  const more = items.length > SHORT ? h("button", { class: "btn btn-sm btn-ghost show-more", type: "button", onclick: () => { all ? expanded.delete(key) : expanded.add(key); state.render(); } },
+    all ? t("common.showLess") : t("common.showAll", { n: items.length })) : null;
+  return section(title, [taskList(all ? items : items.slice(0, SHORT), opts), more], { icon: ic, count: items.length });
 }

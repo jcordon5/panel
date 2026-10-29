@@ -34,12 +34,14 @@ Panel is built so you can **be in the meeting** and then **do the work**, not or
 2. **Join the meeting in meeting mode**: what you wanted to bring up on the left; at the bottom you type a line and press Enter.
    `!` makes it your task, `@Ana` something you are waiting on from Ana, `>` a decision, `?` an open question.
    Is there a transcript? Drop it on top.
-3. **When it ends**, plan your tasks across the week in one click each.
-4. **Your AI processes it** (Claude or another agent, with the included [skill](skills/panel-vault)): "process my meetings" and it
+3. **Your AI processes it** (Claude or another agent, with the included [skill](skills/panel-vault)): "process my meetings" and it
    writes the summary, adds the tasks and decisions you missed, updates people's cards and keeps as knowledge what is worth
    remembering. The sources it used are deleted: no junk piles up.
-5. **Ask your memory**: "how do we register a new supplier?", "what does Luis owe me?", "prepare Thursday's meeting". The answer
-   comes from your notes, with its source.
+4. **Talk to it like a colleague**: "remind me to ask for the quote on project Alpha", "log that we closed the migration" (it finds the
+   related task and closes it, or records it as done), "I learned that quotes are approved before the 20th", "Ana handles invoices",
+   "prepare the next daily" (it looks at the last one, what's pending on each side and what you've done since, and fills in "To discuss").
+5. **Ask your memory**: "how do we register a new supplier?", "what does Luis owe me?", "where's the report template?". The answer
+   comes from your notes and documents, with its source.
 
 Everything is plain `.md` files in a folder of yours. You can read them, Panel shows them with structure, and your AI reads and edits them.
 
@@ -47,12 +49,12 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
 
 <table>
 <tr>
+<td><img src="docs/img/meeting.png" alt="Meeting mode"></td>
 <td><img src="docs/img/today.png" alt="Today"></td>
-<td><img src="docs/img/meeting.png" alt="Meeting"></td>
 </tr>
 <tr>
-<td><img src="docs/img/editor.png" alt="Editor"></td>
-<td><img src="docs/img/calendar.png" alt="Calendar"></td>
+<td><img src="docs/img/people.png" alt="A person's card"></td>
+<td><img src="docs/img/knowledge.png" alt="Knowledge"></td>
 </tr>
 </table>
 
@@ -65,6 +67,8 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
   appears in your meetings without a card and creates it in one click. Attendee picker with autocomplete.
 - **Knowledge** — small notes of *procedures* (how something is done), *resources* (where something is) and *facts* (worth
   remembering), linked to projects and people.
+- **Documents outside the vault** — point Panel to the folders with your templates, guides or documentation (e.g. in OneDrive): it lists
+  them and opens them with their app, and your AI knows they exist. Nothing is copied.
 - **For your AI** — drop or paste transcripts (.vtt, .docx), emails (.eml, or .msg dragged out of Outlook) or chats; Today shows what is
   waiting to be processed.
 - **Waiting on others** — any task starting with `@Name`; it shows in Today, on the person's card and in their meetings.

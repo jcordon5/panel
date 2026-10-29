@@ -487,3 +487,9 @@ test("series: sessions are created on demand with what was left to discuss", asy
   assert.ok(!/tema hecho/.test(disk.get(s2)));
   assert.deepEqual(model.sessionsOf(model.vault().series[0]).map((m) => m.date).sort(), ["2026-09-28", "2026-09-29"]);
 });
+
+test("time field: any way of typing a time", async () => {
+  const { normTime } = await import("../app/js/picker.js");
+  assert.deepEqual(["930", "9:30", "9.30", "9h30", "9", "09:5", "2145", "", "25:00", "abc"].map(normTime),
+    ["09:30", "09:30", "09:30", "09:30", "09:00", "09:50", "21:45", "", null, null]);
+});

@@ -15,10 +15,15 @@ import { section, meetingRow, btn, projectChip, describeRule } from "./common.js
 import { newMeetingDialog, seriesDialog, KIND_ICON } from "./dialogs.js";
 import { personChip, avatar } from "../picker.js";
 import { knowledgeCard } from "./knowledge.js";
-import { errorToast } from "../ui.js";
+import { errorToast, toast } from "../ui.js";
 import * as A from "../actions.js";
 
 const list = (v) => (Array.isArray(v) ? v : typeof v === "string" && v.trim() ? v.split(",").map((x) => x.trim()) : []);
+
+/** Copy a request for the user's AI agent (Panel never talks to an AI by itself). */
+export function askAi(text) {
+  navigator.clipboard?.writeText(text).then(() => toast(t("ai.copied", { text }), { duration: 6000 }), () => toast(text, { duration: 8000 }));
+}
 
 /** Open (creating it if needed) the session of a series on a date, in meeting mode. */
 export async function openSession(sd, date) {
@@ -53,6 +58,9 @@ export function entityChips(doc) {
     const kind = KNOWLEDGE_KINDS.includes(doc.fm.kind) ? doc.fm.kind : "fact";
     chips.push(h("span", { class: "chip know-kind", "data-kind": kind }, icon(KIND_ICON[kind], 12), t("know.kind." + kind)));
     for (const n of list(doc.fm.people)) chips.push(personChip(n));
+    const loc = typeof doc.fm.location === "string" ? doc.fm.location.trim() : "";
+    if (loc) chips.push(/^https?:\/\//.test(loc) ? h("a", { class: "chip chip-series", href: loc, target: "_blank", rel: "noopener" }, icon("external", 12), t("docs.openLink"))
+      : h("a", { class: "chip chip-series", href: "#", "data-open-file": loc, title: loc }, icon("file", 12), t("docs.openDoc", { name: loc.split(/[\\/]/).pop() })));
     const src = typeof doc.fm.source === "string" ? doc.fm.source.trim() : "";
     if (src) {
       const target = resolveLink(src.replace(/^\[\[|\]\]$/g, "").split("|")[0]);
@@ -72,6 +80,7 @@ export function entityActions(doc) {
     const tdy = today();
     const next = occursOn(doc.rule, tdy) ? tdy : nextOccurrence(doc.rule, tdy);
     return [
+      btn(t("ai.prepare"), "sparkles", () => askAi(t("ai.preparePrompt", { title: doc.title })), "btn-ghost"),
       btn(t("series.edit"), "settings", () => seriesDialog(doc)),
       next ? btn(next === tdy ? t("series.openToday") : t("series.openNext", { date: relDay(next) }), "users", () => openSession(doc, next), "btn-primary") : null,
     ].filter(Boolean);

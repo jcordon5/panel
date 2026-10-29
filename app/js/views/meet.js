@@ -7,9 +7,9 @@
 //   right   tasks and decisions, filled as you type
 //
 // Everything is written straight into the meeting's Markdown file, in normal sections that
-// also read well in any editor. "Finish" lets you plan your tasks in one go.
+// also read well in any editor. Sections of your own template are shown too.
 
-import { h, today, addDays, mondayOf } from "../util.js";
+import { h, today } from "../util.js";
 import { icon } from "../icons.js";
 import { t, relDay, fmtDate, cap } from "../i18n.js";
 import { vault, attendeesOf, seriesOf, sessionsOf, waitingTasks, BLOCK_ID_RE } from "../model.js";
@@ -17,13 +17,14 @@ import { meetingSections, quickNote } from "../meeting.js";
 import { renderInline } from "../markdown.js";
 import { content } from "../store.js";
 import { state, setBusy } from "../state.js";
-import { route, go } from "../nav.js";
-import { run, taskList, pickDate } from "../tasks.js";
+import { route } from "../nav.js";
+import { run, taskList } from "../tasks.js";
 import { projectChip } from "./common.js";
 import { personChip, peoplePicker } from "../picker.js";
-import { modal, emptyState, toast } from "../ui.js";
+import { emptyState } from "../ui.js";
 import * as A from "../actions.js";
 import { captureDialog } from "./capture.js";
+import { askAi } from "./entity.js";
 import { sourcesOf } from "../model.js";
 
 export const title = (r) => vault().docs.get(r.arg)?.title || t("mtg.mode");
@@ -36,8 +37,12 @@ const ITEM = /^(\s*)[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/;
 
 /** Items of every section of one kind: [{ line, raw, text, done?, indent }] */
 function itemsOf(lines, secs, kind) {
+  return secs.filter((s) => s.kind === kind).flatMap((sec) => sectionItems(lines, sec));
+}
+
+function sectionItems(lines, sec) {
   const out = [];
-  for (const sec of secs.filter((s) => s.kind === kind)) {
+  {
     for (let i = sec.start; i < sec.end; i++) {
       const l = lines[i];
       if (!l.trim() || /^#{1,6}\s/.test(l)) continue;
@@ -69,9 +74,9 @@ export function render(root, r) {
           doc.project ? projectChip(doc.project) : null),
         h("h1", { class: "page-title" }, doc.title)),
       h("div", { class: "page-actions" },
+        sd ? h("button", { class: "btn btn-ghost", type: "button", title: t("ai.prepareHint"), onclick: () => askAi(t("ai.preparePrompt", { title: sd.title })) }, icon("sparkles", 15), h("span", {}, t("ai.prepare"))) : null,
         h("button", { class: "btn btn-ghost", type: "button", title: t("cap.forMeetingHint"), onclick: () => captureDialog({ meeting: path }) }, icon("upload", 15), h("span", {}, t("cap.forMeeting"))),
-        h("a", { class: "btn btn-ghost", href: route.doc(path), title: t("mtg.openNote") }, icon("file", 15), h("span", {}, t("mtg.openNote"))),
-        h("button", { class: "btn btn-primary", type: "button", onclick: () => finishDialog(path) }, icon("check", 15), h("span", {}, t("mtg.finish"))))),
+        h("a", { class: "btn", href: route.doc(path), title: t("mtg.openNote") }, icon("file", 15), h("span", {}, t("mtg.openNote"))))),
     h("div", { class: "meet-people" },
       picker ? picker.el : people.map((a) => personChip(a.name, { person: a.person })),
       h("button", { class: "btn btn-sm btn-ghost", type: "button", onclick: () => { editingPeople = !editingPeople; state.render(); } },
@@ -100,7 +105,12 @@ export function render(root, r) {
     colHead("check", t("mtg.tasks"), tasks.filter((x) => x.check && !x.done).length),
     h("div", { class: "meet-items" }, tasks.length ? tasks.map((it) => itemRow(path, it, "tasks")) : h("div", { class: "meet-empty" }, t("mtg.tasksEmpty"))),
     colHead("arrow-right", t("mtg.decisions"), decisions.length),
-    h("div", { class: "meet-items" }, decisions.length ? decisions.map((it) => itemRow(path, it, "decisions")) : h("div", { class: "meet-empty" }, t("mtg.decisionsEmpty"))));
+    h("div", { class: "meet-items" }, decisions.length ? decisions.map((it) => itemRow(path, it, "decisions")) : h("div", { class: "meet-empty" }, t("mtg.decisionsEmpty"))),
+    // sections of your own template that aren't one of the above ("Risks", "Next meeting"…)
+    secs.filter((x) => !x.kind && x.level === 2 && !secs.some((k) => k.kind && k.head < x.head && x.head < k.end)).flatMap((x) => {
+      const items = sectionItems(lines, x);
+      return [colHead("note", x.title, 0), h("div", { class: "meet-items" }, items.length ? items.map((it) => itemRow(path, it, "other")) : h("div", { class: "meet-empty" }, t("mtg.otherEmpty")))];
+    }));
 
   root.append(h("div", { class: "meet-grid" }, left, middle, right));
   if (scrollNotes) { scrollNotes = false; requestAnimationFrame(() => { noteList.scrollTop = noteList.scrollHeight; }); }
@@ -223,40 +233,4 @@ function context(doc, sd, people) {
   const owed = people.filter((a) => a.person).flatMap((a) => waitingTasks(a.person)).filter((x) => x.path !== doc.path && !shown.has(x));
   if (owed.length) parts.push(h("div", { class: "meet-context-block" }, h("div", { class: "meet-context-title" }, t("mtg.owedByAttendees")), taskList(owed, { compact: true, showSource: true })));
   return parts.length ? h("div", { class: "meet-context" }, parts) : null;
-}
-
-/* ------------------------------------------------------------ finish: plan the tasks */
-
-function finishDialog(path) {
-  const body = h("div", { class: "finish" });
-  const paint = () => {
-    const doc = vault().docs.get(path);
-    const mine = vault().docTasks.filter((x) => x.path === path && !x.done && !x.who);
-    const theirs = vault().docTasks.filter((x) => x.path === path && !x.done && x.who);
-    const tdy = today();
-    const plan = (task, target) => run(A.planAction(task, target)).then(paint);
-    body.replaceChildren(
-      mine.length ? h("p", { class: "muted small" }, t("mtg.finishHelp")) : h("p", { class: "muted" }, t("mtg.finishNoTasks")),
-      h("div", { class: "finish-list" }, mine.map((task) => {
-        const placed = task.planned && task.planned[0];
-        return h("div", { class: "finish-row" + (placed ? " planned" : "") },
-          h("div", { class: "finish-text", html: renderInline(task.text) }),
-          placed ? h("span", { class: "chip chip-ok" }, icon("check", 12), placed.kind === "day" ? cap(relDay(placed.date)) : t("nav.inbox"))
-            : h("div", { class: "finish-btns" },
-              h("button", { class: "btn btn-sm", type: "button", onclick: () => plan(task, { kind: "day", date: tdy }) }, t("date.today")),
-              h("button", { class: "btn btn-sm", type: "button", onclick: () => plan(task, { kind: "day", date: addDays(tdy, 1) }) }, t("date.tomorrow")),
-              h("button", { class: "btn btn-sm", type: "button", onclick: () => plan(task, { kind: "day", date: addDays(mondayOf(tdy), 7) }) }, t("date.nextWeek")),
-              h("button", { class: "btn btn-sm btn-ghost", type: "button", title: t("task.pickDate"), onclick: () => pickDate(tdy, (d) => plan(task, { kind: "day", date: d })) }, icon("calendar", 14))));
-      })),
-      theirs.length ? h("div", { class: "finish-theirs" }, h("div", { class: "meet-context-title" }, t("mtg.waitingAfter")),
-        theirs.map((x) => h("div", { class: "finish-row" }, personChip(x.who), h("div", { class: "finish-text", html: renderInline(x.text.replace(/^@(\[\[[^\]]+\]\]|\S+)\s*[:,-]?\s*/, "")) })))) : null,
-      doc && !doc.fm.processed ? h("p", { class: "finish-ai small" }, icon("sparkles", 14), " ", t("mtg.askAi")) : null);
-  };
-  paint();
-  modal({
-    title: t("mtg.finishTitle"),
-    body,
-    wide: true,
-    actions: [{ label: t("mtg.backToMeeting") }, { label: t("common.done"), primary: true, onClick: () => { toast(t("mtg.finished")); go(route.doc(path)); } }],
-  });
 }

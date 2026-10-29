@@ -201,6 +201,10 @@ Lo que mi IA hace cuando le digo estas frases. Cámbialas o añade las tuyas cua
 Lo abierto de la sesión anterior, lo que me deben los asistentes, sus fichas y el contexto
 del proyecto. Añade a «Para comentar» lo que debería sacar yo.
 
+## «Prepara la siguiente …»
+Mira la última sesión, qué quedó abierto de cada uno, qué he hecho desde entonces en el proyecto y qué me deben,
+y escríbelo en «Para comentar» de la próxima sesión («Hecho: …», «Pendiente de …», «Abierto por mi parte: …»).
+
 ## «Cierre del día»
 1. Procesa las reuniones de hoy.
 2. Lista lo que quedó sin hacer y propón a qué día moverlo (sin moverlo hasta que lo diga).
@@ -221,6 +225,10 @@ What my AI does when I say these phrases. Change them or add your own whenever y
 ## "Prepare the meeting with …"
 What's open from the previous session, what the attendees owe me, their cards and the
 project's context. Add to "To discuss" what I should bring up.
+
+## "Prepare the next …"
+Look at the last session, what's still open on each side, what I've done on the project since and what I'm owed,
+and write it into "To discuss" of the next session ("Done: …", "Pending from …", "Still open on my side: …").
 
 ## "End of day"
 1. Process today's meetings.
