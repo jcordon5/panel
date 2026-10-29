@@ -4,6 +4,8 @@
 import { store } from "./store.js";
 import { parseDoc } from "./frontmatter.js";
 import { basename, dirname, stripExt, fold, weekStart, addDays, isISODate, mondayOf } from "./util.js";
+import { agendaRanges, assigneeOf } from "./meeting.js";
+import { seriesRule, occursOn } from "./series.js";
 
 export const P = {
   inbox: "inbox.md",
@@ -13,7 +15,14 @@ export const P = {
   notes: "notes",
   templates: "templates",
   assets: "assets",
+  people: "people",
+  knowledge: "knowledge",
+  series: "series",
+  sources: "sources",
 };
+
+/** Kinds of knowledge notes: a procedure (how to do something), a resource (where something is), a fact. */
+export const KNOWLEDGE_KINDS = ["howto", "resource", "fact"];
 
 export const PROJECT_COLORS = ["indigo", "blue", "teal", "green", "amber", "orange", "rose", "violet", "slate"];
 
@@ -56,6 +65,11 @@ export function kindOf(path, fm) {
   if (path === P.inbox || fm.type === "inbox") return "inbox";
   if (path.startsWith(P.templates + "/")) return "template";
   if (path.startsWith(P.weeks + "/") || fm.type === "week") return "week";
+  for (const k of ["person", "knowledge", "series", "source"]) if (fm.type === k) return k;
+  if (path.startsWith(P.people + "/")) return "person";
+  if (path.startsWith(P.knowledge + "/")) return "knowledge";
+  if (path.startsWith(P.series + "/")) return "series";
+  if (path.startsWith(P.sources + "/")) return "source";
   const pm = /^projects\/([^/]+)\/(.+)$/.exec(path);
   if (pm) {
     if (/^readme\.md$/i.test(pm[2]) || fm.type === "project") return "project";
@@ -136,7 +150,8 @@ export function parseTaskText(text) {
   if (tm) { time = tm[1].replace(".", ":"); timeEnd = tm[2] ? tm[2].replace(".", ":") : null; text = text.slice(tm[0].length); }
   const tags = [];
   text.replace(TAG_RE, (_, _p, tag) => { tags.push(tag); return _; });
-  return { time, timeEnd, text, tags, blockId, source };
+  const who = assigneeOf(text); // "@Name ..." = waiting on someone else
+  return { time, timeEnd, text, tags, blockId, source, who: who ? who.name : null };
 }
 
 function makeTask(lines, i, end, extra) {
@@ -323,9 +338,12 @@ function build() {
   // tasks living inside meetings / notes / project docs
   const docTasks = [];
   for (const doc of docs.values()) {
-    if (!["meeting", "note", "project", "doc"].includes(doc.kind)) continue;
+    if (!["meeting", "note", "project", "doc", "person", "knowledge"].includes(doc.kind)) continue;
     const lines = store.files.get(doc.path).content.split("\n");
+    // in a meeting, the checklist of things to bring up is an agenda, not action items
+    const agenda = doc.kind === "meeting" ? agendaRanges(lines, doc.bodyLine) : [];
     for (const tk of allTasks(lines, doc.bodyLine, { path: doc.path, kind: "doc", docKind: doc.kind, date: doc.kind === "meeting" ? doc.date : null, project: doc.project })) {
+      if (agenda.some(([a, b]) => tk.line >= a && tk.line < b)) continue;
       docTasks.push(tk);
     }
   }
@@ -348,11 +366,28 @@ function build() {
     tk.project = hit || null;
   }
 
+  // people: by file name, title and aliases (accent/case-insensitive); unique first names too
+  const people = [...docs.values()].filter((d) => d.kind === "person").sort((a, b) => a.title.localeCompare(b.title));
+  const personIndex = new Map();
+  const firstNames = new Map();
+  for (const d of people) {
+    for (const k of [stripExt(d.name), d.title, ...toList(d.fm.aliases), typeof d.fm.email === "string" ? d.fm.email : ""]) if (k) personIndex.set(fold(k), d);
+    const first = fold(d.title.split(/\s+/)[0]);
+    firstNames.set(first, firstNames.has(first) ? null : d);
+  }
+  for (const [k, d] of firstNames) if (d && !personIndex.has(k)) personIndex.set(k, d);
+  for (const tk of [...tasks, ...docTasks]) tk.assignee = tk.who ? personIndex.get(fold(tk.who.replace(/^\[\[|\]\]$/g, ""))) || null : null;
+
+  const knowledge = [...docs.values()].filter((d) => d.kind === "knowledge").sort((a, b) => b.mtime - a.mtime);
+  const series = [...docs.values()].filter((d) => d.kind === "series").sort((a, b) => a.title.localeCompare(b.title));
+  for (const sd of series) sd.rule = seriesRule(sd.fm, typeof sd.fm.created === "string" ? sd.fm.created.slice(0, 10) : null);
+  const sources = [...docs.values()].filter((d) => d.kind === "source").sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
   const meetings = [...docs.values()].filter((d) => d.kind === "meeting")
     .sort((a, b) => ((b.date || "") + (b.time || "")).localeCompare((a.date || "") + (a.time || "")) || a.title.localeCompare(b.title));
   const notes = [...docs.values()].filter((d) => d.kind === "note");
 
-  return { docs, projects, days, inbox, tasks, docTasks, meetings, notes, weekFiles, byName, byTitle };
+  return { docs, projects, days, inbox, tasks, docTasks, meetings, notes, weekFiles, byName, byTitle, people, personIndex, knowledge, series, sources };
 }
 
 function resolveIn(target, docs, byName, byTitle) {
@@ -438,4 +473,57 @@ export function backlinks(path) {
     if (hit) out.push(d);
   }
   return out;
+}
+
+/* ------------------------------------------------------------ people, series, knowledge */
+
+const unlink = (s) => String(s || "").trim().replace(/^@/, "").replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+
+/** The person a name refers to ("Ana", "ana-garcia", "[[Ana García]]", an alias or e-mail), or null. */
+export function findPerson(name) {
+  const k = fold(unlink(name));
+  return k ? vault().personIndex.get(k) || null : null;
+}
+
+/** Attendees of a meeting or series: [{ name, person }] */
+export function attendeesOf(doc) {
+  return (doc ? doc.attendees : []).map((a) => ({ name: unlink(a), person: findPerson(a) })).filter((a) => a.name);
+}
+
+/** Meetings someone attended, newest first. */
+export function meetingsWith(person) {
+  return vault().meetings.filter((m) => attendeesOf(m).some((a) => a.person === person));
+}
+
+/** Open tasks waiting on someone else ("- [ ] @Name …"); of one person when given. */
+export function waitingTasks(person) {
+  const v = vault();
+  return [...v.tasks, ...v.docTasks].filter((tk) => !tk.done && tk.who && (!person || tk.assignee === person));
+}
+
+export const seriesSlug = (sd) => stripExt(sd.name);
+export const seriesBySlug = (slug) => vault().series.find((s) => seriesSlug(s) === slug || s.path === slug) || null;
+
+/** The series a meeting belongs to (its `series:` field). */
+export function seriesOf(meeting) {
+  const s = meeting && meeting.fm.series;
+  return typeof s === "string" && s ? seriesBySlug(unlink(s)) : null;
+}
+
+/** Sessions (meeting notes) of a series, newest first. */
+export function sessionsOf(sd) {
+  const slug = seriesSlug(sd);
+  return vault().meetings.filter((m) => typeof m.fm.series === "string" && unlink(m.fm.series) === slug);
+}
+
+/** Series with a session on `date` whose note does not exist yet. */
+export function seriesDue(date) {
+  return vault().series.filter((sd) => sd.fm.status !== "paused" && occursOn(sd.rule, date) && !sessionsOf(sd).some((m) => m.date === date))
+    .sort((a, b) => String(a.fm.time || "99").localeCompare(String(b.fm.time || "99")));
+}
+
+/** A meeting that already happened, has notes and hasn't been processed into minutes/tasks yet. */
+export function needsProcessing(m, today) {
+  if (m.kind !== "meeting" || m.fm.processed || !m.date || m.date > today) return false;
+  return /\S/.test(m.body.replace(/^#.*$/gm, "").replace(/^\s*[-*]\s*(\[[ xX]\]\s*)?$/gm, ""));
 }

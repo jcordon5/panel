@@ -7,6 +7,8 @@ import { P, vault, weekPath, TASK_RE, BLOCK_ID_RE, resolveLink, containerItems }
 import { split, join, findTask, toggleLine, extractBlock, buildBlock, touch, locate, insertInto, weekTemplate, inboxTemplate, ensureDay } from "./ops.js";
 import { t, fmtDate, weekdayName } from "./i18n.js";
 import { slugify, today, mondayOf, weekId, dirname, basename, stripExt } from "./util.js";
+import { findSection, meetingSections, SECTION_ORDER } from "./meeting.js";
+import { ruleToFm } from "./series.js";
 
 export class TaskGone extends Error {}
 
@@ -240,7 +242,7 @@ export async function createTemplate(kind, label) {
 export function builtinMeetingTemplate() {
   return ["---", "type: meeting", "title: {{title}}", "date: {{date}}", "time: {{time}}", "project: {{project}}",
     "attendees: [{{attendees}}]", "created: {{today}}", "updated: {{today}}", "---", "", "# {{title}}", "",
-    `## ${t("tpl.notes")}`, "", "", `## ${t("tpl.decisions")}`, "", "", `## ${t("tpl.next")}`, "", ""].join("\n");
+    ...["agenda", "notes", "tasks", "decisions"].flatMap((k) => [`## ${t("mtg." + k)}`, "", ""])].join("\n");
 }
 export function builtinNoteTemplate() {
   return ["---", "type: note", "title: {{title}}", "created: {{today}}", "updated: {{today}}", "---", "", "# {{title}}", "", ""].join("\n");
@@ -311,7 +313,7 @@ export async function dropMeeting(meetingPath, refItem, target, index) {
   return true;
 }
 
-export async function createMeeting({ title, date, time, project, attendees, template: tplPath, calendarId, location }) {
+export async function createMeeting({ title, date, time, project, attendees, template: tplPath, calendarId, location, series, agenda }) {
   title = title.trim() || t("meeting.untitled");
   date = date || today();
   const dir = project ? `${P.projects}/${project}/meetings` : P.meetings;
@@ -321,7 +323,8 @@ export async function createMeeting({ title, date, time, project, attendees, tem
     attendees: (attendees || []).join(", "), weekday: weekdayName(date), dateLong: fmtDate(date, "long"),
   }, { title, date, time: time || null, project: project || null, attendees: attendees || [] });
   let text2 = text;
-  if (calendarId || location) text2 = setFm(text, { location: location || null, calendar_id: calendarId || null });
+  if (calendarId || location || series) text2 = setFm(text, { location: location || null, calendar_id: calendarId || null, series: series || null });
+  if (agenda && agenda.length) text2 = sectionInsert(text2, "agenda", agenda.map((a) => `- [ ] ${a}`));
   await transaction(t("undo.create"), async () => {
     await create(path, text2);
     await placeMeeting(path, date, time || null);
@@ -427,3 +430,118 @@ export async function writeFileRaw(path, text, label) {
 }
 
 export { dirname };
+
+/* ------------------------------------------------------------ meeting sections */
+
+/** Add "## <section>" where it belongs (agenda, notes, tasks, decisions order). */
+function addSection(lines, kind, bodyLine) {
+  const secs = meetingSections(lines, bodyLine).filter((x) => x.kind);
+  const after = secs.find((x) => SECTION_ORDER.indexOf(x.kind) > SECTION_ORDER.indexOf(kind));
+  const at = after ? after.head : lines.length;
+  const block = [`## ${t("mtg." + kind)}`, ""];
+  const before = at > 0 && lines[at - 1].trim() ? [""] : [];
+  const tail = after ? [""] : [];
+  return [...lines.slice(0, at), ...before, ...block, ...tail, ...lines.slice(at)];
+}
+
+/** Text with new lines appended to a section of a meeting (created if missing). */
+export function sectionInsert(text, kind, newLines) {
+  const { bodyLine } = parseDoc(text);
+  let lines = split(text);
+  while (lines.length > 1 && lines[lines.length - 1] === "" && lines[lines.length - 2] === "") lines.pop();
+  let sec = findSection(lines, kind, bodyLine);
+  if (!sec) { lines = addSection(lines, kind, bodyLine); sec = findSection(lines, kind, bodyLine); }
+  let at = sec.head;
+  for (let i = sec.start; i < sec.end; i++) if (lines[i].trim()) at = i;
+  let insert = newLines;
+  if (at === sec.head) { // empty section: "## Heading", blank line, items
+    if (lines[at + 1] === "" && at + 1 < sec.end) at++;
+    else insert = ["", ...insert];
+  }
+  const out = [...lines.slice(0, at + 1), ...insert, ...lines.slice(at + 1)];
+  const next = at + 1 + insert.length;
+  if (next < out.length && /^#{1,6}\s/.test(out[next])) out.splice(next, 0, "");
+  return out.join("\n");
+}
+
+/** Add lines to a section of a meeting note. */
+export async function addToSection(path, kind, newLines) {
+  await transaction(t("undo.add"), () => mutate(path, (cur) => touch(join(split(sectionInsert(cur, kind, newLines))))));
+}
+
+/** Replace one line (found by its text near `line`); an empty text removes it. */
+export async function setLine(path, line, raw, text) {
+  await transaction(text ? t("undo.edit") : t("undo.delete"), () => mutate(path, (cur) => {
+    const lines = split(cur);
+    const i = findTask(lines, line, raw);
+    if (i < 0) throw new TaskGone();
+    if (text) lines[i] = text; else lines.splice(i, 1);
+    return touch(join(lines));
+  }));
+}
+
+/* ------------------------------------------------------------ people, knowledge, series */
+
+function entityText(type, title, fm, body = "") {
+  return setFm(`---\ntype: ${type}\n---\n\n# ${title}\n\n${body}`, { title, ...fm, created: today(), updated: today() });
+}
+
+/** people/<name>.md — returns its path. */
+export async function createPerson({ name, role, team, org, email }) {
+  name = String(name || "").trim();
+  if (!name) throw new Error(t("person.nameMissing"));
+  const path = uniquePath(P.people, slugify(name, 50));
+  await transaction(t("undo.create"), () => create(path, entityText("person", name, {
+    role: role || "", team: team || "", org: org || "", email: email || "", aliases: [], ask_for: [],
+  })));
+  return path;
+}
+
+const KNOWLEDGE_BODY = { howto: () => "1. \n", resource: () => "- \n", fact: () => "" };
+
+/** knowledge/<title>.md — a procedure, a resource or a fact. */
+export async function createKnowledge({ title, kind = "howto", project, body }) {
+  title = String(title || "").trim() || t("know.untitled");
+  const path = uniquePath(P.knowledge, slugify(title, 60));
+  await transaction(t("undo.create"), () => create(path, entityText("knowledge", title, {
+    kind, project: project || null, people: [], source: "", tags: [],
+  }, body || (KNOWLEDGE_BODY[kind] || KNOWLEDGE_BODY.fact)())));
+  return path;
+}
+
+/** series/<title>.md — a recurring meeting. rule: { repeat, days, interval, nth, start, until } */
+export async function createSeries({ title, rule, time, attendees, project, template: tpl }) {
+  title = String(title || "").trim() || t("meeting.untitled");
+  const path = uniquePath(P.series, slugify(title, 50));
+  await transaction(t("undo.create"), () => create(path, entityText("series", title, {
+    ...ruleToFm(rule), time: time || null, attendees: attendees || [], project: project || null, template: tpl || null,
+  }, t("series.bodyHint") + "\n")));
+  return path;
+}
+
+/**
+ * Create the note of a series' session on `date`: same title, time, attendees, project and template,
+ * and what was left to bring up (unticked "to discuss" items) in the previous session.
+ */
+export async function createSession(sd, date) {
+  const slug = stripExt(basename(sd.path));
+  const prev = vault().meetings.filter((m) => m.fm.series === slug && m.date && m.date < date).sort((a, b) => b.date.localeCompare(a.date))[0];
+  const agenda = [];
+  if (prev) {
+    const lines = split(content(prev.path));
+    for (const sec of meetingSections(lines, prev.bodyLine).filter((x) => x.kind === "agenda")) {
+      for (let i = sec.start; i < sec.end; i++) { const m = /^\s*[-*+]\s+\[ \]\s+(.+)$/.exec(lines[i]); if (m) agenda.push(m[1]); }
+    }
+  }
+  const tpl = typeof sd.fm.template === "string" && sd.fm.template ? (sd.fm.template.endsWith(".md") ? sd.fm.template : `${P.templates}/${sd.fm.template}.md`) : undefined;
+  return createMeeting({
+    title: sd.title, date, time: typeof sd.fm.time === "string" ? sd.fm.time : "", project: typeof sd.fm.project === "string" ? sd.fm.project : "",
+    attendees: sd.attendees, template: tpl, series: slug, agenda,
+  });
+}
+
+/** Skip one session of a series (adds the date to `skip`). */
+export async function skipSession(sd, date) {
+  const skip = Array.isArray(sd.fm.skip) ? sd.fm.skip.map(String) : typeof sd.fm.skip === "string" && sd.fm.skip ? sd.fm.skip.split(",").map((x) => x.trim()) : [];
+  await transaction(t("undo.edit"), () => mutate(sd.path, (cur) => touch(setFm(cur, { skip: [...new Set([...skip, date])].sort() }))));
+}

@@ -404,3 +404,86 @@ test("backup: an encrypted backup restores into the vault (new + replaced files,
   assert.equal(disk.get("notes/b.md"), "# B\n");
   assert.ok(![...disk.keys()].some((k) => k.includes("evil") || k.endsWith(".exe")));
 });
+
+/* ------------------------------------------------------------ memory: people, series, meetings */
+
+test("meeting: sections by heading (any language, custom names) and quick notes", async () => {
+  const M = await import("../app/js/meeting.js");
+  assert.equal(M.sectionKind("Para comentar"), "agenda");
+  assert.equal(M.sectionKind("**Tareas para mí**"), "tasks");
+  assert.equal(M.sectionKind("Next steps"), "tasks");
+  assert.equal(M.sectionKind("Acuerdos"), "decisions");
+  assert.equal(M.sectionKind("Riesgos"), null);
+  assert.deepEqual(M.quickNote("! revisar el contrato"), { section: "tasks", line: "- [ ] revisar el contrato" });
+  assert.deepEqual(M.quickNote("@Ana enviar el informe"), { section: "tasks", line: "- [ ] @Ana enviar el informe" });
+  assert.deepEqual(M.quickNote("> se aplaza a enero"), { section: "decisions", line: "- se aplaza a enero" });
+  assert.deepEqual(M.quickNote("? quién lo aprueba"), { section: "notes", line: "- ? quién lo aprueba" });
+  assert.deepEqual(M.quickNote("el piloto va bien"), { section: "notes", line: "- el piloto va bien" });
+  assert.deepEqual(M.assigneeOf("@[[Ana García]]: revisar"), { name: "Ana García", rest: "revisar" });
+  assert.equal(M.assigneeOf("revisar con @Ana"), null);
+});
+
+test("series: daily, weekdays, weekly every N weeks, monthly by date and by Nth weekday, skips", async () => {
+  const S = await import("../app/js/series.js");
+  const occ = (fm, from, to) => S.occurrences(S.seriesRule(fm, "2026-11-02"), from, to);
+  assert.deepEqual(occ({ repeat: "weekdays" }, "2026-11-06", "2026-11-10"), ["2026-11-06", "2026-11-09", "2026-11-10"]);
+  assert.deepEqual(occ({ repeat: "weekly", days: ["tue", "jueves"], interval: 2 }, "2026-11-02", "2026-11-20"), ["2026-11-03", "2026-11-05", "2026-11-17", "2026-11-19"]);
+  assert.deepEqual(occ({ repeat: "daily", interval: 3, until: "2026-11-09" }, "2026-11-01", "2026-11-30"), ["2026-11-02", "2026-11-05", "2026-11-08"]);
+  assert.deepEqual(occ({ repeat: "monthly", start: "2026-11-15" }, "2026-11-01", "2027-01-31"), ["2026-11-15", "2026-12-15", "2027-01-15"]);
+  assert.deepEqual(occ({ repeat: "monthly", nth: 1, days: ["tue"] }, "2026-11-01", "2027-01-31"), ["2026-11-03", "2026-12-01", "2027-01-05"]);
+  assert.deepEqual(occ({ repeat: "monthly", nth: -1, days: ["fri"] }, "2026-11-01", "2026-12-31"), ["2026-11-27", "2026-12-25"]);
+  assert.deepEqual(occ({ repeat: "weekdays", skip: ["2026-11-03"] }, "2026-11-02", "2026-11-04"), ["2026-11-02", "2026-11-04"]);
+});
+
+test("people: found by file name, title, alias and unique first name; @tasks wait on them", async () => {
+  await reset({
+    "people/ana-garcia.md": "---\ntype: person\ntitle: Ana García\naliases: [AG]\n---\n",
+    "people/luis-perez.md": "---\ntype: person\ntitle: Luis Pérez\n---\n",
+    "people/luis-ruiz.md": "---\ntype: person\ntitle: Luis Ruiz\n---\n",
+    "weeks/2026-W40.md": WEEK.replace("- [x] b", "- [ ] @ana enviar el informe\n- [ ] @[[Luis Ruiz]] revisar"),
+  });
+  const ana = model.findPerson("Ana");
+  assert.equal(ana.path, "people/ana-garcia.md");
+  assert.equal(model.findPerson("ag"), ana);
+  assert.equal(model.findPerson("[[ana-garcia]]"), ana);
+  assert.equal(model.findPerson("Luis"), null, "two people share the first name");
+  assert.deepEqual(model.waitingTasks().map((x) => [x.who, x.assignee?.title]), [["ana", "Ana García"], ["Luis Ruiz", "Luis Ruiz"]]);
+  assert.equal(model.waitingTasks(ana).length, 1);
+  const p = await A.createPerson({ name: "Marta Gil", role: "Compras" });
+  assert.equal(p, "people/marta-gil.md");
+  assert.match(disk.get(p), /type: person[\s\S]*title: Marta Gil[\s\S]*role: Compras/);
+  assert.equal(model.findPerson("marta").title, "Marta Gil");
+});
+
+test("meetings: agenda checkboxes are not action items; notes go into the right section of any template", async () => {
+  const custom = "---\ntype: meeting\ntitle: Seguimiento\ndate: 2026-09-28\n---\n\n# Seguimiento\n\n## Comentar\n\n- [ ] presupuesto\n\n## Notas\n\n## Tareas para mí\n\n- [ ] revisar acceso\n";
+  await reset({ "weeks/2026-W40.md": WEEK, "meetings/2026-09-28-seguimiento.md": custom });
+  assert.deepEqual(model.vault().docTasks.map((x) => x.text), ["revisar acceso"]);
+  const mp = "meetings/2026-09-28-seguimiento.md";
+  await A.addToSection(mp, "notes", ["- el piloto va bien"]);
+  await A.addToSection(mp, "tasks", ["- [ ] @Ana enviar el informe"]);
+  await A.addToSection(mp, "decisions", ["- se aplaza a enero"]);
+  assert.match(disk.get(mp), /## Notas\n\n- el piloto va bien\n\n## Tareas para mí\n\n- \[ \] revisar acceso\n- \[ \] @Ana enviar el informe\n\n## Decisiones\n\n- se aplaza a enero\n/);
+  const note = model.vault().docs.get(mp);
+  assert.equal(model.needsProcessing(note, "2026-10-01"), true);
+});
+
+test("series: sessions are created on demand with what was left to discuss", async () => {
+  await reset({ "weeks/2026-W40.md": WEEK, "people/ana-garcia.md": "---\ntype: person\ntitle: Ana García\n---\n" });
+  const sp = await A.createSeries({ title: "Daily", rule: { repeat: "weekdays", days: [], interval: 1, start: "2026-09-28" }, time: "09:30", attendees: ["Ana García"] });
+  assert.equal(sp, "series/daily.md");
+  assert.match(disk.get(sp), /repeat: weekdays[\s\S]*start: 2026-09-28[\s\S]*time: "?09:30"?[\s\S]*attendees: \[Ana García\]/);
+  const sd = model.vault().series[0];
+  assert.deepEqual(model.seriesDue("2026-09-28").map((x) => x.title), ["Daily"]);
+  assert.deepEqual(model.seriesDue("2026-10-03"), []);
+  const s1 = await A.createSession(sd, "2026-09-28");
+  assert.match(disk.get(s1), /series: daily/);
+  assert.match(disk.get(s1), /attendees: \[Ana García\]/);
+  assert.match(disk.get("weeks/2026-W40.md"), /\[\[2026-09-28-daily\]\]/);
+  assert.deepEqual(model.seriesDue("2026-09-28"), []);
+  await A.addToSection(s1, "agenda", ["- [x] tema hecho", "- [ ] tema pendiente"]);
+  const s2 = await A.createSession(model.vault().series[0], "2026-09-29");
+  assert.match(disk.get(s2), /## Para comentar\n\n- \[ \] tema pendiente\n/);
+  assert.ok(!/tema hecho/.test(disk.get(s2)));
+  assert.deepEqual(model.sessionsOf(model.vault().series[0]).map((m) => m.date).sort(), ["2026-09-28", "2026-09-29"]);
+});
