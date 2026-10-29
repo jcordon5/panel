@@ -23,9 +23,8 @@ import { projectChip } from "./common.js";
 import { personChip, peoplePicker } from "../picker.js";
 import { emptyState } from "../ui.js";
 import * as A from "../actions.js";
-import { captureDialog } from "./capture.js";
+import { captureDialog, sourceStrip } from "./capture.js";
 import { askAi } from "./entity.js";
-import { sourcesOf } from "../model.js";
 
 export const title = (r) => vault().docs.get(r.arg)?.title || t("mtg.mode");
 
@@ -80,8 +79,8 @@ export function render(root, r) {
     h("div", { class: "meet-people" },
       picker ? picker.el : people.map((a) => personChip(a.name, { person: a.person })),
       h("button", { class: "btn btn-sm btn-ghost", type: "button", onclick: () => { editingPeople = !editingPeople; state.render(); } },
-        icon(editingPeople ? "check" : "pencil", 13), editingPeople ? t("common.done") : people.length ? t("mtg.editPeople") : t("mtg.addPeople")),
-      sourcesOf(doc).map((s) => h("a", { class: "chip chip-source-file", href: route.doc(s.path), title: t("cap.attached") }, icon("upload", 12), s.title)))));
+        icon(editingPeople ? "check" : "pencil", 13), editingPeople ? t("common.done") : people.length ? t("mtg.editPeople") : t("mtg.addPeople")))),
+    sourceStrip(doc));
 
   /* ---------- columns */
   const agenda = itemsOf(lines, secs, "agenda");

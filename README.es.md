@@ -69,10 +69,13 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
 - **Conocimiento** — notas pequeñas de *procedimientos* (cómo se hace algo), *recursos* (dónde está) y *datos* (lo que conviene
   recordar), enlazadas con proyectos y personas.
 - **Documentos fuera de la bóveda** — indica las carpetas con tus plantillas, guías o documentación (por ejemplo en OneDrive): Panel los
-  lista y abre con su programa, y tu IA sabe que existen. No se copia nada.
+  lista en *Documentos*, los encuentra al buscar (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>) y los abre con su programa, y tu IA sabe que
+  existen. No se copia nada.
 - **Para tu IA** — suelta o pega transcripciones (.vtt, .docx), correos (.eml, o .msg arrastrado desde Outlook) o chats; Hoy te dice
   qué está pendiente de procesar.
 - **Esperando a otros** — cualquier tarea que empieza por `@Nombre`; aparece en Hoy, en la ficha de la persona y en sus reuniones.
+- **Sin aprender sintaxis** — proyecto, persona, etiquetas y hora de una tarea se eligen en un diálogo; quien prefiera escribir
+  `09:30 @Ana enviar el presupuesto #proyecto` puede hacerlo igual.
 - **Editor como Obsidian** — formateado mientras escribes; el Markdown solo aparece donde está el cursor. También modo código y lectura.
 - **Calendario** — tus reuniones de Outlook/Google/iCloud aparecen solas; un clic crea la nota.
 - **Proyectos, tablón de notas, búsqueda global** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **deshacer cualquier cosa**, atajos de

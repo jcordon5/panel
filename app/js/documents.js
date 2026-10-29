@@ -52,7 +52,7 @@ const EXT_ICON = { pdf: "file", doc: "file", docx: "file", xls: "week", xlsx: "w
 let lastQ = "";
 
 /** Searchable list of the documents, with "open" and "copy path". */
-export function documentsBrowser() {
+export function documentsBrowser({ help = true } = {}) {
   const wrap = h("div", { class: "docs-browser" });
   const search = h("input", { class: "input", type: "search", placeholder: t("docs.searchPh"), "data-focus-key": "docs-q", value: lastQ });
   const list = h("div", { class: "rows docs-list" });
@@ -63,7 +63,10 @@ export function documentsBrowser() {
       note.textContent = res.missing.length ? t("docs.missing", { list: res.missing.join(", ") }) : "";
       if (!res.folders.length) {
         list.replaceChildren(h("div", { class: "empty-inline" }, icon("folder", 16), h("span", {}, t("docs.none")),
-          h("button", { class: "btn btn-sm", type: "button", onclick: () => import("./views/settings.js").then((m) => m.openSettings("vault")) }, t("docs.addFolder"))));
+          h("button", { class: "btn btn-sm", type: "button", onclick: () => {
+            const d = document.querySelector(".docs-folders");
+            if (d) { d.open = true; d.querySelector("input")?.focus(); } else import("./views/settings.js").then((m) => m.openSettings("vault"));
+          } }, t("docs.addFolder"))));
         return;
       }
       list.replaceChildren(...(res.files.length ? res.files.map((f) => h("div", { class: "row doc-file" },
@@ -78,7 +81,7 @@ export function documentsBrowser() {
   }, 200);
   search.addEventListener("input", () => { lastQ = search.value; run(); });
   run();
-  wrap.append(h("p", { class: "muted small" }, t("docs.help")), h("div", { class: "toolbar" }, search), note, list);
+  wrap.append(help ? h("p", { class: "muted small" }, t("docs.help")) : "", h("div", { class: "toolbar" }, search), note, list);
   return wrap;
 }
 

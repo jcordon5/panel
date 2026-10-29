@@ -16,6 +16,7 @@ import { newMeetingDialog, seriesDialog, KIND_ICON } from "./dialogs.js";
 import { personChip, avatar } from "../picker.js";
 import { knowledgeCard } from "./knowledge.js";
 import { errorToast, toast } from "../ui.js";
+import { captureDialog } from "./capture.js";
 import * as A from "../actions.js";
 
 const list = (v) => (Array.isArray(v) ? v : typeof v === "string" && v.trim() ? v.split(",").map((x) => x.trim()) : []);
@@ -74,7 +75,10 @@ export function entityChips(doc) {
 
 /** Primary buttons for the page header. */
 export function entityActions(doc) {
-  if (doc.kind === "meeting") return [btn(t("mtg.mode"), "users", () => go(route.meet(doc.path)), "btn-primary")];
+  if (doc.kind === "meeting") return [
+    btn(t("cap.forMeeting"), "upload", () => captureDialog({ meeting: doc.path }), "btn-ghost"),
+    btn(t("mtg.mode"), "users", () => go(route.meet(doc.path)), "btn-primary"),
+  ];
   if (doc.kind === "person") return [btn(t("meeting.new"), "users", () => newMeetingDialog({ attendees: [doc.title] }))];
   if (doc.kind === "series") {
     const tdy = today();

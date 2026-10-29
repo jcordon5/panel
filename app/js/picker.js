@@ -53,7 +53,7 @@ export function peoplePicker(initial = [], opts = {}) {
   const add = (name) => {
     name = String(name || "").trim();
     if (!name || names.some((n) => fold(n) === fold(name) || (findPerson(n) && findPerson(n) === findPerson(name)))) { input.value = ""; close(); return; }
-    names.push(name);
+    if (opts.single) names = [name]; else names.push(name);
     input.value = "";
     close();
     changed();

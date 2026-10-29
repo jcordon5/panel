@@ -20,6 +20,9 @@ Panel becomes a work memory: be in the meeting, let your AI do the paperwork.
 - **Everyday requests to your AI**: "remind me…", "we finished…" (closes the related task or logs it as done), "I learned…", "X handles…",
   "prepare the next X" (last session, open items on each side, work done since → the agenda). New commands: `find-task`, `log`, `tasks`,
   `person-set`, `prepare`, `new-session`, `docs`. *Prepare with AI* in recurring meetings copies the request.
+- Tasks without syntax: *Project, person and tags…* in the task menu, and person/tags in *New task* (typing `@Ana #project` still works).
+- Attachments for your AI are shown in the meeting itself, with *Add transcript* on the meeting note too.
+- *Documents* has its own place in the sidebar (shortcut `D`) and documents show up in search.
 - A time field you can type any way ("930", "9:30") or pick; Today's side column is shorter; sub-items of a done task are struck through.
 - **Skill v2**: process meetings and sources (summary, tasks, decisions, people, knowledge; sources deleted once used), answer from memory
   with citations, prepare meetings, follow your `routines.md`. New script commands: `pending`, `meeting`, `write`, `mark-processed`,

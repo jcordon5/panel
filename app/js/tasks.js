@@ -1,17 +1,18 @@
 // Task UI: rows, lists with drag & drop, inline editing, menus, quick add.
 
-import { h, today, addDays, mondayOf, fold } from "./util.js";
+import { h, today, addDays, mondayOf } from "./util.js";
 import { icon } from "./icons.js";
 import { t, relDay, fmtDate } from "./i18n.js";
 import { renderInline, renderMarkdown } from "./markdown.js";
-import { vault, projectBySlug, docTitle } from "./model.js";
+import { vault, projectBySlug, docTitle, findPerson } from "./model.js";
+import { decompose, compose } from "./taskparts.js";
 import { blockText } from "./ops.js";
 import * as A from "./actions.js";
 import { menu, modal, field, toast, errorToast, autoGrow } from "./ui.js";
 import { state, setBusy } from "./state.js";
 import { go, route } from "./nav.js";
 import { undo } from "./store.js";
-import { personChip } from "./picker.js";
+import { personChip, peoplePicker, timeField } from "./picker.js";
 
 const keyOf = (task) => task.path + "\u0000" + task.raw;
 
@@ -180,6 +181,7 @@ export function taskMenu(anchor, task, el, ref = null) {
     if (ref || where !== subject) items.push({ label: t("task.unplan"), icon: "x", hint: t("task.unplanHint"), onClick: () => run(A.unplanAction(ref || where), t("task.unplanned")) });
     items.push("-");
   }
+  items.push({ label: t("task.details"), icon: "settings", hint: t("task.detailsHint"), onClick: () => taskDialog(task) });
   items.push({ label: t("common.edit"), icon: "pencil", hint: t("task.clickText"), onClick: () => el && startEdit(el, task) });
   items.push({ label: task.done ? t("task.markUndone") : t("task.markDone"), icon: "check", onClick: () => run(A.toggleTask(task, !task.done)) });
   if (movable(task)) items.push({ label: t("task.duplicate"), icon: "copy", onClick: () => run(A.duplicateTask(task)) });
@@ -187,6 +189,55 @@ export function taskMenu(anchor, task, el, ref = null) {
   items.push("-");
   items.push({ label: t("common.delete"), icon: "trash", danger: true, onClick: () => run(A.deleteTask(task), t("task.deleted")) });
   menu(anchor, items, { align: "end" });
+}
+
+/* ------------------------------------------------------------ task parts (project, person, tags, time) */
+
+const isProjectTag = (tag) => !!projectBySlug(tag) || !!projectBySlug(tag.toLowerCase());
+
+/** "@Ana" when the first name is enough to find the person, "@[[Ana García]]" otherwise. */
+export function whoToken(name) {
+  const p = findPerson(name);
+  const first = (p ? p.title : name).split(/\s+/)[0];
+  if (p && findPerson(first) === p) return "@" + first;
+  return /\s/.test(p ? p.title : name) ? `@[[${p ? p.title : name}]]` : "@" + name;
+}
+
+function projectOptions(selected) {
+  const projects = [...vault().projects.values()].filter((p) => p.status !== "done" || p.slug === selected).sort((a, b) => a.title.localeCompare(b.title));
+  return h("select", { class: "input" }, h("option", { value: "" }, t("quick.noProject")),
+    projects.map((p) => h("option", { value: p.slug, selected: p.slug === selected }, p.title)));
+}
+
+/** The fields shared by the task dialog and quick add: project, person, tags. */
+function partFields(parts) {
+  const proj = projectOptions(parts.project);
+  const who = peoplePicker(parts.who ? [parts.who] : [], { placeholder: t("task.whoPh"), single: true });
+  const tags = h("input", { class: "input", type: "text", value: parts.tags.join(", "), placeholder: t("task.tagsPh") });
+  return {
+    els: [h("div", { class: "field-row" }, field(t("common.project"), proj), field(t("task.who"), who.el, t("task.whoHint"))), field(t("common.tags"), tags)],
+    get: () => ({ project: proj.value, who: who.get().slice(-1)[0] || "", tags: tags.value.split(",").map((x) => x.trim().replace(/^#/, "")).filter(Boolean) }),
+  };
+}
+
+/** Edit a task with fields instead of syntax: text, time, project, who it is for, tags. */
+export function taskDialog(task) {
+  const parts = decompose(task.source ?? task.text, isProjectTag);
+  const text = h("input", { class: "input input-lg", type: "text", value: parts.text, autofocus: true });
+  const time = timeField(parts.time);
+  const more = partFields(parts);
+  modal({
+    title: t("task.details"),
+    body: [field(t("task.text"), text), field(t("common.time"), time), ...more.els, h("p", { class: "field-hint" }, t("task.syntaxHint"))],
+    actions: [{ label: t("common.cancel") }, {
+      label: t("common.save"), primary: true, onClick: async () => {
+        if (!text.value.trim()) { text.focus(); return false; }
+        const line = compose({ ...parts, ...more.get(), time: time.value, timeEnd: time.value === parts.time ? parts.timeEnd : "", text: text.value }, whoToken);
+        const rest = blockText(task).split("\n").slice(1);
+        await run(A.updateTask(task, [line, ...rest].join("\n")), t("task.updated"));
+      },
+    }],
+  });
 }
 
 export function pickDate(initial, onPick) {
@@ -437,15 +488,16 @@ export function quickAdd(defaults = {}) {
   for (const [val, label, ic] of opts) {
     seg.append(h("button", { type: "button", "data-v": val, onclick: () => { when = val; paint(); if (val === "date") dateInput.focus(); else text.focus(); } }, icon(ic, 14), label));
   }
-  const projects = [...v.projects.values()].filter((p) => p.status !== "done").sort((a, b) => a.title.localeCompare(b.title));
-  const proj = h("select", { class: "input input-sm" }, h("option", { value: "" }, t("quick.noProject")),
-    projects.map((p) => h("option", { value: p.slug, selected: p.slug === defaults.project }, p.title)));
+  const more = partFields({ project: defaults.project || "", who: defaults.who || "", tags: [] });
   paint();
   const save = () => {
     const lines = text.value.split("\n").map((l) => l.trim()).filter(Boolean);
     if (!lines.length) { text.focus(); return false; }
-    const tag = proj.value ? " #" + proj.value : "";
-    const withTag = lines.map((l) => (tag && !fold(l).includes(fold(tag.trim())) ? l + tag : l));
+    const extra = more.get();
+    const withTag = lines.map((l) => {
+      const p = decompose(l, isProjectTag);
+      return compose({ ...p, project: p.project || extra.project, who: p.who || extra.who, tags: [...new Set([...p.tags, ...extra.tags])] }, whoToken);
+    });
     const target = when === "inbox" ? { kind: "inbox" } : { kind: "day", date: when === "today" ? today() : when === "tomorrow" ? addDays(today(), 1) : dateInput.value || today() };
     run(A.addTask(target, withTag), withTag.length > 1 ? t("quick.addedMany", { n: withTag.length }) : t("quick.added"));
   };
@@ -455,7 +507,7 @@ export function quickAdd(defaults = {}) {
   const m = modal({
     title: t("quick.title"),
     className: "modal-quick",
-    body: [text, h("div", { class: "field-hint" }, t("quick.hint")), h("div", { class: "quick-row" }, seg, dateInput), projects.length ? field(t("common.project"), proj) : null],
+    body: [text, h("div", { class: "field-hint" }, t("quick.hint")), h("div", { class: "quick-row" }, seg, dateInput), ...more.els],
     actions: [{ label: t("common.cancel") }, { label: t("quick.add"), primary: true, onClick: save }],
   });
 }

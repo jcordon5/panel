@@ -18,6 +18,7 @@ export const route = {
   meet: (path) => "#/meet/" + enc(path),
   people: () => "#/people",
   knowledge: () => "#/knowledge",
+  documents: () => "#/documents",
 };
 
 export function go(hash) {

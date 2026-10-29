@@ -493,3 +493,14 @@ test("time field: any way of typing a time", async () => {
   assert.deepEqual(["930", "9:30", "9.30", "9h30", "9", "09:5", "2145", "", "25:00", "abc"].map(normTime),
     ["09:30", "09:30", "09:30", "09:30", "09:00", "09:50", "21:45", "", null, null]);
 });
+
+test("task parts: time, person, project and tags out of the text and back", async () => {
+  const { decompose, compose } = await import("../app/js/taskparts.js");
+  const isProject = (tag) => tag === "proyecto-alfa";
+  const p = decompose("09:30 @[[Ana García]] enviar el #urgente presupuesto #proyecto-alfa", isProject);
+  assert.deepEqual(p, { time: "09:30", timeEnd: "", who: "Ana García", project: "proyecto-alfa", tags: ["urgente"], text: "enviar el presupuesto" });
+  assert.equal(compose(p), "09:30 @[[Ana García]] enviar el presupuesto #proyecto-alfa #urgente");
+  assert.equal(compose({ ...p, who: "Ana García", time: "" }, () => "@Ana"), "@Ana enviar el presupuesto #proyecto-alfa #urgente");
+  assert.equal(compose({ text: "llamar", tags: ["Muy importante"] }), "llamar #Muy-importante");
+  assert.deepEqual(decompose("revisar el informe"), { time: "", timeEnd: "", who: "", project: "", tags: [], text: "revisar el informe" });
+});

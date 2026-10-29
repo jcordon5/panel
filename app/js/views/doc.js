@@ -11,6 +11,7 @@ import { pageHeader, btn, iconBtn, projectChip, bodyWithoutTitle } from "./commo
 import { propertiesDialog } from "./dialogs.js";
 import { state } from "../state.js";
 import { entityChips, entityActions, entitySections, personHeader } from "./entity.js";
+import { sourceStrip } from "./capture.js";
 import { go, route } from "../nav.js";
 import { menu, confirmDialog, emptyState, toast } from "../ui.js";
 import { store } from "../store.js";
@@ -104,6 +105,7 @@ export function render(root, r) {
     h("h1", { class: "doc-title" }, doc.title),
     h("div", { class: "doc-meta" }, chips),
     doc.kind === "person" ? personHeader(doc) : null,
+    doc.kind === "meeting" ? sourceStrip(doc) : null,
     body.trim() ? h("div", { class: "md", html: renderMarkdown(body, { path, lineOffset: offset }) })
       : h("button", { class: "doc-empty" + (["person", "series", "knowledge"].includes(doc.kind) ? " doc-empty-sm" : ""), type: "button", onclick: () => go(route.edit(path)) },
         icon("pencil", 16), ["person", "series", "knowledge"].includes(doc.kind) ? t("doc.addNotes") : t("doc.emptyBody")));

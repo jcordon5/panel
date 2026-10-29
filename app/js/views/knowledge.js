@@ -12,10 +12,8 @@ import { newKnowledgeDialog, KIND_ICON } from "./dialogs.js";
 import { personChip } from "../picker.js";
 import { emptyState } from "../ui.js";
 import { bodyWithoutTitle } from "./common.js";
-import { documentsBrowser } from "../documents.js";
-import { state } from "../state.js";
 
-let filter = { q: "", kind: "", project: "", tab: "notes" };
+let filter = { q: "", kind: "", project: "" };
 
 export const title = () => t("nav.knowledge");
 
@@ -41,10 +39,6 @@ export function render(root) {
     subtitle: t("know.subtitle"),
     actions: [btn(t("know.new"), "plus", () => newKnowledgeDialog({ kind: filter.kind || "howto", project: filter.project }), "btn-primary")],
   }));
-  const tabs = h("div", { class: "segmented know-tabs" }, [["notes", "book", t("know.tabNotes")], ["docs", "folder", t("docs.title")]].map(([k, ic, label]) =>
-    h("button", { type: "button", class: filter.tab === k ? "active" : "", onclick: () => { filter.tab = k; state.render(); } }, icon(ic, 14), label)));
-  root.append(tabs);
-  if (filter.tab === "docs") { root.append(documentsBrowser()); return; }
   const search = h("input", { class: "input", type: "search", placeholder: t("know.searchPh"), value: filter.q, "data-focus-key": "know-q" });
   const kinds = h("div", { class: "segmented" });
   const projects = [...v.projects.values()].sort((a, b) => a.title.localeCompare(b.title));

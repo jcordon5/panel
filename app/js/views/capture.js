@@ -5,10 +5,11 @@
 import { h, today, addDays } from "../util.js";
 import { icon } from "../icons.js";
 import { t, relDay } from "../i18n.js";
-import { vault } from "../model.js";
+import { vault, sourcesOf } from "../model.js";
+import { route } from "../nav.js";
 import { backend } from "../backends.js";
 import { sync } from "../store.js";
-import { modal, field, toast, errorToast } from "../ui.js";
+import { modal, field, toast, errorToast, confirmDialog } from "../ui.js";
 
 export const SOURCE_EXT = [".vtt", ".docx", ".eml", ".msg", ".txt", ".md"];
 const KINDS = ["note", "chat", "email", "transcript", "document"];
@@ -91,4 +92,20 @@ export function bindGlobalDrop() {
     const m = /^#\/meet\/(.+)$/.exec(location.hash);
     captureDialog({ files, meeting: m ? decodeURIComponent(m[1]) : undefined });
   });
+}
+
+/** What is attached to a meeting for your AI (transcripts, chats…), shown in the meeting itself. */
+export function sourceStrip(meeting) {
+  const list = sourcesOf(meeting);
+  if (!list.length) return null;
+  return h("div", { class: "source-strip" },
+    h("div", { class: "source-strip-head" }, icon("sparkles", 14), h("strong", {}, t("cap.attachedN", { n: list.length })), h("span", { class: "muted small" }, t("cap.pendingHint"))),
+    h("div", { class: "source-items" }, list.map((s) => h("div", { class: "source-item" },
+      icon(s.fm.kind === "email" ? "link" : "upload", 13),
+      h("a", { href: route.doc(s.path) }, s.title),
+      h("span", { class: "muted small" }, t("cap.kind." + (s.fm.kind || "note"))),
+      h("button", { class: "chip-x", type: "button", title: t("cap.remove"), "aria-label": t("cap.remove"), onclick: async () => {
+        if (!(await confirmDialog(t("cap.removeConfirm", { name: s.title }), { ok: t("cap.remove") }))) return;
+        try { await backend.remove(s.path); await sync(); toast(t("cap.removed")); } catch (e) { errorToast(e); }
+      } }, icon("x", 11))))));
 }

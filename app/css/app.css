@@ -1039,3 +1039,14 @@ body.drop-capture::after { content: ""; position: fixed; inset: 10px; border: 3p
 .show-more { margin-top: 6px; width: 100%; justify-content: center; color: var(--text-2); }
 .meet-item.done .task-check { background: var(--success); border-color: var(--success); color: #fff; }
 .doc-empty.doc-empty-sm { padding: 8px 12px; border-style: dashed; width: auto; font-size: 13px; margin-bottom: 8px; }
+.docs-folders summary { cursor: pointer; color: var(--text-2); padding: 4px 0 8px; display: flex; align-items: center; gap: 6px; list-style: none; }
+.docs-folders summary::-webkit-details-marker { display: none; }
+.docs-folders[open] .docs-caret { transform: rotate(90deg); }
+.page-documents .docs-browser { margin-bottom: 20px; }
+.source-strip { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--radius); background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+.source-strip-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--warn); }
+.source-strip-head strong { color: var(--text); }
+.source-items { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+.source-item { display: inline-flex; align-items: center; gap: 6px; }
+.source-item a { color: var(--text); font-weight: 550; }
+.doc .source-strip { margin-top: 14px; }

@@ -15,7 +15,7 @@ import { go, route } from "../nav.js";
 
 const SHORTCUTS = [
   ["Ctrl/⌘ K", "sc.palette"], ["N", "sc.newTask"], ["M", "sc.newMeeting"], ["⇧ N", "sc.newNote"],
-  ["T", "sc.today"], ["I", "sc.inbox"], ["W", "sc.week"], ["C", "sc.calendar"], ["R", "sc.meetings"], ["U", "sc.people"], ["K", "sc.knowledge"], ["B", "sc.notes"], ["P", "sc.projects"],
+  ["T", "sc.today"], ["I", "sc.inbox"], ["W", "sc.week"], ["C", "sc.calendar"], ["R", "sc.meetings"], ["U", "sc.people"], ["K", "sc.knowledge"], ["D", "sc.documents"], ["B", "sc.notes"], ["P", "sc.projects"],
   ["← →", "sc.navigate"], ["E", "sc.edit"], ["Ctrl/⌘ Z", "sc.undo"],
   ["Ctrl/⌘ S", "sc.save"], ["Ctrl/⌘ Enter", "sc.toggleTask"], ["Esc", "sc.exitEditor"], ["[[", "sc.link"],
 ];

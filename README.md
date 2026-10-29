@@ -68,10 +68,13 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
 - **Knowledge** — small notes of *procedures* (how something is done), *resources* (where something is) and *facts* (worth
   remembering), linked to projects and people.
 - **Documents outside the vault** — point Panel to the folders with your templates, guides or documentation (e.g. in OneDrive): it lists
-  them and opens them with their app, and your AI knows they exist. Nothing is copied.
+  them in *Documents*, finds them in search (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>) and opens them with their app, and your AI knows
+  they exist. Nothing is copied.
 - **For your AI** — drop or paste transcripts (.vtt, .docx), emails (.eml, or .msg dragged out of Outlook) or chats; Today shows what is
   waiting to be processed.
 - **Waiting on others** — any task starting with `@Name`; it shows in Today, on the person's card and in their meetings.
+- **No syntax to learn** — a task's project, person, tags and time can be picked in a dialog; if you prefer typing
+  `09:30 @Ana send the quote #project`, that works too.
 - **An editor like Obsidian's** — formatted as you type; the Markdown only shows where the cursor is. Source and reading modes too.
 - **Calendar** — your Outlook/Google/iCloud meetings show up on their own; one click creates the note.
 - **Projects, a notes board, search everything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **undo anything**, keyboard shortcuts,

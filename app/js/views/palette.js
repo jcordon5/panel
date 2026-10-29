@@ -1,6 +1,7 @@
 // Command palette (Ctrl/⌘+K): jump to any file, full-text search, commands.
 
-import { h, fold, today } from "../util.js";
+import { h, fold, today, debounce } from "../util.js";
+import { listDocs, openDoc } from "../documents.js";
 import { icon } from "../icons.js";
 import { t, relDay } from "../i18n.js";
 import { vault } from "../model.js";
@@ -23,6 +24,7 @@ function commands() {
     { label: t("cap.title"), icon: "upload", run: () => captureDialog() },
     { label: t("nav.people"), icon: "user", hint: "U", run: () => go(route.people()) },
     { label: t("nav.knowledge"), icon: "book", hint: "K", run: () => go(route.knowledge()) },
+    { label: t("docs.title"), icon: "folder", hint: "D", run: () => go(route.documents()) },
     { label: t("nav.today"), icon: "sun", hint: "T", run: () => go(route.today()) },
     { label: t("nav.inbox"), icon: "inbox", hint: "I", run: () => go(route.inbox()) },
     { label: t("nav.week"), icon: "week", hint: "W", run: () => go(route.week()) },
@@ -63,6 +65,11 @@ export function openPalette(initial = "") {
   const backdrop = h("div", { class: "modal-backdrop palette-backdrop", onmousedown: (e) => { if (e.target === backdrop) close(); } }, box);
   document.getElementById("overlays").append(backdrop);
   let items = [], idx = 0;
+  const docHits = new Map(); // query -> documents outside the vault (fetched in the background)
+  const fetchDocs = debounce((q) => {
+    if (docHits.has(q)) return;
+    listDocs(q).then((res) => { docHits.set(q, res.files.slice(0, 6)); if (fold(input.value.trim()) === fold(q)) build(); }).catch(() => docHits.set(q, []));
+  }, 180);
 
   function close() { backdrop.remove(); document.removeEventListener("keydown", onKey, true); }
 
@@ -88,6 +95,15 @@ export function openPalette(initial = "") {
       if (byTitle.length) {
         items.push({ header: t("palette.files") });
         byTitle.forEach(({ d }) => items.push({ label: d.title, sub: (d.date ? relDay(d.date) + " · " : "") + d.path, icon: docIcon(d), run: () => go(route.doc(d.path)) }));
+      }
+      // documents in the folders of documents.md
+      if (q.length >= 2) {
+        const dh = docHits.get(raw);
+        if (!dh) fetchDocs(raw);
+        else if (dh.length) {
+          items.push({ header: t("docs.title") });
+          dh.forEach((f) => items.push({ label: f.name, sub: f.rel, icon: "folder", run: () => openDoc(f.path) }));
+        }
       }
       // full text
       if (q.length >= 2) {
