@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.2 — 2026-10-30
+
+- **People, easier to browse**: group by team or by organisation, with the groups listed on the left and their counts; pick one to
+  see only its people, or see everyone with the groups folded (their faces shown) instead of one endless page. Cards or a compact
+  list. The names from your meetings without a card have their own entry.
+
 ## 3.1.1 — 2026-10-30
 
 - **Taking notes in a meeting**: only one button (*Edit*); while editing, the sticky header keeps a button per section (it no longer
