@@ -252,14 +252,15 @@ function colorPicker(selected) {
 export function newProjectDialog() {
   const name = h("input", { class: "input input-lg", type: "text", placeholder: t("project.namePh"), autofocus: true });
   const desc = h("textarea", { class: "input", rows: "3", placeholder: t("project.descPh") });
+  const code = h("input", { class: "input input-code", type: "text", placeholder: t("project.codePh"), maxlength: "16" });
   const color = colorPicker();
   modal({
     title: t("project.new"),
-    body: [field(t("common.name"), name), field(t("common.color"), color.el), field(t("common.description"), desc)],
+    body: [field(t("common.name"), name), h("div", { class: "field-row" }, field(t("project.code"), code, t("project.codeHint")), field(t("common.color"), color.el)), field(t("common.description"), desc)],
     actions: [{ label: t("common.cancel") }, {
       label: t("project.create"), primary: true, onClick: async () => {
         if (!name.value.trim()) { name.focus(); return false; }
-        const slug = await A.createProject({ name: name.value, color: color.get(), description: desc.value });
+        const slug = await A.createProject({ name: name.value, color: color.get(), description: desc.value, code: code.value.trim() });
         go(route.project(slug));
       },
     }],
@@ -281,7 +282,7 @@ export function propertiesDialog(doc, onDone) {
   const text = (k, label, ph) => { extra[k] = h("input", { class: "input", type: "text", value: listText(doc.fm[k]), placeholder: ph || "" }); fields.push(field(label, extra[k])); };
   if (doc.kind === "person") {
     text("role", t("person.role"), t("person.rolePh"));
-    text("team", t("person.team"), t("person.teamPh"));
+    text("team", t("person.teams"), t("person.teamsPh"));
     text("org", t("person.org"));
     text("email", t("person.email"));
     text("phone", t("person.phone"));
@@ -310,7 +311,8 @@ export function propertiesDialog(doc, onDone) {
   if (doc.kind === "project") {
     status = h("select", { class: "input" }, ["active", "paused", "done"].map((s) => h("option", { value: s, selected: (doc.fm.status || "active") === s }, t("project.status." + s))));
     color = colorPicker(doc.fm.color);
-    fields.push(field(t("project.statusLabel"), status), field(t("common.color"), color.el));
+    extra.code = h("input", { class: "input input-code", type: "text", value: listText(doc.fm.code), placeholder: t("project.codePh"), maxlength: "16" });
+    fields.push(h("div", { class: "field-row" }, field(t("project.statusLabel"), status), field(t("project.code"), extra.code, t("project.codeHint"))), field(t("common.color"), color.el));
   }
   tags = h("input", { class: "input", type: "text", value: doc.tags.join(", "), placeholder: t("props.tagsPh") });
   fields.push(field(t("common.tags"), tags));
@@ -327,7 +329,7 @@ export function propertiesDialog(doc, onDone) {
         if (people && doc.kind === "meeting" && people.get().join("|") !== doc.attendees.join("|")) up.attendees = people.get();
         if (people && doc.kind === "knowledge") up.people = people.get();
         for (const [k, el] of Object.entries(extra)) {
-          const listy = ["aliases", "ask_for"].includes(k);
+          const listy = ["aliases", "ask_for", "team"].includes(k);
           const v = listy ? splitList(el.value) : el.value.trim();
           if ((listy ? v.join(", ") : v) !== listText(doc.fm[k])) up[k] = listy ? v : v || null;
         }

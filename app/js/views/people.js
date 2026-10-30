@@ -4,7 +4,7 @@
 import { h, fold, today } from "../util.js";
 import { icon } from "../icons.js";
 import { t, relTime, relDay } from "../i18n.js";
-import { vault, findPerson, attendeesOf, waitingTasks, meetingsWith } from "../model.js";
+import { vault, findPerson, findTeam, attendeesOf, waitingTasks, meetingsWith, teamsOf } from "../model.js";
 import { route } from "../nav.js";
 import { pageHeader, btn, section } from "./common.js";
 import { newPersonDialog } from "./dialogs.js";
@@ -24,7 +24,7 @@ export function unknownPeople() {
   const seen = new Map();
   const add = (name, date) => {
     const k = fold(name);
-    if (!k || findPerson(name)) return;
+    if (!k || findPerson(name) || findTeam(name)) return;
     const cur = seen.get(k) || { name, count: 0, last: "" };
     cur.count++;
     if (date && date > cur.last) cur.last = date;
@@ -43,7 +43,7 @@ function personCard(p) {
     h("div", { class: "person-card-head" }, avatar(p.title),
       h("div", { class: "person-card-name" },
         h("div", { class: "card-title" }, p.title),
-        h("div", { class: "muted small" }, [p.fm.role, p.fm.team || p.fm.org].filter(Boolean).join(" · ") || " "))),
+        h("div", { class: "muted small" }, [p.fm.role, teamsOf(p).join(", ") || p.fm.org].filter(Boolean).join(" · ") || " "))),
     ask.length ? h("div", { class: "person-ask" }, h("span", { class: "muted small" }, t("person.askShort")), ask.slice(0, 4).map((x) => h("span", { class: "chip" }, x))) : null,
     h("div", { class: "card-foot" },
       met.length ? h("span", {}, icon("users", 12), " ", t("person.lastMet", { when: relDay(met[0].date).toLowerCase() })) : h("span", {}, relTime(p.mtime)),
@@ -64,16 +64,18 @@ export function render(root) {
 
   function paint() {
     const k = fold(q.trim());
-    const people = v.people.filter((p) => !k || fold([p.title, p.fm.role, p.fm.team, p.fm.org, p.fm.email, ...list(p.fm.aliases), ...list(p.fm.ask_for), p.body].join(" ")).includes(k));
+    const people = v.people.filter((p) => !k || fold([p.title, p.fm.role, teamsOf(p).join(" "), p.fm.org, p.fm.email, ...list(p.fm.aliases), ...list(p.fm.ask_for), p.body].join(" ")).includes(k));
     body.replaceChildren();
     if (!v.people.length) body.append(emptyState("users", t("people.emptyTitle"), t("people.emptyText"), btn(t("person.new"), "plus", () => newPersonDialog(), "btn-primary")));
     else if (!people.length) body.append(emptyState("search", t("people.noMatch")));
     // grouped by team (or organisation)
     const groups = new Map();
-    for (const p of people) {
-      const g = String(p.fm.team || p.fm.org || "").trim() || t("people.noTeam");
-      if (!groups.has(g)) groups.set(g, []);
-      groups.get(g).push(p);
+    for (const p of people) { // someone in two teams shows in both
+      const gs = teamsOf(p).length ? teamsOf(p) : [String(p.fm.org || "").trim() || t("people.noTeam")];
+      for (const g of gs) {
+        if (!groups.has(g)) groups.set(g, []);
+        groups.get(g).push(p);
+      }
     }
     const keys = [...groups.keys()].sort((a, b) => (a === t("people.noTeam")) - (b === t("people.noTeam")) || a.localeCompare(b));
     for (const g of keys) body.append(section(g, h("div", { class: "cards people-cards" }, groups.get(g).map(personCard)), { count: groups.get(g).length }));

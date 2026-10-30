@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.1.0 — 2026-10-30
+
+- **Meetings are the note again**, with a compact bar on top: time, attendees, attachments, *Prepare with AI*, the context folded away
+  and a button per section that jumps there with the cursor ready. Works on half a laptop screen; nested lists, and clicking anywhere
+  to write, behave as in any note. The separate meeting mode is gone (and with it the stray "null").
+- **Whole teams as attendees** ("Equipo X" / "X team"); a person can be in several teams.
+- **Project codes**: a short code per project; tasks and notes mentioning it (or `#code`) belong to the project. Project tasks carry the
+  project's colour and a chip instead of a bare hashtag.
+- **Meeting status** in Today and the week: not held yet, held but not processed, processed. The "For your AI" block left Today.
+- **Graph**: projects, people, meetings and knowledge, how they connect and where most of it concentrates.
+- *Prepare with AI* now writes a script you can read aloud: one line per topic in plain words, news first, then what you need from
+  others, and how to close the meeting. Closed items are never brought up again (only reported once as news).
+- Fixes: attendees typed into a dialog were lost when their suggestions were hidden at the bottom of the dialog; a half-typed name
+  that fits one person is that person; Today could stop updating after editing a meeting (drag, delete); more space between
+  paragraphs, and blank lines are kept in reading mode.
+
 ## 3.0.0 — 2026-10-29
 
 Panel becomes a work memory: be in the meeting, let your AI do the paperwork.

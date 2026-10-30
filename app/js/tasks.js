@@ -4,7 +4,7 @@ import { h, today, addDays, mondayOf } from "./util.js";
 import { icon } from "./icons.js";
 import { t, relDay, fmtDate } from "./i18n.js";
 import { renderInline, renderMarkdown } from "./markdown.js";
-import { vault, projectBySlug, docTitle, findPerson } from "./model.js";
+import { vault, projectBySlug, docTitle, findPerson, meetingStatus } from "./model.js";
 import { decompose, compose } from "./taskparts.js";
 import { blockText } from "./ops.js";
 import * as A from "./actions.js";
@@ -47,8 +47,10 @@ export function taskRow(task, opts = {}) {
   const ref = opts.ref || null; // this row is a "- [[doc#^id]]" line of a day plan showing `task`
   const detailsOpen = !opts.compact || state.expanded.has(keyOf(task));
   const hasDetails = task.details.some((l) => l.trim());
+  const proj = task.project ? projectBySlug(task.project) : null;
   const el = h("div", {
-    class: "task" + (task.done ? " done" : "") + (opts.compact ? " compact" : "") + (ref ? " is-action" : ""),
+    class: "task" + (task.done ? " done" : "") + (opts.compact ? " compact" : "") + (ref ? " is-action" : "") + (proj ? " has-project" : ""),
+    "data-color": proj ? proj.color : null,
     draggable: (ref ? movable(ref) : movable(task) || plannable(task)) && opts.draggable !== false ? "true" : null,
   });
   el._task = ref || task;
@@ -69,7 +71,10 @@ export function taskRow(task, opts = {}) {
   // "@Name …": a task someone else has to do (you are waiting on them)
   const who = task.who ? /^@(?:\[\[[^\]]+\]\]|\S+)\s*[:,-]?\s*/.exec(task.text) : null;
   if (who) title.append(personChip(task.who, { person: task.assignee }), " ");
-  title.append(h("span", { class: "task-text", html: renderInline(who ? task.text.slice(who[0].length) : task.text) }));
+  let shown = who ? task.text.slice(who[0].length) : task.text;
+  // the project shows as a coloured chip and border, not as "#slug" in the text
+  if (proj) shown = shown.replace(new RegExp("(^|\\s)#(" + [proj.slug, proj.code].filter(Boolean).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")(?=\\s|$)", "gi"), "$1").trim();
+  title.append(h("span", { class: "task-text", html: renderInline(shown) }));
   title.addEventListener("click", (e) => {
     if (e.target.closest("a, button, input")) return;
     startEdit(el, task);
@@ -85,6 +90,10 @@ export function taskRow(task, opts = {}) {
   if (plan) {
     meta.push(h("button", { class: "chip chip-date chip-planned", type: "button", title: planMsg(plan), onclick: (e) => { e.stopPropagation(); go(plan.kind === "day" ? route.week(plan.date) : route.inbox()); } },
       icon(plan.kind === "day" ? "calendar" : "inbox", 12), plan.kind === "day" ? relDay(plan.date) : t("nav.inbox")));
+  }
+  if (proj && !opts.hideProject) {
+    meta.push(h("a", { class: "chip chip-project", href: route.project(proj.slug), "data-color": proj.color, onclick: (e) => e.stopPropagation() },
+      h("span", { class: "dot", "data-color": proj.color }), h("span", { class: "chip-text" }, proj.title)));
   }
   if ((opts.showSource || ref) && task.kind === "doc") {
     meta.push(h("button", { class: "chip chip-source", type: "button", onclick: (e) => { e.stopPropagation(); go(route.doc(task.path)); } }, icon(task.docKind === "meeting" ? "users" : "file", 12), h("span", { class: "chip-text" }, docTitle(task.path))));
@@ -382,6 +391,7 @@ export function refRow(item, opts = {}) {
     h("div", { class: "task-main", onclick: open },
       h("div", { class: "task-title" },
         isMeeting && d.time ? h("span", { class: "chip chip-time" }, d.time) : null,
+        isMeeting ? statusIcon(d) : null,
         h("span", { class: "task-text" }, (d ? d.title : item.target) + (item.anchor ? " · " + t("task.actionGone") : ""))),
       !opts.compact && isMeeting && (d.attendees.length || p) ? h("div", { class: "task-meta" },
         d.attendees.length ? h("span", { class: "chip" }, icon("users", 12), d.attendees.slice(0, 3).join(", ")) : null,
@@ -391,9 +401,17 @@ export function refRow(item, opts = {}) {
 }
 
 /** Meeting of a day that is not placed in its list yet: drag it in between tasks. */
+/** A small icon with where a meeting stands: not held yet, notes waiting for your AI, processed. */
+export function statusIcon(m) {
+  const st = meetingStatus(m, today());
+  if (!st) return null;
+  const ic = { upcoming: "clock", pending: "sparkles", processed: "check" }[st];
+  return h("span", { class: "mstatus mstatus-" + st, title: t("mstatus." + st) }, icon(ic, 12));
+}
+
 export function meetingPill(m, color) {
   const el = h("a", { class: "meeting-pill", href: route.doc(m.path), draggable: "true", "data-color": color, title: t("meeting.dragHint") },
-    m.time ? h("span", { class: "meeting-pill-time" }, m.time) : icon("users", 12), h("span", { class: "meeting-pill-title" }, m.title));
+    m.time ? h("span", { class: "meeting-pill-time" }, m.time) : icon("users", 12), statusIcon(m), h("span", { class: "meeting-pill-title" }, m.title));
   el._meeting = m;
   return el;
 }

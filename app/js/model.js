@@ -281,11 +281,18 @@ function build() {
       p.color = PROJECT_COLORS.includes(doc.fm.color) ? doc.fm.color : null;
       const para = doc.body.split("\n").find((l) => l.trim() && !/^#|^[-*>|]|^\s*\d+\./.test(l.trim()));
       p.description = typeof doc.fm.description === "string" ? doc.fm.description : (para || "").trim();
+      p.code = typeof doc.fm.code === "string" && doc.fm.code.trim() ? doc.fm.code.trim() : null; // e.g. "ALFA2": tags and titles with it belong here
     }
   }
   let ci = 0;
   for (const p of [...projects.values()].sort((a, b) => a.slug.localeCompare(b.slug))) {
     if (!p.color) p.color = PROJECT_COLORS[ci++ % (PROJECT_COLORS.length - 1)];
+  }
+  // a project code written anywhere in a text, as a whole word ("ALFA2 kickoff"), counts too
+  const codes = [...projects.values()].filter((p) => p.code).map((p) => [new RegExp("(^|[^\\p{L}\\p{N}_-])" + p.code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{N}_-])", "u"), p.slug]);
+  const byCode = (text) => (codes.find(([re]) => re.test(text)) || [])[1] || null;
+  for (const d of docs.values()) {
+    if (!d.project && ["meeting", "note", "doc", "knowledge", "series"].includes(d.kind)) d.project = byCode(d.title);
   }
 
   // wikilink resolution: basename or title (case/accent-insensitive)
@@ -361,9 +368,10 @@ function build() {
 
   // project membership of week/inbox tasks by #tag
   const slugByFold = new Map([...projects.keys()].map((s) => [fold(s), s]));
+  for (const p of projects.values()) if (p.code) slugByFold.set(fold(p.code), p.slug);
   for (const tk of tasks) {
     const hit = tk.tags.map((tg) => slugByFold.get(fold(tg))).find(Boolean);
-    tk.project = hit || null;
+    tk.project = hit || byCode(tk.text) || null;
   }
 
   // people: by file name, title and aliases (accent/case-insensitive); unique first names too
@@ -376,6 +384,15 @@ function build() {
     firstNames.set(first, firstNames.has(first) ? null : d);
   }
   for (const [k, d] of firstNames) if (d && !personIndex.has(k)) personIndex.set(k, d);
+  // teams: from people's `team` (one or several, e.g. a global team and a project team)
+  const teams = new Map(); // fold(name) -> { name, people[] }
+  for (const d of people) {
+    for (const name of [...toList(d.fm.team), ...toList(d.fm.teams)]) {
+      const k = fold(name);
+      if (!teams.has(k)) teams.set(k, { name, people: [] });
+      if (!teams.get(k).people.includes(d)) teams.get(k).people.push(d);
+    }
+  }
   for (const tk of [...tasks, ...docTasks]) tk.assignee = tk.who ? personIndex.get(fold(tk.who.replace(/^\[\[|\]\]$/g, ""))) || null : null;
 
   const knowledge = [...docs.values()].filter((d) => d.kind === "knowledge").sort((a, b) => b.mtime - a.mtime);
@@ -387,7 +404,7 @@ function build() {
     .sort((a, b) => ((b.date || "") + (b.time || "")).localeCompare((a.date || "") + (a.time || "")) || a.title.localeCompare(b.title));
   const notes = [...docs.values()].filter((d) => d.kind === "note");
 
-  return { docs, projects, days, inbox, tasks, docTasks, meetings, notes, weekFiles, byName, byTitle, people, personIndex, knowledge, series, sources };
+  return { docs, projects, days, inbox, tasks, docTasks, meetings, notes, weekFiles, byName, byTitle, people, personIndex, teams, knowledge, series, sources };
 }
 
 function resolveIn(target, docs, byName, byTitle) {
@@ -485,14 +502,27 @@ export function findPerson(name) {
   return k ? vault().personIndex.get(k) || null : null;
 }
 
-/** Attendees of a meeting or series: [{ name, person }] */
-export function attendeesOf(doc) {
-  return (doc ? doc.attendees : []).map((a) => ({ name: unlink(a), person: findPerson(a) })).filter((a) => a.name);
+/** "Equipo IA", "IA team", "IA" -> the team, or null. */
+export function findTeam(name) {
+  const k = fold(unlink(name)).replace(/^(equipo|team)\s+(de\s+)?/, "").replace(/\s+(team|equipo)$/, "");
+  return k ? vault().teams.get(k) || null : null;
 }
 
-/** Meetings someone attended, newest first. */
+/** Teams of a person. */
+export const teamsOf = (p) => [...toList(p.fm.team), ...toList(p.fm.teams)];
+
+/** Attendees of a meeting or series: [{ name, person }] — or { name, team, people } for a whole team. */
+export function attendeesOf(doc) {
+  return (doc ? doc.attendees : []).map((a) => {
+    const person = findPerson(a);
+    const team = person ? null : findTeam(a);
+    return team ? { name: unlink(a), person: null, team: team.name, people: team.people } : { name: unlink(a), person };
+  }).filter((a) => a.name);
+}
+
+/** Meetings someone attended (in person or with one of their teams), newest first. */
 export function meetingsWith(person) {
-  return vault().meetings.filter((m) => attendeesOf(m).some((a) => a.person === person));
+  return vault().meetings.filter((m) => attendeesOf(m).some((a) => a.person === person || (a.people && a.people.includes(person))));
 }
 
 /** Open tasks waiting on someone else ("- [ ] @Name …"); of one person when given. */
@@ -543,4 +573,12 @@ export function needsProcessing(m, today, days = 14) {
   const lines = m.body.split("\n");
   const skip = new Set(agendaRanges(lines).flatMap(([a, b]) => Array.from({ length: b - a }, (_, i) => a + i)));
   return lines.some((l, i) => !skip.has(i) && !/^\s*(#.*|[-*+]\s*(\[[ xX]\]\s*)?)?$/.test(l));
+}
+
+/** "upcoming" (hasn't happened), "pending" (notes not processed yet), "processed", or "" (nothing to say). */
+export function meetingStatus(m, today) {
+  if (m.fm.processed) return "processed";
+  const d = new Date(), now = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  if (m.date > today || (m.date === today && m.time && String(m.time).padStart(5, "0") > now)) return "upcoming";
+  return needsProcessing(m, today, 30) ? "pending" : "";
 }

@@ -71,10 +71,10 @@ export function render(root, r) {
     const planned = tasks.filter((x) => x.kind === "day" || x.kind === "inbox").sort((a, b) => (a.done - b.done) || (a.date || "9").localeCompare(b.date || "9"));
     const inDocs = tasks.filter((x) => x.kind === "doc");
     root.append(h("p", { class: "muted small" }, t("project.tasksHint", { tag: "#" + slug })));
-    root.append(section(t("project.planned"), taskList(planned.filter((x) => !x.done), { showDate: true, showSource: true, empty: t("project.noPlanned") }), { icon: "calendar" }));
-    root.append(section(t("project.fromDocs"), taskList(inDocs.filter((x) => !x.done), { showSource: true, empty: t("project.noDocTasks") }), { icon: "file" }));
+    root.append(section(t("project.planned"), taskList(planned.filter((x) => !x.done), { hideProject: true, showDate: true, showSource: true, empty: t("project.noPlanned") }), { icon: "calendar" }));
+    root.append(section(t("project.fromDocs"), taskList(inDocs.filter((x) => !x.done), { hideProject: true, showSource: true, empty: t("project.noDocTasks") }), { icon: "file" }));
     const doneAll = tasks.filter((x) => x.done);
-    if (doneAll.length) root.append(section(t("project.completed"), taskList(doneAll.slice(0, 30), { showDate: true, showSource: true, compact: true }), { icon: "check", count: doneAll.length }));
+    if (doneAll.length) root.append(section(t("project.completed"), taskList(doneAll.slice(0, 30), { hideProject: true, showDate: true, showSource: true, compact: true }), { icon: "check", count: doneAll.length }));
     root.append(h("div", { class: "narrow-left" }, btn(t("project.addTask"), "plus", () => import("../tasks.js").then((m) => m.quickAdd({ project: slug })), "btn-ghost")));
     return;
   }
@@ -103,7 +103,7 @@ export function render(root, r) {
     icon: "users", actions: [btn("", "plus", () => newMeetingDialog({ project: slug }), "btn-sm btn-ghost")],
   }));
   if (openTasks.length) {
-    aside.append(section(t("project.openTasks"), taskList(openTasks.slice(0, 8), { compact: true, showDate: true, showSource: true }), {
+    aside.append(section(t("project.openTasks"), taskList(openTasks.slice(0, 8), { hideProject: true, compact: true, showDate: true, showSource: true }), {
       icon: "check", count: openTasks.length,
       actions: [h("a", { class: "btn btn-sm btn-ghost", href: route.project(slug, "tasks") }, t("common.seeAll"))],
     }));

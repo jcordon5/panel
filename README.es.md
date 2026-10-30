@@ -31,9 +31,9 @@ Panel está hecho para que **atiendas a la reunión** y luego **hagas**, no para
 ## Cómo funciona
 
 1. **Planificas la semana** en un tablero: tareas y reuniones en el orden en que ocurren.
-2. **Entras a la reunión en modo reunión**: lo que querías comentar a la izquierda; abajo escribes una línea y Enter.
-   `!` la convierte en tarea tuya, `@Ana` en algo que esperas de Ana, `>` en una decisión, `?` en una duda.
-   ¿Hay transcripción? La sueltas encima.
+2. **Tomas notas en la propia nota de la reunión**: arriba una barra compacta con los asistentes, lo que sigue abierto y botones para
+   saltar a cada sección, así que funciona en media pantalla del portátil junto a la llamada. Debajo, Markdown normal: `- [ ]` una
+   tarea, `@Ana …` algo que esperas de Ana. ¿Hay transcripción? La sueltas encima.
 3. **Tu IA lo procesa** (Claude u otro agente, con la [skill](skills/panel-vault) incluida): «procesa mis reuniones» y escribe el
    resumen, completa tareas y decisiones que se te escaparon, actualiza las fichas de las personas y guarda como conocimiento lo que
    vale la pena recordar. Las fuentes que usó se borran: no se acumula basura.
@@ -50,21 +50,28 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
 
 <table>
 <tr>
-<td><img src="docs/img/meeting.png" alt="Modo reunión"></td>
+<td><img src="docs/img/meeting.png" alt="Una nota de reunión"></td>
 <td><img src="docs/img/today.png" alt="Hoy"></td>
 </tr>
 <tr>
 <td><img src="docs/img/people.png" alt="Ficha de una persona"></td>
 <td><img src="docs/img/knowledge.png" alt="Conocimiento"></td>
 </tr>
+<tr>
+<td colspan="2"><img src="docs/img/graph.png" alt="Grafo"></td>
+</tr>
 </table>
 
 - **Semana y plan del día** — una columna por día más la bandeja; arrastra tareas y reuniones; lo atrasado a hoy con un clic.
 - **Reuniones recurrentes** — una daily, un seguimiento cada dos semanas, el primer lunes de mes… Con sus asistentes habituales. Cada
   sesión aparece sola en su día y su nota se crea al entrar, con lo que quedó sin comentar en la anterior.
-- **Modo reunión** — orden del día para marcar, notas rápidas que se clasifican solas, tareas y decisiones a la vista, y el contexto:
-  lo abierto de la sesión anterior y lo que te deben los asistentes. Sin scroll arriba y abajo.
-- **Personas** — fichas con puesto, equipo y *para qué acudir a ellas*; en cada una, sus reuniones y lo que te debe. Panel te enseña
+- **Reuniones** — la propia nota con una barra compacta: hora, asistentes (personas o equipos enteros), adjuntos, el contexto plegado
+  (lo abierto de la sesión anterior, lo que te deben los asistentes) y un botón por sección para saltar a ella. Hoy y la semana marcan
+  qué reuniones aún no se han celebrado y cuáles faltan por procesar.
+- **Proyectos con código** — dale a un proyecto un código corto y todo lo que lo mencione (o `#código`) se asocia a él; sus tareas
+  llevan su color en todas partes.
+- **Grafo** — un mapa de tu memoria de trabajo: proyectos, personas, reuniones y conocimiento, y dónde se concentra más.
+- **Personas** — fichas con puesto, equipos (uno o varios) y *para qué acudir a ellas*; en cada una, sus reuniones y lo que te debe. Panel te enseña
   quién aparece en tus reuniones sin ficha y la crea con un clic. Selector de asistentes con autocompletado.
 - **Conocimiento** — notas pequeñas de *procedimientos* (cómo se hace algo), *recursos* (dónde está) y *datos* (lo que conviene
   recordar), enlazadas con proyectos y personas.

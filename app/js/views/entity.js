@@ -6,7 +6,7 @@ import { icon } from "../icons.js";
 import { t, relDay, cap } from "../i18n.js";
 import {
   vault, attendeesOf, waitingTasks, meetingsWith, seriesOf, sessionsOf, resolveLink, needsProcessing,
-  KNOWLEDGE_KINDS, findPerson,
+  KNOWLEDGE_KINDS, findPerson, teamsOf,
 } from "../model.js";
 import { occursOn, nextOccurrence } from "../series.js";
 import { route, go } from "../nav.js";
@@ -40,14 +40,14 @@ export function entityChips(doc) {
   if (doc.kind === "meeting") {
     const sd = seriesOf(doc);
     if (sd) chips.push(h("a", { class: "chip chip-series", href: route.doc(sd.path) }, icon("clock", 12), sd.title));
-    for (const a of attendeesOf(doc)) chips.push(personChip(a.name, { person: a.person }));
+    for (const a of attendeesOf(doc)) chips.push(personChip(a.name, { person: a.person, team: a.people }));
     if (doc.fm.processed) chips.push(h("span", { class: "chip chip-ok", title: t("mtg.processedOn", { date: String(doc.fm.processed) }) }, icon("check", 12), t("mtg.processed")));
     else if (needsProcessing(doc, today())) chips.push(h("span", { class: "chip chip-warn", title: t("mtg.unprocessedHint") }, icon("sparkles", 12), t("mtg.unprocessed")));
   }
   if (doc.kind === "series") {
     chips.push(h("span", { class: "chip" }, icon("clock", 12), describeRule(doc.rule) + (doc.fm.time ? " · " + doc.fm.time : "")));
     if (doc.fm.status === "paused") chips.push(h("span", { class: "chip chip-warn" }, t("series.pausedChip")));
-    for (const a of attendeesOf(doc)) chips.push(personChip(a.name, { person: a.person }));
+    for (const a of attendeesOf(doc)) chips.push(personChip(a.name, { person: a.person, team: a.people }));
   }
   if (doc.kind === "source") {
     chips.push(h("span", { class: "chip chip-warn", title: t("cap.pendingHint") }, icon("sparkles", 12), t("cap.kind." + (doc.fm.kind || "note")) + " · " + t("cap.pending")));
@@ -95,7 +95,7 @@ export function entityActions(doc) {
 /** A person's profile card (under the title). */
 export function personHeader(p) {
   const ask = list(p.fm.ask_for);
-  const line = [p.fm.role, p.fm.team, p.fm.org].filter((x) => typeof x === "string" && x.trim());
+  const line = [p.fm.role, teamsOf(p).join(", "), p.fm.org].filter((x) => typeof x === "string" && x.trim());
   return h("div", { class: "profile" },
     avatar(p.title, "avatar-lg"),
     h("div", { class: "profile-main" },

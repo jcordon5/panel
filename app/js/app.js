@@ -28,13 +28,13 @@ import * as editor from "./views/editor.js";
 import * as welcome from "./views/welcome.js";
 import * as people from "./views/people.js";
 import * as knowledge from "./views/knowledge.js";
-import * as meet from "./views/meet.js";
+import * as graph from "./views/graph.js";
 import * as documents from "./views/docs.js";
 import { bindGlobalDrop } from "./views/capture.js";
 import { bindFileLinks } from "./documents.js";
 import { backend, setBackend, detectBackend } from "./backends.js";
 
-const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet, documents };
+const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet: editor, documents, graph };
 
 let current = { key: null, view: null };
 
@@ -73,6 +73,7 @@ function renderSidebar(r) {
       navItem(route.meetings(), "users", t("nav.meetings"), 0, is("meetings") || is("meet") || (docPath && ["meeting", "series"].includes(v.docs.get(docPath)?.kind) && !v.docs.get(docPath)?.project)),
       navItem(route.people(), "user", t("nav.people"), 0, is("people") || docPath.startsWith("people/")),
       navItem(route.knowledge(), "book", t("nav.knowledge"), 0, is("knowledge") || docPath.startsWith("knowledge/")),
+      navItem(route.graph(), "graph", t("graph.title"), 0, is("graph")),
       navItem(route.documents(), "folder", t("docs.title"), 0, is("documents")),
       navItem(route.notes(), "note", t("nav.notes"), 0, is("notes") || docPath.startsWith("notes/"))),
     h("div", { class: "sb-section" },
@@ -144,7 +145,7 @@ state.render = render;
 /* ------------------------------------------------------------ events */
 
 function bindGlobal() {
-  window.addEventListener("hashchange", () => { closeMenus(); closeModals(); trackNavigation(); render(); $("#view").scrollTop = 0; });
+  window.addEventListener("hashchange", () => { closeMenus(); closeModals(); state.busy = 0; state.pending = false; trackNavigation(); render(); $("#view").scrollTop = 0; });
   $("#nav-back").addEventListener("click", () => history.back());
   $("#nav-fwd").addEventListener("click", () => history.forward());
   onChange(() => requestRender());

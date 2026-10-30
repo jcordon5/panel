@@ -33,6 +33,26 @@ class SkillTest(unittest.TestCase):
         with open(os.path.join(self.vault, rel), encoding="utf-8") as f:
             return f.read()
 
+    def test_project_codes_and_teams(self):
+        readme = "projects/portal-clientes/README.md"
+        text = self.read(readme).replace("type: project\n", "type: project\ncode: PRT\n", 1)
+        with open(os.path.join(self.vault, readme), "w", encoding="utf-8") as f:
+            f.write(text)
+        self.run_cmd("add-task", "Revisar el contrato PRT", "--inbox")
+        self.run_cmd("add-task", "Revisar el contrato PRTX", "--inbox")
+        out = self.run_cmd("tasks", "--project", "portal-clientes")
+        self.assertIn("Revisar el contrato PRT ", out)
+        self.assertNotIn("PRTX", out)
+        self.assertIn("code PRT", self.run_cmd("projects"))
+        # a person in two teams; a whole team as an attendee
+        person = "people/ana-garcia.md"
+        text = self.read(person).replace("team: Compras", "team: [Compras, Comité]", 1)
+        with open(os.path.join(self.vault, person), "w", encoding="utf-8") as f:
+            f.write(text)
+        self.assertIn("Compras, Comité", self.run_cmd("people", "comite"))
+        self.run_cmd("new-meeting", "--title", "Revisión de compras", "--date", "2026-11-02", "--attendees", "Equipo Compras")
+        self.assertIn("whole team Compras: Ana García", self.run_cmd("meeting", "revision-de-compras"))
+
     def test_memory_commands(self):
         pending = self.run_cmd("pending")
         self.assertIn("1-1-con-javi", pending)
@@ -89,8 +109,9 @@ class SkillTest(unittest.TestCase):
         # prepare the next daily: last session, its tasks, what attendees owe; then create the session
         prep = self.run_cmd("prepare", "daily")
         self.assertIn("## Last session: Daily del equipo", prep)
-        self.assertIn("@Luis revisar los permisos de red  (owner: Luis)", prep)
-        self.assertIn("## Attendees owe you", prep)
+        self.assertRegex(prep, r"STILL OPEN on others' side \(ask them\)\n- @Luis revisar los permisos de red")
+        self.assertRegex(prep, r"NOT DISCUSSED last time.*\n- \[ \] Vacaciones de diciembre")
+        self.assertIn("Attendees also owe you", prep)
         out = self.run_cmd("new-session", "daily")
         rel = out.split()[-1]
         self.assertRegex(self.read(rel), r"series: daily-del-equipo[\s\S]*## Para comentar\n\n- \[ \] Vacaciones de diciembre")

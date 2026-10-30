@@ -2,14 +2,13 @@
 
 import { h, today, addDays } from "../util.js";
 import { icon } from "../icons.js";
-import { t, fmtDate, cap, relDay } from "../i18n.js";
-import { vault, dayItems, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue, needsProcessing, waitingTasks } from "../model.js";
+import { t, fmtDate, cap } from "../i18n.js";
+import { vault, dayItems, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue, waitingTasks } from "../model.js";
 import { taskList, run, quickAdd, meetingPill, eventPill, seriesPill } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
-import { pageHeader, section, btn, meetingRow, progress } from "./common.js";
+import { pageHeader, section, btn, progress } from "./common.js";
 import { newMeetingDialog } from "./dialogs.js";
-import { route } from "../nav.js";
 import { state } from "../state.js";
 import { emptyState } from "../ui.js";
 
@@ -70,17 +69,6 @@ export function render(root) {
     taskList(items, { target: { kind: "day", date: d }, placeholder: t("today.addPh"), empty: null }),
   ], { icon: "sun", count: tasks.length - done, actions: [btn(t("meeting.new"), "users", () => newMeetingDialog({ date: d }), "btn-sm btn-ghost")] }));
 
-  // --- for your AI: meetings with notes but no summary yet, and captured sources
-  // the last two weeks only: older meetings (e.g. from before Panel 3) are processed on request
-  const toProcess = v.meetings.filter((m) => m.date >= addDays(d, -14) && needsProcessing(m, d));
-  if (toProcess.length || v.sources.length) {
-    main.append(section(t("today.toProcess"), [
-      h("p", { class: "muted small process-hint" }, icon("sparkles", 13), " ", t("today.toProcessHint")),
-      toProcess.length ? h("div", { class: "rows" }, toProcess.slice(0, 8).map((m) => meetingRow(m))) : null,
-      v.sources.length ? h("div", { class: "rows" }, v.sources.slice(0, 8).map(sourceRow)) : null,
-    ], { icon: "sparkles", count: toProcess.length + v.sources.length, cls: "section-ai" }));
-  }
-
   // --- aside: short lists (5 each, "see all" expands in place)
   const waiting = waitingTasks().sort((a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")));
   if (waiting.length) aside.append(shortList("waiting", t("today.waiting"), "clock", waiting, { compact: true, showDate: true, showSource: true }));
@@ -93,14 +81,6 @@ export function render(root) {
   if (!tasks.length && !overdue.length && !meetings.length && !v.docs.size) {
     main.append(emptyState("sparkles", t("today.emptyTitle"), t("today.emptyText")));
   }
-}
-
-function sourceRow(s) {
-  return h("a", { class: "row doc-row", href: route.doc(s.path) },
-    h("span", { class: "row-icon" }, icon("upload", 16)),
-    h("div", { class: "row-main" },
-      h("div", { class: "row-title" }, s.title),
-      h("div", { class: "row-meta" }, h("span", {}, t("cap.kind." + (s.fm.kind || "note"))), s.date ? h("span", {}, relDay(s.date)) : null)));
 }
 
 const expanded = new Set();

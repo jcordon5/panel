@@ -4,7 +4,7 @@
 import { h, fold } from "./util.js";
 import { icon } from "./icons.js";
 import { t } from "./i18n.js";
-import { vault, findPerson } from "./model.js";
+import { vault, findPerson, findTeam } from "./model.js";
 import { route } from "./nav.js";
 import * as A from "./actions.js";
 import { errorToast, toast } from "./ui.js";
@@ -19,11 +19,25 @@ export function avatar(name, size = "") {
 
 /** A person (or just a name) as a chip; links to the person's page when there is one. */
 export function personChip(name, opts = {}) {
+  const team = opts.team || (opts.person === undefined && !findPerson(name) ? findTeam(name)?.people : null);
+  if (team) return teamChip(name, team);
   const p = opts.person !== undefined ? opts.person : findPerson(name);
   const label = p ? p.title : String(name).replace(/^@|\[\[|\]\]/g, "");
   const inner = [avatar(label, "avatar-sm"), h("span", { class: "chip-text" }, label)];
-  if (p) return h("a", { class: "chip chip-person", href: route.doc(p.path), title: [p.fm.role, p.fm.team].filter(Boolean).join(" · ") || p.title, onclick: (e) => e.stopPropagation() }, ...inner);
+  if (p) return h("a", { class: "chip chip-person", href: route.doc(p.path), title: [p.fm.role, [].concat(p.fm.team || []).join(", ")].filter(Boolean).join(" · ") || p.title, onclick: (e) => e.stopPropagation() }, ...inner);
   return h("span", { class: "chip chip-person unknown", title: t("person.notYet") }, ...inner);
+}
+
+/** A whole team as an attendee ("Equipo IA"): its members on hover. */
+export function teamChip(name, people) {
+  return h("span", { class: "chip chip-person chip-team", title: people.map((p) => p.title).join(", ") },
+    h("span", { class: "avatar avatar-sm team-avatar" }, icon("users", 11)), h("span", { class: "chip-text" }, String(name).replace(/^@|\[\[|\]\]/g, "")),
+    h("span", { class: "chip-count" }, String(people.length)));
+}
+
+function teamMatches(q) {
+  const k = fold(q.trim());
+  return [...vault().teams.values()].filter((tm) => !k || fold(tm.name).includes(k)).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 5);
 }
 
 function matches(q) {
@@ -31,7 +45,7 @@ function matches(q) {
   const v = vault();
   if (!k) return v.people.slice(0, 8);
   return v.people.map((p) => {
-    const hay = [p.title, ...(Array.isArray(p.fm.aliases) ? p.fm.aliases : []), p.fm.team || "", p.fm.role || ""].map(fold);
+    const hay = [p.title, ...(Array.isArray(p.fm.aliases) ? p.fm.aliases : []), [].concat(p.fm.team || []).join(" "), p.fm.role || ""].map(fold);
     const score = hay[0].startsWith(k) ? 0 : hay.some((x) => x.split(/\s+/).some((w) => w.startsWith(k))) ? 1 : hay.some((x) => x.includes(k)) ? 2 : 9;
     return { p, score };
   }).filter((x) => x.score < 9).sort((a, b) => a.score - b.score || a.p.title.localeCompare(b.p.title)).slice(0, 8).map((x) => x.p);
@@ -58,6 +72,12 @@ export function peoplePicker(initial = [], opts = {}) {
     close();
     changed();
   };
+  // what's typed but not picked: a half-written name that fits one person is that person ("Luis P")
+  const resolve = (q) => {
+    q = String(q || "").trim();
+    const only = q && !findPerson(q) && !findTeam(q) ? matches(q) : [];
+    return only.length === 1 ? only[0].title : q;
+  };
   const createAndAdd = async (name) => {
     try {
       await A.createPerson({ name });
@@ -69,7 +89,14 @@ export function peoplePicker(initial = [], opts = {}) {
   function paintChips() {
     chips.replaceChildren(...names.map((n, i) => {
       const p = findPerson(n);
-      return h("span", { class: "chip chip-person picker-chip" + (p ? "" : " unknown"), title: p ? [p.fm.role, p.fm.team].filter(Boolean).join(" · ") : t("person.notYet") },
+      const tm = p ? null : findTeam(n);
+      if (tm) {
+        const c = teamChip(n, tm.people);
+        c.classList.add("picker-chip");
+        c.append(h("button", { class: "chip-x", type: "button", "aria-label": t("common.remove"), onclick: (e) => { e.stopPropagation(); names.splice(i, 1); changed(); input.focus(); } }, icon("x", 11)));
+        return c;
+      }
+      return h("span", { class: "chip chip-person picker-chip" + (p ? "" : " unknown"), title: p ? [p.fm.role, [].concat(p.fm.team || []).join(", ")].filter(Boolean).join(" · ") : t("person.notYet") },
         avatar(p ? p.title : n, "avatar-sm"), h("span", { class: "chip-text" }, p ? p.title : n),
         p ? null : h("button", { class: "chip-x", type: "button", title: t("person.createThis", { name: n }), onclick: (e) => { e.stopPropagation(); names.splice(i, 1); createAndAdd(n); } }, icon("plus", 11)),
         h("button", { class: "chip-x", type: "button", "aria-label": t("common.remove"), onclick: (e) => { e.stopPropagation(); names.splice(i, 1); changed(); input.focus(); } }, icon("x", 11)));
@@ -81,6 +108,7 @@ export function peoplePicker(initial = [], opts = {}) {
     const q = input.value;
     const found = matches(q).filter((p) => !names.some((n) => findPerson(n) === p));
     options = found.map((p) => ({ kind: "person", p }));
+    if (!opts.single) for (const tm of teamMatches(q)) if (!names.some((n) => findTeam(n) === tm)) options.push({ kind: "team", tm });
     if (q.trim() && !found.some((p) => fold(p.title) === fold(q.trim()))) {
       options.push({ kind: "free", name: q.trim() }, { kind: "create", name: q.trim() });
     }
@@ -89,22 +117,33 @@ export function peoplePicker(initial = [], opts = {}) {
     list.replaceChildren(...options.map((o, i) => h("div", {
       class: "picker-opt" + (i === active ? " active" : ""), role: "option",
       onmousedown: (e) => { e.preventDefault(); pick(i); },
-    }, o.kind === "person" ? [avatar(o.p.title, "avatar-sm"), h("span", { class: "picker-name" }, o.p.title), h("span", { class: "picker-sub" }, [o.p.fm.role, o.p.fm.team].filter(Boolean).join(" · "))]
+    }, o.kind === "person" ? [avatar(o.p.title, "avatar-sm"), h("span", { class: "picker-name" }, o.p.title), h("span", { class: "picker-sub" }, [o.p.fm.role, [].concat(o.p.fm.team || []).join(", ")].filter(Boolean).join(" · "))]
+      : o.kind === "team" ? [h("span", { class: "avatar avatar-sm team-avatar" }, icon("users", 11)), h("span", { class: "picker-name" }, t("team.attendee", { name: o.tm.name })), h("span", { class: "picker-sub" }, t("team.members", { n: o.tm.people.length }))]
       : o.kind === "free" ? [icon("plus", 14), h("span", { class: "picker-name" }, t("people.addName", { name: o.name }))]
         : [icon("users", 14), h("span", { class: "picker-name" }, t("person.createThis", { name: o.name }))])));
     list.hidden = false;
+    place();
+  }
+  // open upwards when the list would be cut off (a picker at the bottom of a dialog)
+  function place() {
+    let box = el.parentElement;
+    while (box && box !== document.body && !/(auto|scroll|hidden)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+    const lim = box && box !== document.body ? box.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+    const r = el.getBoundingClientRect(), need = Math.min(list.scrollHeight, 280) + 8;
+    list.classList.toggle("up", lim.bottom - r.bottom < need && r.top - lim.top > lim.bottom - r.bottom);
   }
   function pick(i) {
     const o = options[i];
     if (!o) return;
     if (o.kind === "person") add(o.p.title);
+    else if (o.kind === "team") add(t("team.attendee", { name: o.tm.name }));
     else if (o.kind === "free") add(o.name);
     else createAndAdd(o.name);
   }
 
   input.addEventListener("input", () => { active = 0; open(); });
   input.addEventListener("focus", open);
-  input.addEventListener("blur", () => setTimeout(() => { if (input.value.trim() && opts.addOnBlur !== false) add(input.value); close(); }, 150));
+  input.addEventListener("blur", () => setTimeout(() => { if (input.value.trim() && opts.addOnBlur !== false) add(resolve(input.value)); close(); }, 150));
   input.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (list.hidden) open(); active = (active + (e.key === "ArrowDown" ? 1 : options.length - 1)) % Math.max(1, options.length); open(); return; }
     if ((e.key === "Enter" || e.key === "Tab") && !list.hidden && options.length && input.value.trim()) { e.preventDefault(); pick(active); return; }
@@ -114,7 +153,13 @@ export function peoplePicker(initial = [], opts = {}) {
     if (e.key === "Escape" && !list.hidden) { e.stopPropagation(); close(); }
   });
   paintChips();
-  return { el, get: () => [...names] };
+  // what is typed but not added yet counts too (people click "Create" right after typing a name)
+  const get = () => {
+    const v = resolve(input.value);
+    if (!v || names.some((n) => fold(n) === fold(v) || (findPerson(n) && findPerson(n) === findPerson(v)))) return [...names];
+    return opts.single ? [v] : [...names, v];
+  };
+  return { el, get };
 }
 
 /* ------------------------------------------------------------ time */

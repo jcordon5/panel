@@ -345,13 +345,14 @@ export async function createNote({ title, project, pinned, body, template: tplPa
   return path;
 }
 
-export async function createProject({ name, color, description }) {
+export async function createProject({ name, color, description, code }) {
   name = name.trim();
   let slug = slugify(name, 40), n = 2;
   while (exists(`${P.projects}/${slug}`) || vault().projects.has(slug)) slug = slugify(name, 40) + "-" + n++;
   const text = fill(template("project", builtinProjectTemplate()), { title: name, color: color || "", description: description || "", today: today() }, { title: name, color: color || null })
     .replace(/\n{3,}/g, "\n\n");
-  await transaction(t("undo.create"), () => create(`${P.projects}/${slug}/README.md`, text));
+  const withCode = code ? setFm(text, { code }) : text;
+  await transaction(t("undo.create"), () => create(`${P.projects}/${slug}/README.md`, withCode));
   return slug;
 }
 

@@ -44,15 +44,28 @@ In the meeting it came from (`write REF --section decisions`), and a dated line 
 
 ## "Prepare the next X meeting", "what should I bring up with…"
 
-1. `prepare "X"` (a recurring meeting by name, or a past meeting to follow up). It shows the last session (summary, notes, decisions, what was left to discuss), the state of its tasks now, what was done on the project since then, what is still open, and what the attendees owe.
-2. The session note: if it doesn't exist yet, `new-session "X" --date D` (it carries over the undiscussed items).
-3. Write the agenda (`write SESSION --section agenda --text "…"`), one line each, short:
-   - `- [ ] Done: <what was closed since last time>` — the user's tasks from last session that are done, and project work logged since;
-   - `- [ ] Pending from Ana: <task>` — what others owe;
-   - `- [ ] Still open on my side: <task>` — the user's open tasks from last session (so they can give status);
-   - `- [ ] Follow up: <open question / unresolved point>`;
-   Skip what is already in the agenda. Don't add new topics the user didn't have; they add those.
-4. Give the user a 3–5 line brief of where things stand.
+The result is a **script the user can glance at during the call and read out naturally** — not a list of fragments. If they have to stop to decode a line, or it raises something already settled, it failed.
+
+1. `prepare "X"` (a recurring meeting by name, or a past meeting to follow up). Read every section of its output; it separates **NEWS** (closed since last time), **STILL OPEN** on the user's side and on others' side, **NOT DISCUSSED**, and context. Check anything doubtful before using it (`find-task`, the meeting note): never put on the agenda something that is already closed, unless it is news to report once.
+2. Look at what happened between the two sessions: tasks done on the project since then, notes and decisions in other meetings with the same people, new knowledge. That is what makes the script useful.
+3. The session note: if it doesn't exist yet, `new-session "X" --date D`.
+4. Write the script into its agenda (`write SESSION --section agenda --text -`), replacing nothing the user wrote:
+
+   ```markdown
+   - [ ] **Network ticket** — It's open since Tuesday; networking still has to approve it.
+     - Ask Luis: can he push for approval this week?
+   - [ ] **Managed service quote** — I asked the vendor on Monday; no answer yet. I'll chase them tomorrow.
+   - [ ] **Framework contract (Ana)** — Ana, do you have it reviewed? We need it to close the quote.
+   - [ ] **Decide** — Pilot date: 15 Nov or wait for the network change?
+   - [ ] **Close** — Recap: Luis → approval this week; me → quote by Friday; Ana → contract. Next: Thursday 10:30.
+   ```
+
+   - One topic per line: **bold short topic** — one sentence in first person, as the user would say it, with the fact needed (date, number, who) right there.
+   - At most one indented sub-line, only for the question to ask or the data to show.
+   - Order: news (what I did / what got closed) → what I need from others → decisions to take → **Close**. Keep it to what fits the meeting (usually 4–8 lines).
+   - **Always end with a Close line**: the agreements to recap, who does what by when, and the next meeting — so the user can wrap up on time without long silences.
+   - Plain words; no task ids, no file names, no "[[links]]", no "Pending from X:" prefixes, no copying task text verbatim when a natural sentence reads better.
+5. Tell the user in 2–3 lines where things stand and what the key point of the meeting is.
 
 ## "Plan my week / my day"
 

@@ -82,6 +82,11 @@ const highlight = {
 const CALLOUT_ICONS = { note: "✎", info: "ℹ", tip: "✦", success: "✓", question: "?", warning: "!", danger: "⚠", bug: "⚠", example: "❖", quote: "❝", todo: "☐", abstract: "≡", important: "!", caution: "!" };
 
 const renderer = {
+  // several blank lines in a row stay visible as extra space (people press Enter to separate things)
+  space({ raw }) {
+    const blanks = (raw.match(/\n/g) || []).length - 1;
+    return blanks >= 2 ? `<div class="md-gap" style="height:${Math.min(blanks - 1, 4) * 0.9}em"></div>` : "";
+  },
   html({ text }) {
     return SAFE_HTML.test(text.trim()) ? text : esc(text);
   },
@@ -162,13 +167,13 @@ function taskLines(src) {
 }
 
 /** " ^a1b2c3" block ids (links from day plans) are not shown, like in Obsidian. Same line count. */
-function hideBlockIds(src) {
-  if (!src.includes("^")) return src;
+function prepare(src) {
   let fence = null;
   return src.split("\n").map((l) => {
     const f = /^\s*(```|~~~)/.exec(l);
     if (f) { if (!fence) fence = f[1]; else if (f[1] === fence) fence = null; return l; }
-    return fence ? l : l.replace(BLOCK_ID_RE, "");
+    if (fence) return l;
+    return l.includes("^") ? l.replace(BLOCK_ID_RE, "") : l;
   }).join("\n");
 }
 
@@ -179,7 +184,7 @@ function hideBlockIds(src) {
  */
 export function renderMarkdown(src, opts = {}) {
   ctx = { dir: opts.path ? dirname(opts.path) : "", n: 0 };
-  src = hideBlockIds(src || "");
+  src = prepare(src || "");
   let html;
   try { html = md.parse(src); } catch (e) { return `<pre>${esc(src)}</pre>`; }
   if (!opts.path || opts.interactive === false) return html.replace(/class="md-task"/g, 'class="md-task" disabled');

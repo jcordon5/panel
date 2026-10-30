@@ -113,7 +113,7 @@ Unticked agenda items of the last session are copied into the next one.
 type: person
 title: Ana García
 role: Responsable de compras
-team: Compras
+team: [Compras, Proyecto Alfa]   # one team or several
 org: Acme
 email: ana.garcia@example.com
 phone:
@@ -126,6 +126,8 @@ ask_for: [contratos con proveedores, presupuestos]
 Free notes: how they like to work, context, history. Add dated lines with their source:
 - 2026-10-29: takes over the supplier contracts from January ([[2026-10-29-seguimiento-alfa]])
 ```
+
+A whole team can be an attendee: `attendees: [Equipo Compras, Luis Pérez]` (also `Compras team`, or just the team name) means everyone whose `team` includes it. The `meeting` command lists who that is.
 
 Panel shows on their page what they owe the user (`@Ana` tasks), their meetings, recurring meetings and related knowledge — computed, never written into the file.
 
@@ -175,7 +177,7 @@ Carpetas con documentos útiles que viven fuera de la bóveda.
 
 ## Projects
 
-`projects/<slug>/README.md` with `type: project`, `title`, `status: active|paused|done`, `color`. The body is the project's living context: goal, who is who, state, decisions, risks, links. Keep a "## Estado" / "## Status" or "## Decisiones" section up to date when processing meetings if the project has one (append dated lines; don't rewrite what the user wrote).
+`projects/<slug>/README.md` with `type: project`, `title`, `status: active|paused|done`, `color`, and optionally `code` (a short word such as `ABC`). A task or note belongs to the project when it has `#<slug>`, `#<code>` or the code as a whole word, or lives in the project folder; `tasks --project` and `find-task --project` follow the same rule. The body is the project's living context: goal, who is who, state, decisions, risks, links. Keep a "## Estado" / "## Status" or "## Decisiones" section up to date when processing meetings if the project has one (append dated lines; don't rewrite what the user wrote).
 
 ## Sources
 

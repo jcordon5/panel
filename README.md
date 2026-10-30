@@ -31,9 +31,9 @@ Panel is built so you can **be in the meeting** and then **do the work**, not or
 ## How it works
 
 1. **Plan your week** on a board: tasks and meetings in the order they happen.
-2. **Join the meeting in meeting mode**: what you wanted to bring up on the left; at the bottom you type a line and press Enter.
-   `!` makes it your task, `@Ana` something you are waiting on from Ana, `>` a decision, `?` an open question.
-   Is there a transcript? Drop it on top.
+2. **Take notes in the meeting note**: a compact bar on top with the attendees, what's still open and buttons to jump to each
+   section, so it works on half a laptop screen next to the call. Plain Markdown below: `- [ ]` a task, `@Ana …` something you are
+   waiting on from Ana. Is there a transcript? Drop it on top.
 3. **Your AI processes it** (Claude or another agent, with the included [skill](skills/panel-vault)): "process my meetings" and it
    writes the summary, adds the tasks and decisions you missed, updates people's cards and keeps as knowledge what is worth
    remembering. The sources it used are deleted: no junk piles up.
@@ -49,21 +49,28 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
 
 <table>
 <tr>
-<td><img src="docs/img/meeting.png" alt="Meeting mode"></td>
+<td><img src="docs/img/meeting.png" alt="A meeting note"></td>
 <td><img src="docs/img/today.png" alt="Today"></td>
 </tr>
 <tr>
 <td><img src="docs/img/people.png" alt="A person's card"></td>
 <td><img src="docs/img/knowledge.png" alt="Knowledge"></td>
 </tr>
+<tr>
+<td colspan="2"><img src="docs/img/graph.png" alt="Graph"></td>
+</tr>
 </table>
 
 - **Week and day plan** — one column per day plus the inbox; drag tasks and meetings around; bring overdue work to today in one click.
 - **Recurring meetings** — a daily, a fortnightly sync, the first Monday of the month… with their usual attendees. Each session shows up
   on its day and its note is created when you join, with whatever was left to discuss last time.
-- **Meeting mode** — an agenda to tick off, quick notes that sort themselves, tasks and decisions in view, and context: what is still
-  open from the previous session and what the attendees owe you. No scrolling up and down a document.
-- **People** — cards with role, team and *what to go to them for*; each shows their meetings and what they owe you. Panel lists who
+- **Meetings** — the note itself with a compact bar: time, attendees (people or whole teams), attachments, the context folded away
+  (what's still open from the previous session, what the attendees owe you) and a button per section to jump there. Today and the
+  week mark which meetings haven't happened yet and which still need processing.
+- **Projects with a code** — give a project a short code and anything mentioning it (or `#code`) belongs to it; its tasks show its
+  colour everywhere.
+- **Graph** — a map of your work memory: projects, people, meetings and knowledge, and where most of it concentrates.
+- **People** — cards with role, teams (one or several) and *what to go to them for*; each shows their meetings and what they owe you. Panel lists who
   appears in your meetings without a card and creates it in one click. Attendee picker with autocomplete.
 - **Knowledge** — small notes of *procedures* (how something is done), *resources* (where something is) and *facts* (worth
   remembering), linked to projects and people.

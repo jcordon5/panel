@@ -3,12 +3,13 @@
 // Edits the body; frontmatter stays intact.
 
 import {
-  EditorView, EditorState, Compartment, Prec, keymap, drawSelection, dropCursor, placeholder,
+  EditorView, EditorState, Compartment, Prec, keymap, StateEffect, drawSelection, dropCursor, placeholder,
   history, historyKeymap, defaultKeymap, indentMore, indentLess, indentUnit, LanguageSupport,
   markdownLanguage, insertNewlineContinueMarkup, deleteMarkupBackward,
   autocompletion, startCompletion, search, searchKeymap, highlightSelectionMatches,
 } from "../../vendor/codemirror.js";
 import { livePreview, mdHighlight } from "../livemd.js";
+import { meetingBar } from "./meetbar.js";
 import { openDoc, fileUrlPath } from "../documents.js";
 import { h, debounce, today, dirname, relativePath, fold, basename, joinPath } from "../util.js";
 import { icon } from "../icons.js";
@@ -377,6 +378,15 @@ export function render(root, r) {
     goReplace(route.doc(path)); // going back from the document skips the editor
   }
 
+  // meetings: a compact bar with time, attendees, context and section jumps (the "meeting mode")
+  const bar = doc.kind === "meeting" ? meetingBar(doc, view, path) : null;
+  if (bar) {
+    // the editor keeps the rest of the screen, whatever the bar's height (context open or closed)
+    new ResizeObserver(() => root.style.setProperty("--mb-h", bar.offsetHeight + "px")).observe(bar);
+    const refresh = debounce(() => bar.refresh(), 400);
+    view.dispatch({ effects: StateEffect.appendConfig.of(EditorView.updateListener.of((u) => { if (u.docChanged) refresh(); })) });
+  }
+
   root.append(
     h("div", { class: "doc-top editor-top" }, crumbs(doc), h("div", { class: "page-actions" },
       status,
@@ -384,7 +394,8 @@ export function render(root, r) {
       h("button", { class: "icon-btn", type: "button", title: t("props.title"), "aria-label": t("props.title"), onclick: () => { autosave.flush(); propertiesDialog(vault().docs.get(path) || doc, (np) => { if (np !== path) go(route.edit(np)); else { const c = store.files.get(path); if (c) { fmPart = c.content.slice(0, c.content.length - parseDoc(c.content).body.length); baseEtag = c.etag; } } }); } }, icon("settings", 16)),
       h("button", { class: "btn btn-primary", type: "button", onclick: done }, icon("check", 15), t("editor.done")))),
     banner,
-    h("div", { class: "editor" }, titleInput, toolbar, panes),
+    bar,
+    h("div", { class: "editor" + (bar ? " is-meeting" : "") }, titleInput, toolbar, panes),
     h("div", { class: "editor-foot muted small" }, isTemplate ? t("tpl.placeholders") : t("editor.help")));
   if (mode === "preview") { toolbar.classList.add("is-disabled"); refreshPreview.flush(); }
 
