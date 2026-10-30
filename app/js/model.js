@@ -435,6 +435,13 @@ export function docTitle(path) {
 }
 
 export function projectBySlug(slug) { return slug ? vault().projects.get(slug) || null : null; }
+/** The project a #tag points at: its slug or its code, any case ("#alfa", "#ALFA2"). */
+export function projectByTag(tag) {
+  const k = fold(String(tag || "").replace(/^#/, ""));
+  if (!k) return null;
+  for (const p of vault().projects.values()) if (fold(p.slug) === k || (p.code && fold(p.code) === k)) return p;
+  return null;
+}
 
 export function dayItems(date) {
   const d = vault().days.get(date);

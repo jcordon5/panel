@@ -7,7 +7,7 @@ import {
   syntaxTree, ensureSyntaxTree, HighlightStyle, syntaxHighlighting, tags,
 } from "../vendor/codemirror.js";
 import { renderMarkdown } from "./markdown.js";
-import { resolveLink } from "./model.js";
+import { resolveLink, projectByTag } from "./model.js";
 import { backend } from "./backends.js";
 
 /* ------------------------------------------------------------ token colours (both modes) */
@@ -255,7 +255,9 @@ function build(state) {
     TAG_RE.lastIndex = 0;
     while ((m = TAG_RE.exec(text))) {
       const from = l.from + m.index + m[1].length, to = from + m[2].length;
-      if (!inSkip(from, to) && !/^#{1,6}$/.test(m[2])) mark("cm-tag", from, to);
+      if (inSkip(from, to) || /^#{1,6}$/.test(m[2])) continue;
+      const p = projectByTag(m[2]); // a project's #slug or #CODE, in its colour
+      mark(p ? "cm-tag cm-tag-project" : "cm-tag", from, to, p ? { "data-color": p.color, title: p.title } : undefined);
     }
     const b = BLOCK_ID_RE.exec(text);
     if (b && !inSkip(l.from + b.index, l.to)) {

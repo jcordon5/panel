@@ -7,7 +7,7 @@ import { vault, PROJECT_COLORS, KNOWLEDGE_KINDS } from "../model.js";
 import * as A from "../actions.js";
 import { modal, field, errorToast, toast, closeModals } from "../ui.js";
 import { go, route } from "../nav.js";
-import { peoplePicker, timeField } from "../picker.js";
+import { peoplePicker, timeField, listPicker, teamNames } from "../picker.js";
 import { seriesRule, weekday, DAY_KEYS, nextOccurrence } from "../series.js";
 
 function projectSelect(selected, { allowNone = true } = {}) {
@@ -178,15 +178,15 @@ export function seriesDialog(sd = null) {
 export function newPersonDialog(defaults = {}) {
   const name = h("input", { class: "input input-lg", type: "text", value: defaults.name || "", placeholder: t("person.namePh"), autofocus: true });
   const role = h("input", { class: "input", type: "text", placeholder: t("person.rolePh") });
-  const team = h("input", { class: "input", type: "text", placeholder: t("person.teamPh") });
+  const team = listPicker([], { suggest: teamNames, placeholder: t("person.teamsPh"), label: t("person.teams") });
   const email = h("input", { class: "input", type: "email", placeholder: "nombre@empresa.com" });
   modal({
     title: t("person.new"),
-    body: [field(t("common.name"), name), h("div", { class: "field-row" }, field(t("person.role"), role), field(t("person.team"), team)), field(t("person.email"), email)],
+    body: [field(t("common.name"), name), h("div", { class: "field-row" }, field(t("person.role"), role), field(t("person.teams"), team.el)), field(t("person.email"), email)],
     actions: [{ label: t("common.cancel") }, {
       label: t("person.create"), primary: true, onClick: async () => {
         if (!name.value.trim()) { name.focus(); return false; }
-        const path = await A.createPerson({ name: name.value, role: role.value, team: team.value, email: email.value });
+        const path = await A.createPerson({ name: name.value, role: role.value, team: team.get(), email: email.value });
         if (defaults.onCreated) defaults.onCreated(path); else go(route.doc(path));
       },
     }],
@@ -271,7 +271,7 @@ export function newProjectDialog() {
 export function propertiesDialog(doc, onDone) {
   const title = h("input", { class: "input input-lg", type: "text", value: doc.title });
   const fields = [field(t("common.title"), title)];
-  let date, time, proj, people, tags, pin, status, color, extra = {};
+  let date, time, proj, people, tags, pin, status, color, teams, extra = {};
   if (doc.kind === "meeting") {
     date = h("input", { class: "input", type: "date", value: doc.date || today() });
     time = timeField(doc.time || "");
@@ -282,7 +282,9 @@ export function propertiesDialog(doc, onDone) {
   const text = (k, label, ph) => { extra[k] = h("input", { class: "input", type: "text", value: listText(doc.fm[k]), placeholder: ph || "" }); fields.push(field(label, extra[k])); };
   if (doc.kind === "person") {
     text("role", t("person.role"), t("person.rolePh"));
-    text("team", t("person.teams"), t("person.teamsPh"));
+    teams = listPicker([doc.fm.team, doc.fm.teams].flatMap((x) => (Array.isArray(x) ? x : String(x || "").split(","))).map((x) => String(x).trim()).filter(Boolean),
+      { suggest: teamNames, placeholder: t("person.teamsPh"), label: t("person.teams") });
+    fields.push(field(t("person.teams"), teams.el, t("person.teamsHint")));
     text("org", t("person.org"));
     text("email", t("person.email"));
     text("phone", t("person.phone"));
@@ -329,9 +331,13 @@ export function propertiesDialog(doc, onDone) {
         if (people && doc.kind === "meeting" && people.get().join("|") !== doc.attendees.join("|")) up.attendees = people.get();
         if (people && doc.kind === "knowledge") up.people = people.get();
         for (const [k, el] of Object.entries(extra)) {
-          const listy = ["aliases", "ask_for", "team"].includes(k);
+          const listy = ["aliases", "ask_for"].includes(k);
           const v = listy ? splitList(el.value) : el.value.trim();
           if ((listy ? v.join(", ") : v) !== listText(doc.fm[k])) up[k] = listy ? v : v || null;
+        }
+        if (teams) {
+          const v = teams.get(), was = [doc.fm.team, doc.fm.teams].flatMap((x) => (Array.isArray(x) ? x : String(x || "").split(","))).map((x) => String(x).trim()).filter(Boolean);
+          if (v.join("|") !== was.join("|")) { up.team = v.length > 1 ? v : v[0] || ""; if (doc.fm.teams !== undefined) up.teams = null; }
         }
         if (proj && (proj.value || null) !== (doc.project || null)) up.project = proj.value || null;
         if (pin && pin.checked !== doc.pinned) up.pinned = pin.checked ? true : null;

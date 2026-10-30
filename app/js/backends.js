@@ -5,7 +5,7 @@
 
 import { slugify } from "./util.js";
 
-export const APP_VERSION = "3.1.0";
+export const APP_VERSION = "3.1.1";
 
 export class ApiError extends Error {
   constructor(msg, status, data) { super(msg); this.status = status; this.data = data || {}; }

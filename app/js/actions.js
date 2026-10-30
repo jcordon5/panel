@@ -495,7 +495,7 @@ export async function createPerson({ name, role, team, org, email }) {
   if (!name) throw new Error(t("person.nameMissing"));
   const path = uniquePath(P.people, slugify(name, 50));
   await transaction(t("undo.create"), () => create(path, entityText("person", name, {
-    role: role || "", team: team || "", org: org || "", email: email || "", aliases: [], ask_for: [],
+    role: role || "", team: Array.isArray(team) ? (team.length > 1 ? team : team[0] || "") : team || "", org: org || "", email: email || "", aliases: [], ask_for: [],
   })));
   return path;
 }

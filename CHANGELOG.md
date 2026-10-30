@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.1 — 2026-10-30
+
+- **Taking notes in a meeting**: only one button (*Edit*); while editing, the sticky header keeps a button per section (it no longer
+  scrolls away) and the folded context, and nothing else — no time, title, attendees or attachments, so the note gets the room.
+- **Teams**: a person's teams are chips you add one by one, with suggestions; the attendee picker shows *Teams* and *People* in separate
+  groups and finds a team by its name or "Equipo X".
+- **Project codes** work inside notes too: `#CODE` takes the project's colour in the editor and in reading mode, and clicking it opens
+  the project.
+- "Ask them for" is now "Go to them for": the topics a person helps you with.
+- The AI skill no longer turns meeting summaries into knowledge notes: knowledge is only what stays useful beyond the meeting.
+- Fix: a stray "null" above the editor of any note.
+
 ## 3.1.0 — 2026-10-30
 
 - **Meetings are the note again**, with a compact bar on top: time, attendees, attachments, *Prepare with AI*, the context folded away

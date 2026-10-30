@@ -1,40 +1,40 @@
-// The meeting bar: what the editor shows above a meeting note. Compact, so it works on half a
-// laptop screen next to the call: time and attendees, attachments for your AI, the context
-// (what's open from the previous session, what attendees owe you) folded away, and buttons to
-// jump to each section of the note without scrolling.
+// The meeting bar: one slim row in the editor's sticky header while you take notes. A button per
+// "##" section that jumps there (it stays on screen, so you can jump again), and the context —
+// what's open from the previous session, what the attendees owe you — folded at the end. The
+// meeting's details (time, attendees, attachments) are on its page, not here: the note gets the room.
 
 import { h, today } from "../util.js";
 import { icon } from "../icons.js";
-import { t, relDay, fmtDate, cap } from "../i18n.js";
+import { t, fmtDate } from "../i18n.js";
 import { vault, attendeesOf, seriesOf, sessionsOf, waitingTasks } from "../model.js";
 import { meetingSections } from "../meeting.js";
 import { route } from "../nav.js";
 import { taskList } from "../tasks.js";
-import { projectChip } from "./common.js";
-import { personChip } from "../picker.js";
-import { propertiesDialog } from "./dialogs.js";
-import { captureDialog, sourceStrip } from "./capture.js";
-import { askAi } from "./entity.js";
-import { EditorView } from "../../vendor/codemirror.js";
 
-/** Jump to a "## section": cursor at the end of what's written in it, heading at the top. */
-function jump(view, sec) {
+/** Jump to a "## section": heading just below the sticky header, cursor at the end of what's written in it. */
+function jump(view, sec, header) {
   const doc = view.state.doc;
   let line = sec.head + 1; // 1-based CodeMirror lines: heading is sec.head + 1
   for (let n = sec.start + 1; n <= Math.min(sec.end, doc.lines); n++) if (doc.line(n).text.trim()) line = n;
-  const pos = doc.line(line).to;
-  view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(doc.line(sec.head + 1).from, { y: "start", yMargin: 8 }) });
+  view.dispatch({ selection: { anchor: doc.line(line).to } });
   view.focus();
+  const top = view.lineBlockAt(doc.line(sec.head + 1).from).top;
+  const sc = view.scrollDOM;
+  if (sc.scrollHeight > sc.clientHeight + 1) { // the editor scrolls inside its own box
+    sc.scrollTop = view.documentTop - sc.getBoundingClientRect().top + sc.scrollTop + top - 8;
+  } else { // the page scrolls (narrow windows): keep the heading clear of the sticky header
+    const page = document.getElementById("view");
+    page.scrollTop += view.documentTop + top - header.getBoundingClientRect().bottom - 8;
+  }
 }
 
-export function meetingBar(doc, view, path) {
+export function meetingBar(doc, view) {
   const sd = seriesOf(doc);
-  const people = attendeesOf(doc);
   const jumps = h("div", { class: "mb-jumps" });
+  const bar = h("div", { class: "meeting-bar" });
   const paintJumps = () => {
-    const lines = view.state.doc.toString().split("\n");
-    const secs = meetingSections(lines).filter((s) => s.level === 2);
-    jumps.replaceChildren(...secs.map((s) => h("button", { class: "mb-jump", type: "button", onclick: () => jump(view, s) }, s.title)));
+    const secs = meetingSections(view.state.doc.toString().split("\n")).filter((s) => s.level === 2);
+    jumps.replaceChildren(...secs.map((s) => h("button", { class: "mb-jump", type: "button", onclick: () => jump(view, s, bar.closest(".editor-top") || bar) }, s.title)));
   };
   paintJumps();
 
@@ -48,7 +48,7 @@ export function meetingBar(doc, view, path) {
     if (open.length) blocks.push(h("div", { class: "mb-block" }, h("div", { class: "mb-block-title" }, t("mtg.fromPrevious"), " ", h("a", { href: route.doc(prev.path) }, fmtDate(prev.date, "short"))), taskList(open, { compact: true })));
   }
   const owed = [];
-  for (const a of people) {
+  for (const a of attendeesOf(doc)) {
     for (const p of a.people || (a.person ? [a.person] : [])) {
       for (const x of waitingTasks(p)) if (x.path !== doc.path && !shown.has(x)) { shown.add(x); owed.push(x); }
     }
@@ -56,19 +56,7 @@ export function meetingBar(doc, view, path) {
   if (owed.length) blocks.push(h("div", { class: "mb-block" }, h("div", { class: "mb-block-title" }, t("mtg.owedByAttendees")), taskList(owed, { compact: true, showSource: true })));
   const n = blocks.reduce((k, b) => k + b.querySelectorAll(".task").length, 0);
 
-  const bar = h("div", { class: "meeting-bar" },
-    h("div", { class: "mb-row" },
-      h("span", { class: "mb-when" }, icon("clock", 13), cap(relDay(doc.date || today())) + (doc.time ? " · " + doc.time : "")),
-      sd ? h("a", { class: "chip chip-series", href: route.doc(sd.path) }, icon("clock", 12), sd.title) : null,
-      doc.project ? projectChip(doc.project) : null,
-      people.map((a) => personChip(a.name, { person: a.person, team: a.people })),
-      h("button", { class: "btn btn-sm btn-ghost", type: "button", onclick: () => propertiesDialog(vault().docs.get(path) || doc) }, icon("pencil", 12), people.length ? t("mtg.editPeople") : t("mtg.addPeople")),
-      h("span", { class: "mb-spacer" }),
-      sd ? h("button", { class: "btn btn-sm btn-ghost", type: "button", title: t("ai.prepareHint"), onclick: () => askAi(t("ai.preparePrompt", { title: sd.title })) }, icon("sparkles", 13), t("ai.prepare")) : null,
-      h("button", { class: "btn btn-sm btn-ghost", type: "button", title: t("cap.forMeetingHint"), onclick: () => captureDialog({ meeting: path }) }, icon("upload", 13), t("cap.forMeeting"))),
-    sourceStrip(doc),
-    n ? h("details", { class: "mb-context" }, h("summary", {}, icon("chevron-right", 13, "mb-caret"), t("mtg.context", { n })), blocks) : null,
-    jumps);
+  bar.append(jumps, n ? h("details", { class: "mb-context" }, h("summary", {}, icon("chevron-right", 13, "mb-caret"), t("mtg.context", { n })), h("div", { class: "mb-context-body" }, blocks)) : "");
   bar.refresh = paintJumps;
   return bar;
 }

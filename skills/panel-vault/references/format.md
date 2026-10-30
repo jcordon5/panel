@@ -72,7 +72,7 @@ processed: 2026-10-29             # set once the summary is written (by you)
 Sections are recognised by their heading, in any language and with the names people use in their own templates: **summary** (Resumen, Acta, Summary, Minutes) · **agenda** (Para comentar, Comentar, Agenda, To discuss) · **notes** (Notas, Apuntes, Notes) · **tasks** (Tareas, Acciones, Próximos pasos, Tasks, Action items, Next steps — "Tareas para mí" too) · **decisions** (Decisiones, Acuerdos, Decisions). Older meetings without these sections are valid; when you add to them, `write` creates the section in the right place.
 
 - `attendees` are names as written; each resolves to a person card by title, alias, file name or unique first name. Names without a card are fine.
-- Notes are written live in meeting mode, often terse: `! x` became a task, `@Name x` a task for Name, `> x` a decision, `? x` a question. Keep them; the summary goes on top.
+- Notes are written live during the meeting, often terse (`@Name x` = a task for Name; older notes may also use `! x` task, `> x` decision, `? x` question). Keep them; the summary goes on top.
 - Open `- [ ]` lines outside the agenda are **action items**; the day plan can link to them (`plan`).
 
 ## Recurring meetings (series)
@@ -155,6 +155,7 @@ tags: [compras]
 
 - **howto**: numbered steps, prerequisites, who to ask, pitfalls. **resource**: the link(s) and what is there. **fact**: one or two sentences.
 - A resource that is a file can say where it is with `location: "C:\\Templates\\report.docx"` (or a URL): Panel shows an *Open* button. Links like `[report](file:///C:/Templates/report.docx)` in any note open the file too.
+- Knowledge is what stays useful beyond any one meeting. A meeting's summary, status, decisions and outcomes live in the meeting note (and the project), **never** in `knowledge/`.
 - One topic per note; update an existing note instead of creating a near-duplicate (search first). Add `updated` changes as dated lines if the knowledge changed.
 
 ## documents.md

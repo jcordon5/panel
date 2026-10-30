@@ -77,7 +77,6 @@ export function entityChips(doc) {
 export function entityActions(doc) {
   if (doc.kind === "meeting") return [
     btn(t("cap.forMeeting"), "upload", () => captureDialog({ meeting: doc.path }), "btn-ghost"),
-    btn(t("mtg.mode"), "users", () => go(route.meet(doc.path)), "btn-primary"),
   ];
   if (doc.kind === "person") return [btn(t("meeting.new"), "users", () => newMeetingDialog({ attendees: [doc.title] }))];
   if (doc.kind === "series") {

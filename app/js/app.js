@@ -4,7 +4,7 @@ import { h, $, today } from "./util.js";
 import { icon } from "./icons.js";
 import { t, lang, setLang } from "./i18n.js";
 import { store, loadInfo, sync, onChange, startPolling, apiGet } from "./store.js";
-import { vault, dayTasks, overdueTasks, isTask } from "./model.js";
+import { vault, dayTasks, overdueTasks, isTask, projectByTag } from "./model.js";
 import { startAutoBackups } from "./backup.js";
 import { state, requestRender, applyTheme } from "./state.js";
 import { parseRoute, route, go, trackNavigation, setNavTitle, navBack, navForward } from "./nav.js";
@@ -160,7 +160,12 @@ function bindGlobal() {
       return;
     }
     if (a && a.dataset.asset) { e.preventDefault(); openAsset(a.dataset.asset); return; }
-    if (a && a.classList.contains("tag")) { e.preventDefault(); openPalette("#" + a.dataset.tag); return; }
+    if (a && a.classList.contains("tag")) {
+      e.preventDefault();
+      const p = projectByTag(a.dataset.tag);
+      p ? go(route.project(p.slug)) : openPalette("#" + a.dataset.tag);
+      return;
+    }
     const copy = e.target.closest("[data-action=copy-code]");
     if (copy) {
       const code = copy.parentElement.querySelector("code")?.textContent || "";

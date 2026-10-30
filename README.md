@@ -31,8 +31,8 @@ Panel is built so you can **be in the meeting** and then **do the work**, not or
 ## How it works
 
 1. **Plan your week** on a board: tasks and meetings in the order they happen.
-2. **Take notes in the meeting note**: a compact bar on top with the attendees, what's still open and buttons to jump to each
-   section, so it works on half a laptop screen next to the call. Plain Markdown below: `- [ ]` a task, `@Ana …` something you are
+2. **Take notes in the meeting note**: the whole screen is the note, with a button per section that stays on top and what's still
+   open folded beside it, so it works on half a laptop screen next to the call. Plain Markdown below: `- [ ]` a task, `@Ana …` something you are
    waiting on from Ana. Is there a transcript? Drop it on top.
 3. **Your AI processes it** (Claude or another agent, with the included [skill](skills/panel-vault)): "process my meetings" and it
    writes the summary, adds the tasks and decisions you missed, updates people's cards and keeps as knowledge what is worth
@@ -64,8 +64,8 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
 - **Week and day plan** — one column per day plus the inbox; drag tasks and meetings around; bring overdue work to today in one click.
 - **Recurring meetings** — a daily, a fortnightly sync, the first Monday of the month… with their usual attendees. Each session shows up
   on its day and its note is created when you join, with whatever was left to discuss last time.
-- **Meetings** — the note itself with a compact bar: time, attendees (people or whole teams), attachments, the context folded away
-  (what's still open from the previous session, what the attendees owe you) and a button per section to jump there. Today and the
+- **Meetings** — their page shows time, attendees (people or whole teams) and attachments; while you write, only the note, a button
+  per section to jump there and the context folded away (what's still open from the previous session, what the attendees owe you). Today and the
   week mark which meetings haven't happened yet and which still need processing.
 - **Projects with a code** — give a project a short code and anything mentioning it (or `#code`) belongs to it; its tasks show its
   colour everywhere.

@@ -31,8 +31,8 @@ Panel está hecho para que **atiendas a la reunión** y luego **hagas**, no para
 ## Cómo funciona
 
 1. **Planificas la semana** en un tablero: tareas y reuniones en el orden en que ocurren.
-2. **Tomas notas en la propia nota de la reunión**: arriba una barra compacta con los asistentes, lo que sigue abierto y botones para
-   saltar a cada sección, así que funciona en media pantalla del portátil junto a la llamada. Debajo, Markdown normal: `- [ ]` una
+2. **Tomas notas en la propia nota de la reunión**: toda la pantalla es la nota, con un botón por sección que se queda arriba y lo
+   que sigue abierto plegado al lado, así que funciona en media pantalla del portátil junto a la llamada. Debajo, Markdown normal: `- [ ]` una
    tarea, `@Ana …` algo que esperas de Ana. ¿Hay transcripción? La sueltas encima.
 3. **Tu IA lo procesa** (Claude u otro agente, con la [skill](skills/panel-vault) incluida): «procesa mis reuniones» y escribe el
    resumen, completa tareas y decisiones que se te escaparon, actualiza las fichas de las personas y guarda como conocimiento lo que
@@ -65,8 +65,8 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
 - **Semana y plan del día** — una columna por día más la bandeja; arrastra tareas y reuniones; lo atrasado a hoy con un clic.
 - **Reuniones recurrentes** — una daily, un seguimiento cada dos semanas, el primer lunes de mes… Con sus asistentes habituales. Cada
   sesión aparece sola en su día y su nota se crea al entrar, con lo que quedó sin comentar en la anterior.
-- **Reuniones** — la propia nota con una barra compacta: hora, asistentes (personas o equipos enteros), adjuntos, el contexto plegado
-  (lo abierto de la sesión anterior, lo que te deben los asistentes) y un botón por sección para saltar a ella. Hoy y la semana marcan
+- **Reuniones** — su página muestra hora, asistentes (personas o equipos enteros) y adjuntos; mientras escribes, solo la nota, un botón
+  por sección para saltar a ella y el contexto plegado (lo abierto de la sesión anterior, lo que te deben los asistentes). Hoy y la semana marcan
   qué reuniones aún no se han celebrado y cuáles faltan por procesar.
 - **Proyectos con código** — dale a un proyecto un código corto y todo lo que lo mencione (o `#código`) se asocia a él; sus tareas
   llevan su color en todas partes.

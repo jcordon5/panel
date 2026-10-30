@@ -21,7 +21,7 @@ weeks/2026-W44.md              one file per ISO week; "## <Weekday> · YYYY-MM-D
 meetings/YYYY-MM-DD-title.md   meetings (projects/<slug>/meetings/ for a project's)
 series/<name>.md               recurring meetings (repeat rule, usual attendees); each session is a normal meeting with `series: <name>`
 people/<name>.md               one card per person: role, team, what to ask them for, notes
-knowledge/<title>.md           small notes of what was learned: kind howto | resource | fact
+knowledge/<title>.md           small reusable notes (howto | resource | fact) — never meeting summaries or status
 projects/<slug>/README.md      project overview and context
 notes/*.md                     free notes
 sources/*.md                   things captured for you to process (transcripts, emails, chats); delete once used

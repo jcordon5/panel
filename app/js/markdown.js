@@ -4,7 +4,7 @@
 
 import { Marked } from "../vendor/marked.esm.js";
 import { esc, dirname, joinPath } from "./util.js";
-import { resolveLink, projectBySlug, TASK_RE, BLOCK_ID_RE } from "./model.js";
+import { resolveLink, projectByTag, TASK_RE, BLOCK_ID_RE } from "./model.js";
 import { backend } from "./backends.js";
 
 const IMG_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
@@ -62,7 +62,7 @@ const tag = {
     if (m) return { type: "tag", raw: m[0], tag: m[1] };
   },
   renderer(tok) {
-    const p = projectBySlug(tok.tag) || projectBySlug(tok.tag.toLowerCase());
+    const p = projectByTag(tok.tag);
     const style = p ? ` data-color="${p.color}"` : "";
     return `<a href="#" class="tag${p ? " tag-project" : ""}"${style} data-tag="${esc(tok.tag)}">#${esc(tok.tag)}</a>`;
   },

@@ -36,7 +36,7 @@ export function teamChip(name, people) {
 }
 
 function teamMatches(q) {
-  const k = fold(q.trim());
+  const k = fold(q.trim().replace(/^(equipo|team)\b\s*|\s*\b(equipo|team)$/i, ""));
   return [...vault().teams.values()].filter((tm) => !k || fold(tm.name).includes(k)).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 5);
 }
 
@@ -106,32 +106,30 @@ export function peoplePicker(initial = [], opts = {}) {
   function close() { list.hidden = true; options = []; }
   function open() {
     const q = input.value;
+    // teams first, in their own group; people below (a team's name no longer buries it under its members)
+    const teams = opts.single ? [] : teamMatches(q).filter((tm) => !names.some((n) => findTeam(n) === tm));
     const found = matches(q).filter((p) => !names.some((n) => findPerson(n) === p));
-    options = found.map((p) => ({ kind: "person", p }));
-    if (!opts.single) for (const tm of teamMatches(q)) if (!names.some((n) => findTeam(n) === tm)) options.push({ kind: "team", tm });
-    if (q.trim() && !found.some((p) => fold(p.title) === fold(q.trim()))) {
+    options = [...teams.map((tm) => ({ kind: "team", tm })), ...found.map((p) => ({ kind: "person", p }))];
+    const exact = (x) => fold(x) === fold(q.trim());
+    if (q.trim() && !found.some((p) => exact(p.title)) && !teams.some((tm) => exact(tm.name) || exact(t("team.attendee", { name: tm.name })))) {
       options.push({ kind: "free", name: q.trim() }, { kind: "create", name: q.trim() });
     }
     if (!options.length) { close(); return; }
     active = Math.min(active, options.length - 1);
-    list.replaceChildren(...options.map((o, i) => h("div", {
+    const head = (i) => (opts.single ? null
+      : i === 0 && options[0].kind === "team" ? h("div", { class: "picker-group" }, t("picker.teams"))
+        : options[i].kind === "person" && (i === 0 || options[i - 1].kind !== "person") && teams.length ? h("div", { class: "picker-group" }, t("picker.people")) : null);
+    list.replaceChildren(...options.flatMap((o, i) => [head(i), h("div", {
       class: "picker-opt" + (i === active ? " active" : ""), role: "option",
       onmousedown: (e) => { e.preventDefault(); pick(i); },
     }, o.kind === "person" ? [avatar(o.p.title, "avatar-sm"), h("span", { class: "picker-name" }, o.p.title), h("span", { class: "picker-sub" }, [o.p.fm.role, [].concat(o.p.fm.team || []).join(", ")].filter(Boolean).join(" · "))]
       : o.kind === "team" ? [h("span", { class: "avatar avatar-sm team-avatar" }, icon("users", 11)), h("span", { class: "picker-name" }, t("team.attendee", { name: o.tm.name })), h("span", { class: "picker-sub" }, t("team.members", { n: o.tm.people.length }))]
       : o.kind === "free" ? [icon("plus", 14), h("span", { class: "picker-name" }, t("people.addName", { name: o.name }))]
-        : [icon("users", 14), h("span", { class: "picker-name" }, t("person.createThis", { name: o.name }))])));
+        : [icon("users", 14), h("span", { class: "picker-name" }, t("person.createThis", { name: o.name }))])]).filter(Boolean));
     list.hidden = false;
     place();
   }
-  // open upwards when the list would be cut off (a picker at the bottom of a dialog)
-  function place() {
-    let box = el.parentElement;
-    while (box && box !== document.body && !/(auto|scroll|hidden)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
-    const lim = box && box !== document.body ? box.getBoundingClientRect() : { top: 0, bottom: innerHeight };
-    const r = el.getBoundingClientRect(), need = Math.min(list.scrollHeight, 280) + 8;
-    list.classList.toggle("up", lim.bottom - r.bottom < need && r.top - lim.top > lim.bottom - r.bottom);
-  }
+  const place = () => placeList(el, list);
   function pick(i) {
     const o = options[i];
     if (!o) return;
@@ -161,6 +159,64 @@ export function peoplePicker(initial = [], opts = {}) {
   };
   return { el, get };
 }
+
+/** Open a picker's list upwards when it would be cut off (a picker at the bottom of a dialog). */
+function placeList(el, list) {
+  let box = el.parentElement;
+  while (box && box !== document.body && !/(auto|scroll|hidden)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+  const lim = box && box !== document.body ? box.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+  const r = el.getBoundingClientRect(), need = Math.min(list.scrollHeight, 280) + 8;
+  list.classList.toggle("up", lim.bottom - r.bottom < need && r.top - lim.top > lim.bottom - r.bottom);
+}
+
+/**
+ * Several short values as chips, with suggestions (a person's teams):
+ * listPicker(["Finance"], { suggest: () => ["Finance", "Sales"], placeholder }) -> { el, get }
+ */
+export function listPicker(initial = [], opts = {}) {
+  const values = [...initial];
+  const chips = h("div", { class: "picker-chips" });
+  const input = h("input", { class: "picker-input", type: "text", placeholder: opts.placeholder || "", autocomplete: "off", "aria-label": opts.label || "" });
+  const list = h("div", { class: "picker-list", role: "listbox", hidden: true });
+  const el = h("div", { class: "picker", onclick: (e) => { if (e.target === el || e.target === chips) input.focus(); } }, chips, input, list);
+  let options = [], active = 0;
+  const has = (v) => values.some((x) => fold(x) === fold(v));
+  const paint = () => chips.replaceChildren(...values.map((v, i) => h("span", { class: "chip picker-chip" }, h("span", { class: "chip-text" }, v),
+    h("button", { class: "chip-x", type: "button", "aria-label": t("common.remove"), onclick: (e) => { e.stopPropagation(); values.splice(i, 1); paint(); input.focus(); } }, icon("x", 11)))));
+  const close = () => { list.hidden = true; options = []; };
+  const add = (v) => { v = String(v || "").trim(); input.value = ""; close(); if (v && !has(v)) { values.push(v); paint(); } };
+  const open = () => {
+    const q = input.value.trim(), k = fold(q);
+    options = (opts.suggest?.() || []).filter((s) => !has(s) && (!k || fold(s).includes(k))).slice(0, 8).map((s) => ({ v: s }));
+    if (q && !has(q) && !options.some((o) => fold(o.v) === k)) options.push({ v: q, isNew: true });
+    if (!options.length) { close(); return; }
+    active = Math.min(active, options.length - 1);
+    list.replaceChildren(...options.map((o, i) => h("div", { class: "picker-opt" + (i === active ? " active" : ""), role: "option", onmousedown: (e) => { e.preventDefault(); add(o.v); } },
+      o.isNew ? [icon("plus", 14), h("span", { class: "picker-name" }, t("list.addNew", { name: o.v }))] : h("span", { class: "picker-name" }, o.v))));
+    list.hidden = false;
+    placeList(el, list);
+  };
+  input.addEventListener("input", () => { active = 0; open(); });
+  input.addEventListener("focus", open);
+  input.addEventListener("blur", () => setTimeout(() => { if (input.value.trim()) add(input.value); close(); }, 150));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); active = (active + (e.key === "ArrowDown" ? 1 : options.length - 1)) % Math.max(1, options.length); open(); return; }
+    if (e.key === "Enter" || e.key === ",") {
+      if (!input.value.trim() && e.key === "Enter" && list.hidden) return; // let the dialog submit
+      e.preventDefault();
+      add(!list.hidden && options[active] ? options[active].v : input.value);
+      return;
+    }
+    if (e.key === "Backspace" && !input.value && values.length) { values.pop(); paint(); }
+    if (e.key === "Escape" && !list.hidden) { e.stopPropagation(); close(); }
+  });
+  paint();
+  const get = () => (input.value.trim() && !has(input.value) ? [...values, input.value.trim()] : [...values]);
+  return { el, get };
+}
+
+/** The teams people are in, for suggestions. */
+export const teamNames = () => [...vault().teams.values()].map((tm) => tm.name).sort((a, b) => a.localeCompare(b));
 
 /* ------------------------------------------------------------ time */
 

@@ -36,7 +36,14 @@ Append with `write REF --section tasks`. Don't duplicate existing lines; don't r
 - something new learned (new role, takes over a topic, "ask her for X") → append a dated line to their card's notes, or update `role`/`team`/`ask_for` in the frontmatter.
 Don't create cards for one-off mentions.
 
-**Knowledge** — anything reusable beyond this meeting: how something is done (howto), where something is (resource), a rule or number worth remembering (fact). `search` first; update the existing note if there is one; otherwise `add-knowledge` with `--source "[[meeting-file]]"` and `--people` of who knows about it. Skip what only matters for this meeting.
+**Knowledge** — only what stays true and useful *after* this meeting, for any future situation: how something is done (howto), where something is (resource), a general rule, contact or number worth remembering (fact). Most meetings produce **none**; that is the normal case.
+
+- **Never a summary, recap, status or outcome of the meeting** — that is the meeting's own `summary` section. "The pilot is two weeks late", "we agreed to review costs", "Ana will send the contract" are *not* knowledge (status, decision and task: they go in the meeting, its tasks and the project).
+- Test before saving: *would this help someone in six months, in a different meeting, who never saw this one?* and *can it be said in 1–3 sentences without mentioning this meeting?* If not, skip it.
+- Examples that **are** knowledge: "Purchase orders over a threshold need the finance director's approval", "The deployment checklist lives in the ops wiki", "Network changes are requested through the infrastructure ticket queue".
+- One topic per note, short (a sentence to a few lines; a howto can be numbered steps). Title it by the topic ("How to request a network change"), never by the meeting or date.
+- `search` / `knowledge` first and update the existing note instead of creating a near-duplicate; otherwise `add-knowledge` with `--source "[[meeting-file]]"` and `--people` of who knows about it.
+- When in doubt, don't create it: mention it in the report as a possible knowledge note and let the user decide.
 
 **Project** — if the meeting changes the project's state and its README has a status/decisions section, append a dated line.
 
@@ -56,9 +63,9 @@ python3 scripts/panel_vault.py --vault PATH source-done sources/<each source use
 ## 4. Sources without a meeting
 
 - **Email / chat**: requests to the user → tasks (with the sender as context: "Reply to Ana about …"); requests the user made to others → `@Name` tasks; facts and how-tos → knowledge; new people → cards.
-- **Document / note**: knowledge notes (one per topic) and project context.
+- **Document / note**: project context, and knowledge notes only for the reusable procedures, locations and rules it contains (one per topic) — never a summary of the document.
 - Then `source-done`.
 
 ## 5. Report
 
-Tell the user, briefly: which meetings were processed (one line each), the tasks created for them (so they can plan them — in Panel, *Finish* in meeting mode or the task menu), new people cards and knowledge notes, and anything unclear that needs their input. Don't plan their tasks for them unless they ask.
+Tell the user, briefly: which meetings were processed (one line each), the tasks created for them (so they can plan them — in Panel, by dragging them to a day or from the task menu), new people cards and knowledge notes, and anything unclear that needs their input. Don't plan their tasks for them unless they ask.
