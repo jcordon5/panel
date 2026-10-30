@@ -13,6 +13,7 @@ import { emptyState, errorToast, toast } from "../ui.js";
 import * as A from "../actions.js";
 
 let q = "";
+let org = ""; // organisation filter
 
 export const title = () => t("nav.people");
 
@@ -60,11 +61,16 @@ export function render(root) {
   const search = h("input", { class: "input", type: "search", placeholder: t("people.searchPh"), value: q, "data-focus-key": "people-q" });
   const body = h("div", {});
   search.addEventListener("input", () => { q = search.value; paint(); });
-  root.append(h("div", { class: "toolbar" }, search), body);
+  // filter by organisation (only when people have one)
+  const orgs = [...new Set(v.people.map((p) => String(p.fm.org || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  if (org && !orgs.includes(org)) org = "";
+  const orgSel = orgs.length ? h("select", { class: "input input-auto", "aria-label": t("person.org"), onchange: (e) => { org = e.target.value; paint(); } },
+    h("option", { value: "" }, t("people.allOrgs")), orgs.map((o) => h("option", { value: o, selected: org === o }, o))) : null;
+  root.append(h("div", { class: "toolbar" }, search, orgSel), body);
 
   function paint() {
     const k = fold(q.trim());
-    const people = v.people.filter((p) => !k || fold([p.title, p.fm.role, teamsOf(p).join(" "), p.fm.org, p.fm.email, ...list(p.fm.aliases), ...list(p.fm.ask_for), p.body].join(" ")).includes(k));
+    const people = v.people.filter((p) => !org || String(p.fm.org || "").trim() === org).filter((p) => !k || fold([p.title, p.fm.role, teamsOf(p).join(" "), p.fm.org, p.fm.email, ...list(p.fm.aliases), ...list(p.fm.ask_for), p.body].join(" ")).includes(k));
     body.replaceChildren();
     if (!v.people.length) body.append(emptyState("users", t("people.emptyTitle"), t("people.emptyText"), btn(t("person.new"), "plus", () => newPersonDialog(), "btn-primary")));
     else if (!people.length) body.append(emptyState("search", t("people.noMatch")));
@@ -80,7 +86,7 @@ export function render(root) {
     const keys = [...groups.keys()].sort((a, b) => (a === t("people.noTeam")) - (b === t("people.noTeam")) || a.localeCompare(b));
     for (const g of keys) body.append(section(g, h("div", { class: "cards people-cards" }, groups.get(g).map(personCard)), { count: groups.get(g).length }));
 
-    const unknown = !k ? unknownPeople() : [];
+    const unknown = !k && !org ? unknownPeople() : [];
     if (unknown.length) {
       body.append(section(t("people.unknown"), h("div", {},
         h("p", { class: "muted small" }, t("people.unknownHint")),

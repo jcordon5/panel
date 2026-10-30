@@ -469,6 +469,7 @@ export const STRINGS = {
     "person.teamsHint": "Puede estar en varios: el equipo general y el de cada proyecto. Pulsa Enter o coma para añadir otro.",
     "picker.teams": "Equipos",
     "picker.people": "Personas",
+    "people.allOrgs": "Todas las organizaciones",
     "undo.add": "añadir tarea", "undo.toggle": "marcar tarea", "undo.edit": "editar", "undo.delete": "eliminar",
     "undo.move": "mover", "undo.plan": "planificar", "undo.unplan": "quitar del plan", "undo.create": "crear", "undo.done": "Deshecho: {what}", "undo.nothing": "Nada que deshacer",
 
@@ -958,6 +959,7 @@ export const STRINGS = {
     "person.teamsHint": "Can be several: the general team and each project's team. Press Enter or comma to add another.",
     "picker.teams": "Teams",
     "picker.people": "People",
+    "people.allOrgs": "All organisations",
     "undo.add": "add task", "undo.toggle": "check task", "undo.edit": "edit", "undo.delete": "delete",
     "undo.move": "move", "undo.plan": "plan", "undo.unplan": "remove from plan", "undo.create": "create", "undo.done": "Undone: {what}", "undo.nothing": "Nothing to undo",
 
