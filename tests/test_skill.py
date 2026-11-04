@@ -3,6 +3,7 @@
 import contextlib
 import io
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -52,6 +53,19 @@ class SkillTest(unittest.TestCase):
         self.assertIn("Compras, Comité", self.run_cmd("people", "comite"))
         self.run_cmd("new-meeting", "--title", "Revisión de compras", "--date", "2026-11-02", "--attendees", "Equipo Compras")
         self.assertIn("whole team Compras: Ana García", self.run_cmd("meeting", "revision-de-compras"))
+
+    def test_tasks_placed_in_the_day(self):
+        self.run_cmd("add-task", "Preparar datos para el sync", "--before", "sync")
+        self.run_cmd("add-task", "Enviar el resumen del sync", "--after", "sync")
+        self.run_cmd("add-task", "Ordenar la carpeta")
+        self.run_cmd("add-task", "Llamar a soporte", "--after", "resumen del sync")
+        lines = [l for l in self.run_cmd("day").split("\n") if re.match(r"^\d+\. ", l)]
+        order = lambda words: next(i for i, l in enumerate(lines) if words in l)
+        self.assertEqual(order("Preparar datos"), order("[meeting]") - 1)
+        self.assertEqual(order("Enviar el resumen"), order("[meeting]") + 1)
+        self.assertEqual(order("Llamar a soporte"), order("Enviar el resumen") + 1)
+        self.assertEqual(order("Ordenar la carpeta"), len(lines) - 1)
+        self.assertIn("16:00 Revisar", self.run_cmd("add-task", "Revisar contrato", "--time", "16:00"))
 
     def test_memory_commands(self):
         pending = self.run_cmd("pending")

@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.1.3 — 2026-11-04
+
+- **Your AI plans, not just adds**: tasks go where they'd be done in the day — preparing a meeting right before it, follow-ups right
+  after, short things in the gaps between meetings, low-priority things at the end. The skill's `add-task`, `move` and `plan` take
+  `--before` / `--after` (a meeting or task of that day, by its words or number), `--at HH:MM` and `--time HH:MM`; `day` numbers its
+  items. The skill's instructions explain how to order a day and when to suggest another day instead.
+- Lists keep their spacing in reading mode: a blank line between items shows as one, like in the editor, and more blank lines add more
+  space.
+
 ## 3.1.2 — 2026-10-30
 
 - **People, easier to browse**: group by team or by organisation, with the groups listed on the left and their counts; pick one to

@@ -27,9 +27,10 @@ Memory
   series                          recurring meetings and their next session
 
 Write (atomic, keeps frontmatter, bumps `updated`)
-  add-task TEXT [--date D | --inbox] [--project SLUG]
+  add-task TEXT [--date D | --inbox] [--project SLUG] [--time HH:MM]
+              [--before X | --after X | --at HH:MM]   where in the day: X = words of a meeting/task of that day or its number
   done PATTERN [--date D] [--reopen]      check (or uncheck) the task whose text contains PATTERN
-  move PATTERN (--to D | --to-inbox) [--from D]
+  move PATTERN (--to D | --to-inbox) [--from D] [--before X | --after X | --at HH:MM]
   new-meeting --title T --date D [--time HH:MM] [--project SLUG] [--attendees "Ana, Luis"]
               [--template NAME] [--notes TEXT]
   write REF --section summary|agenda|notes|tasks|decisions --text TEXT   (TEXT "-" = stdin)
@@ -394,12 +395,12 @@ def print_day(v, d, header=True):
     placed = set(i["meeting"]["path"] for i in items if i["type"] == "ref" and i["meeting"])
     if header:
         print("## %s %s" % (DAYS["en"][d.weekday()], d.isoformat()))
-    shown = False
+    shown, n = False, 0
     for it in items:
-        if it["type"] == "task":
-            print(fmt_task(it))
-        elif it["type"] == "ref":
-            print(fmt_meeting(it["meeting"]) if it["meeting"] else "- [[%s]] (missing file)" % it["target"])
+        if it["type"] in ("task", "ref"):  # numbered in order: `--before N` / `--after N` place things by number
+            n += 1
+            line = fmt_task(it) if it["type"] == "task" else fmt_meeting(it["meeting"]) if it["meeting"] else "- [[%s]] (missing file)" % it["target"]
+            print("%d. %s" % (n, line[2:]))
         else:
             print("  ### " + it["text"])
         shown = True
@@ -626,6 +627,50 @@ def insert_in_day(v, d, block, index=None, time=None):
     return rel
 
 
+def day_position(v, d, before=None, after=None, at=None):
+    """Where to put something in a day: (index, time) for insert_in_day.
+    before/after: words of a meeting title or task in that day (or its 1-based number in `day`);
+    at: HH:MM — where that time falls among the day's meetings and timed tasks."""
+    if at:
+        return None, norm_hhmm(at)
+    anchor = before or after
+    if not anchor:
+        return None, None
+    items = [x for x in day_items(v, d) if x["type"] in ("task", "ref")]
+    label = lambda it: (it["meeting"]["title"] if it["type"] == "ref" and it["meeting"] else it.get("text") or it.get("target") or "")
+    if anchor.isdigit():
+        n = int(anchor) - 1
+        if not 0 <= n < len(items):
+            sys.exit("The day has %d items; no item %s." % (len(items), anchor))
+        hits = [n]
+    else:
+        k = fold(anchor)
+        hits = [n for n, it in enumerate(items) if k in fold(label(it))]
+        meets = [n for n in hits if items[n]["type"] == "ref"]
+        if len(hits) > 1 and len(meets) == 1:  # "before the sync": the meeting, not a task that mentions it
+            hits = meets
+    if len(hits) > 1:
+        sys.exit("Several items of %s match '%s' — use more words or its number:\n%s" % (d.isoformat(), anchor, "\n".join("%d. %s" % (n + 1, label(items[n])) for n in hits)))
+    if hits:
+        return (hits[0] if before else hits[0] + 1), None
+    # a meeting of that day not placed in the plan yet (or a recurring session): place by its time
+    k = fold(anchor)
+    times = [m["time"] for m in all_meetings(v) if m["date"] == d.isoformat() and m["time"] and k in fold(m["title"])]
+    times += [sd["fm"].get("time") for sd in all_series(v) if sd["fm"].get("time") and k in fold(sd["title"]) and occurs_on(sd["rule"], d)]
+    if not times:
+        sys.exit("Nothing in %s matches '%s' (see `day %s`)." % (d.isoformat(), anchor, d.isoformat()))
+    hh, mm = map(int, norm_hhmm(times[0]).split(":"))
+    mins = hh * 60 + mm + (1 if after else -1)
+    return None, "%02d:%02d" % (max(0, mins) // 60, max(0, mins) % 60)
+
+
+def norm_hhmm(t):
+    m = re.match(r"^(\d{1,2})[:.h]?(\d{2})?$", str(t or "").strip())
+    if not m or int(m.group(1)) > 23 or int(m.group(2) or 0) > 59:
+        sys.exit("Not a time: '%s' (use HH:MM)." % t)
+    return "%02d:%02d" % (int(m.group(1)), int(m.group(2) or 0))
+
+
 def cmd_add_task(v, a):
     text = a.text.strip()
     if a.project and ("#" + a.project) not in text:
@@ -639,7 +684,10 @@ def cmd_add_task(v, a):
         print("Added to inbox.md: " + block[0])
         return
     d = parse_date(a.date)
-    rel = insert_in_day(v, d, block)
+    if a.time:
+        block = ["- [ ] %s %s" % (norm_hhmm(a.time), text)]
+    index, at = day_position(v, d, a.before, a.after, a.at or a.time)
+    rel = insert_in_day(v, d, block, index, at)
     print("Added to %s (%s): %s" % (rel, d.isoformat(), block[0]))
 
 
@@ -720,7 +768,8 @@ def cmd_move(v, a):
         print("Moved to inbox: " + t["text"])
     else:
         d = parse_date(a.to)
-        rel = insert_in_day(v, d, block)
+        index, at = day_position(v, d, a.before, a.after, a.at)
+        rel = insert_in_day(v, d, block, index, at)
         print("Moved to %s (%s): %s" % (rel, d.isoformat(), t["text"]))
 
 
@@ -748,7 +797,8 @@ def cmd_plan(v, a):
     base = os.path.basename(x["path"])[:-3]
     link = base if resolve(v, base) == x["path"] else x["path"][:-3]
     d = parse_date(a.date)
-    rel = insert_in_day(v, d, ["- [[%s#^%s]]" % (link, block)])
+    index, at = day_position(v, d, a.before, a.after, a.at)
+    rel = insert_in_day(v, d, ["- [[%s#^%s]]" % (link, block)], index, at)
     print("Planned for %s (%s): %s   (stays in %s)" % (d.isoformat(), rel, x["text"], x["path"]))
 
 
@@ -1534,10 +1584,10 @@ def main(argv=None):
     s = sub.add_parser("actions"); s.add_argument("--project"); s.add_argument("--since"); s.set_defaults(fn=cmd_actions)
     sub.add_parser("projects").set_defaults(fn=cmd_projects)
     s = sub.add_parser("project"); s.add_argument("slug"); s.set_defaults(fn=cmd_project)
-    s = sub.add_parser("add-task"); s.add_argument("text"); s.add_argument("--date"); s.add_argument("--inbox", action="store_true"); s.add_argument("--project"); s.set_defaults(fn=cmd_add_task)
+    s = sub.add_parser("add-task"); s.add_argument("text"); s.add_argument("--date"); s.add_argument("--inbox", action="store_true"); s.add_argument("--project"); s.add_argument("--time"); s.add_argument("--before"); s.add_argument("--after"); s.add_argument("--at"); s.set_defaults(fn=cmd_add_task)
     s = sub.add_parser("done"); s.add_argument("pattern"); s.add_argument("--date"); s.add_argument("--reopen", action="store_true"); s.set_defaults(fn=cmd_done)
-    s = sub.add_parser("plan"); s.add_argument("pattern"); s.add_argument("--date", default="today"); s.set_defaults(fn=cmd_plan)
-    s = sub.add_parser("move"); s.add_argument("pattern"); s.add_argument("--to"); s.add_argument("--to-inbox", action="store_true"); s.add_argument("--from", dest="from_"); s.set_defaults(fn=cmd_move)
+    s = sub.add_parser("plan"); s.add_argument("pattern"); s.add_argument("--date", default="today"); s.add_argument("--before"); s.add_argument("--after"); s.add_argument("--at"); s.set_defaults(fn=cmd_plan)
+    s = sub.add_parser("move"); s.add_argument("pattern"); s.add_argument("--to"); s.add_argument("--to-inbox", action="store_true"); s.add_argument("--from", dest="from_"); s.add_argument("--before"); s.add_argument("--after"); s.add_argument("--at"); s.set_defaults(fn=cmd_move)
     s = sub.add_parser("new-meeting"); s.add_argument("--title", required=True); s.add_argument("--date", default="today"); s.add_argument("--time")
     s.add_argument("--project"); s.add_argument("--attendees"); s.add_argument("--template"); s.add_argument("--notes"); s.set_defaults(fn=cmd_new_meeting)
     s = sub.add_parser("pending"); s.add_argument("--since", default="-14"); s.set_defaults(fn=cmd_pending)

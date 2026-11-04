@@ -95,8 +95,11 @@ const renderer = {
   },
   listitem(item) {
     const body = this.parser.parse(item.tokens);
-    if (item.task) return `<li class="task-li${item.checked ? " done" : ""}">${body}</li>\n`;
-    return `<li>${body}</li>\n`;
+    // more than one blank line after an item: that much extra space before the next one, as in the editor
+    const blanks = ((item.raw || "").match(/\n*$/)[0].length) - 1;
+    const gap = blanks >= 2 ? ` style="padding-bottom:${Math.min(blanks - 1, 4) * 0.9}em"` : "";
+    if (item.task) return `<li class="task-li${item.checked ? " done" : ""}"${gap}>${body}</li>\n`;
+    return `<li${gap}>${body}</li>\n`;
   },
   link({ href, title, tokens }) {
     const text = this.parser.parseInline(tokens);

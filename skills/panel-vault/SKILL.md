@@ -59,7 +59,7 @@ Before acting on a short trigger ("buenos días", "cierre del día", "prepara la
 
 **Weekly review** → `week`, `meetings --from -7`, `actions --since -7`, `waiting`: done, slipped, decisions, open loops, next week.
 
-**Tasks** → `add-task`, `find-task`, `done`, `log`, `move`, `plan` (a meeting's action item on a day without copying it), `tasks --project`. A task for someone else starts with `@Name`; it is something the user is waiting on.
+**Tasks** → `add-task`, `find-task`, `done`, `log`, `move`, `plan` (a meeting's action item on a day without copying it), `tasks --project`. Always put tasks **in their place in the day** (before the meeting they prepare, after the one they follow up, in a gap, or at the end) — see [workflows.md#placing-tasks-in-a-day](references/workflows.md#placing-tasks-in-a-day). A task for someone else starts with `@Name`; it is something the user is waiting on.
 
 **Migrate / tidy** the user's own notes into people, knowledge and projects → [references/format.md#migrating-existing-notes](references/format.md#migrating-existing-notes). Propose the plan first, then do it in small steps.
 
@@ -82,9 +82,10 @@ $P prepare "series or meeting" [--date D]      # what's needed to prepare the ne
 $P docs ["words"]                              # documents in the folders of documents.md
 
 $P add-task "Text #project" --date tomorrow    # or --inbox; "@Name text" = waiting on Name
+$P add-task "Prepare X" --before "X meeting"    # placed in the day: --before/--after a meeting or task, --at HH:MM, --time HH:MM
 $P done "part of the text" | PATH:LINE [--date D] [--reopen]
 $P log "what was done #project" [--date D]    # a checked task: record of work done
-$P move "part of the text" --to D              # or --to-inbox
+$P move "part of the text" --to D              # or --to-inbox; --before/--after/--at as in add-task
 $P plan "part of a meeting action" --date D
 $P new-meeting --title T --date D [--time HH:MM] [--project SLUG] [--attendees "A, B"] [--template NAME]
 $P new-session "series" [--date D]             # a recurring meeting's session note (carries over undiscussed items)

@@ -9,12 +9,29 @@ The user talks to you in plain words; you turn it into the right change in the v
 - **People**: a task for someone else starts with `@Name` (the user is waiting on them). Mention people by the name on their card. If a person matters and has no card, create it (`add-person`) with whatever is known.
 - **Dates**: a stated day goes to that day ("on Thursday" → that date); "tomorrow", "next week" → that day / its Monday; no date → today if it's for now, otherwise the inbox. Never invent deadlines.
 - **Sources**: when something comes from a meeting or document, link it (`[[file-name]]`) in knowledge notes and person notes.
+- **Order in the day**: a day plan is read top to bottom as the day goes. Never just append: place each task where it would be done (see *Placing tasks in a day*).
 - **One home per fact**: search before creating; update the existing note, card or task instead of duplicating.
 - Report in one or two lines what you changed and where.
 
 ## "Remind me…", "I have to…", "note down…"
 
-`add-task "verb + what #project" --date D` (or `--inbox`). If it's for someone else: `add-task "@Name what" --date D`. Several things at once → several tasks.
+`add-task "verb + what #project" --date D` (or `--inbox`). If it's for someone else: `add-task "@Name what" --date D`. Several things at once → several tasks, each in its place in the day (below).
+
+## Placing tasks in a day
+
+A day in Panel is a list in the order things happen: meetings at their time, tasks between them. Before adding or moving anything into a day, run `day D` (items are numbered) and put each task where it belongs:
+
+- **Before the meeting it serves**: preparing, reviewing material, getting data for it → `--before "meeting words"`. If it takes a while, leave a gap (put it before the previous meeting, or first thing).
+- **After the meeting that triggers it**: minutes, follow-ups, sending what was promised → `--after "meeting words"`.
+- **In a free slot**: short tasks fit between two meetings → `--at HH:MM` (it lands among the meetings and timed tasks by time). Something with a fixed time ("call at 16:00") → `--time 16:00` (writes the time on the task too).
+- **Focused work** (writing, analysis): in the longest free stretch, usually away from meeting-heavy parts of the day.
+- **Low priority / "when you can"**: at the end of the day (no option = end) or in the inbox if it has no day.
+- **Dependencies**: if B needs A, A goes first (`--after "A words"` for B).
+- Several tasks at once: decide the whole order first, then add them (or chain them with `--after` the previous one). Same for `move` and `plan`, which take the same options.
+- If the day is already full (back-to-back meetings, many open tasks), say so and propose another day instead of piling on.
+- Report where each one went in a few words ("before the sync", "after lunch, between the two meetings", "at the end").
+
+`--at` only knows the times of meetings and timed tasks; to put something next to an untimed task, use `--before`/`--after` with its words or number.
 
 ## "I did…", "we've finished…", "log that…"
 
@@ -69,7 +86,7 @@ The result is a **script the user can glance at during the call and read out nat
 
 ## "Plan my week / my day"
 
-`week`, `overdue`, `waiting`, `actions`, `pending`. Propose a distribution (what goes where and why: deadlines, meetings that day, what unblocks others). Apply it (`move`, `plan`, `add-task`) only after the user agrees.
+`week`, `overdue`, `waiting`, `actions`, `pending`. Propose a distribution (what goes where and why: deadlines, meetings that day, what unblocks others) **and the order inside each day**, following *Placing tasks in a day*. Apply it (`move`, `plan`, `add-task` with `--before`/`--after`/`--at`) only after the user agrees.
 
 ## "What do I know about…", "who…", "where…", "how…"
 

@@ -516,6 +516,9 @@ body.is-dragging .task-add { opacity: 0.4; }
 .md mark, mark { background: var(--mark); color: inherit; padding: 0 2px; border-radius: 3px; }
 .md ul, .md ol { padding-left: 1.5em; margin: 0.5em 0; }
 .md li { margin: 0.2em 0; }
+/* a list with blank lines between its items: each blank line reads as one, like in the editor */
+.md li > p { margin: 0.2em 0; }
+.md :is(ul, ol):has(> li > p) > li + li { margin-top: 1.1em; }
 .md li > ul, .md li > ol { margin: 0.15em 0; }
 .md li::marker { color: var(--text-3); }
 .md li.task-li { list-style: none; position: relative; }
