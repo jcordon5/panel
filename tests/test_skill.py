@@ -54,6 +54,28 @@ class SkillTest(unittest.TestCase):
         self.run_cmd("new-meeting", "--title", "Revisión de compras", "--date", "2026-11-02", "--attendees", "Equipo Compras")
         self.assertIn("whole team Compras: Ana García", self.run_cmd("meeting", "revision-de-compras"))
 
+    def test_the_vault_is_found_from_any_folder(self):
+        sys.path.insert(0, ROOT)
+        import server
+        home, elsewhere = os.path.join(self.tmp, "home"), os.path.join(self.tmp, "elsewhere")
+        os.makedirs(elsewhere)
+        old_env, old_cwd = os.environ.get("PANEL_HOME"), os.getcwd()
+        os.environ["PANEL_HOME"] = home
+        try:
+            os.chdir(elsewhere)
+            server.remember_vault(self.vault)  # what Panel does when it starts
+            self.assertEqual(os.path.realpath(panel_vault.find_vault(None)), os.path.realpath(self.vault))
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                panel_vault.main(["where"])
+            self.assertIn(self.vault, out.getvalue())
+        finally:
+            os.chdir(old_cwd)
+            if old_env is None:
+                os.environ.pop("PANEL_HOME", None)
+            else:
+                os.environ["PANEL_HOME"] = old_env
+
     def test_tasks_placed_in_the_day(self):
         self.run_cmd("add-task", "Preparar datos para el sync", "--before", "sync")
         self.run_cmd("add-task", "Enviar el resumen del sync", "--after", "sync")

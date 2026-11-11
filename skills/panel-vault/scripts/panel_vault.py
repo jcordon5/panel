@@ -4,8 +4,9 @@
 panel_vault.py — read and update a Panel vault (plain Markdown) from the command line.
 Standard library only (Python 3.7+). Output is plain text meant for an AI agent or a human.
 
-Vault location: --vault PATH, else $PANEL_VAULT, else the current folder if it looks like a
-vault (inbox.md / weeks/), else ./vault.
+Vault location: --vault PATH, else $PANEL_VAULT, else the current folder (or ./vault) if it looks
+like a vault (inbox.md / weeks/), else the one Panel saved in ~/.panel/where.json when it last
+started (or `set-vault PATH`). `where` prints the one in use.
 
 Read
   day [DATE]                      plan of a day (tasks + meetings in order), overdue, unplaced meetings
@@ -1562,14 +1563,63 @@ def cmd_docs(v, a):
 
 # --------------------------------------------------------------------------- main
 
+def panel_home():
+    return os.environ.get("PANEL_HOME") or os.path.join(os.path.expanduser("~"), ".panel")
+
+
+def looks_like_vault(p):
+    return bool(p) and (os.path.isfile(os.path.join(p, "inbox.md")) or os.path.isdir(os.path.join(p, "weeks")))
+
+
+def remembered_vault():
+    """Where Panel (or `set-vault`) left the vault: ~/.panel/where.json."""
+    import json
+    try:
+        with open(os.path.join(panel_home(), "where.json"), encoding="utf-8") as f:
+            return json.load(f).get("vault")
+    except (OSError, ValueError):
+        return None
+
+
 def find_vault(arg):
+    """--vault, $PANEL_VAULT, the current folder (or its vault/), where Panel last ran, or the vault next to this skill's Panel."""
     for cand in (arg, os.environ.get("PANEL_VAULT")):
         if cand:
-            return cand
+            return os.path.expanduser(cand)
     cwd = os.getcwd()
-    if os.path.isfile(os.path.join(cwd, "inbox.md")) or os.path.isdir(os.path.join(cwd, "weeks")):
-        return cwd
-    return os.path.join(cwd, "vault")
+    for cand in (cwd, os.path.join(cwd, "vault"), remembered_vault()):
+        if cand and looks_like_vault(cand):
+            return cand
+    here = os.path.dirname(os.path.abspath(__file__))  # <panel>/skills/panel-vault/scripts
+    panel = os.path.dirname(os.path.dirname(os.path.dirname(here)))
+    if os.path.isfile(os.path.join(panel, "server.py")):
+        import json
+        try:
+            with open(os.path.join(panel, "panel.config.json"), encoding="utf-8-sig") as f:
+                v = json.load(f).get("vault")
+            v = v and (v if os.path.isabs(os.path.expanduser(v)) else os.path.join(panel, v))
+        except (OSError, ValueError):
+            v = None
+        for cand in (v, os.path.join(panel, "vault")):
+            if cand and looks_like_vault(os.path.expanduser(cand)):
+                return os.path.expanduser(cand)
+    return remembered_vault() or os.path.join(cwd, "vault")
+
+
+def cmd_where(v, a):
+    print("Vault: %s" % v.root)
+
+
+def cmd_set_vault(path):
+    """Remember the vault for every later call, from any folder (same file Panel writes when it starts)."""
+    import json
+    p = os.path.realpath(os.path.expanduser(path))
+    if not looks_like_vault(p):
+        sys.exit("%s doesn't look like a Panel vault (no inbox.md or weeks/)." % p)
+    os.makedirs(panel_home(), exist_ok=True)
+    with open(os.path.join(panel_home(), "where.json"), "w", encoding="utf-8") as f:
+        json.dump({"vault": p, "updated": datetime.now().isoformat(timespec="seconds")}, f, indent=2, ensure_ascii=False)
+    print("Vault remembered: %s" % p)
 
 
 def main(argv=None):
@@ -1613,7 +1663,12 @@ def main(argv=None):
     s = sub.add_parser("new-session"); s.add_argument("series"); s.add_argument("--date"); s.set_defaults(fn=cmd_new_session)
     s = sub.add_parser("prepare"); s.add_argument("ref"); s.add_argument("--date"); s.set_defaults(fn=cmd_prepare)
     s = sub.add_parser("docs"); s.add_argument("query", nargs="?"); s.add_argument("--limit", type=int, default=40); s.set_defaults(fn=cmd_docs)
+    s = sub.add_parser("where"); s.set_defaults(fn=cmd_where)
+    s = sub.add_parser("set-vault"); s.add_argument("path"); s.set_defaults(fn=None)
     a = ap.parse_args(argv)
+    if a.cmd == "set-vault":
+        cmd_set_vault(a.path)
+        return 0
     if not getattr(a, "fn", None):
         ap.print_help()
         return 1
@@ -1621,7 +1676,8 @@ def main(argv=None):
         ap.error("move needs --to DATE or --to-inbox")
     v = Vault(find_vault(a.vault))
     if not os.path.isdir(v.root):
-        sys.exit("Vault not found: %s (use --vault or PANEL_VAULT)" % v.root)
+        sys.exit("Vault not found (looked in --vault, $PANEL_VAULT, this folder and ~/.panel/where.json, which Panel writes when it starts).\n"
+                 "Open Panel once, or ask the user where their vault is and run: set-vault PATH")
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except Exception:

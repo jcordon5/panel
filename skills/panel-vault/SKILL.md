@@ -11,7 +11,9 @@ Your job: **keep the memory structured and up to date so the user can spend thei
 
 ## Find the vault
 
-The folder that contains `inbox.md`, `weeks/`, `meetings/`… Usually `vault/` next to Panel's `server.py`, `$PANEL_VAULT`, the current folder, or where the user says. Its `README.md` describes it.
+The folder that contains `inbox.md`, `weeks/`, `meetings/`… **You don't need to know where it is**: the script finds it from any folder — `--vault`, `$PANEL_VAULT`, the current folder, then the location Panel saves every time it starts (`~/.panel/where.json`). Run `$P where` to see which one it uses.
+
+If it says the vault wasn't found (Panel has never been opened on this computer, or the vault moved): ask the user once for the folder, then `$P set-vault PATH` — it is remembered for every later conversation. Don't search the disk for it. Its `README.md` describes it.
 
 ## Layout
 
@@ -65,10 +67,11 @@ Before acting on a short trigger ("buenos días", "cierre del día", "prepara la
 
 ## Script
 
-`scripts/panel_vault.py` (Python 3, standard library only). Every listed item ends with `<path:line>`.
+`scripts/panel_vault.py` in this skill's folder (Python 3, standard library only). Call it by its full path, whatever the current folder is. Every listed item ends with `<path:line>`.
 
 ```bash
-P="python3 scripts/panel_vault.py --vault PATH"
+P="python3 <this skill's folder>/scripts/panel_vault.py"   # finds the vault by itself; --vault PATH to force one
+$P where | set-vault PATH                         # which vault it uses / remember one
 $P day [DATE] | week [DATE] | overdue | inbox | projects | project SLUG
 $P meetings [--from -7] [--to D] [--project SLUG]
 $P actions [--since -14] [--project SLUG]        # open action items for the user

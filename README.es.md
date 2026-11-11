@@ -115,7 +115,8 @@ la bóveda en el OneDrive de la empresa y se sincroniza como cualquier documento
 Panel se abre en tu navegador en `http://127.0.0.1:8765`. `python3 server.py --demo` lo arranca con datos de ejemplo.
 
 **Conecta tu IA**: copia [`skills/panel-vault`](skills/panel-vault) a `~/.claude/skills/` (Claude Code, también la extensión de VS Code)
-o añádela como skill en la app de Claude; a otros agentes, apúntales a `skills/panel-vault/SKILL.md`. Después: «procesa mis reuniones».
+o añádela como skill en la app de Claude; a otros agentes, apúntales a `skills/panel-vault/SKILL.md`. Después: «procesa mis reuniones». Funciona desde cualquier
+carpeta o chat: Panel recuerda dónde está tu bóveda cada vez que arranca (`~/.panel/where.json`).
 
 ## Tu IA y tus rutinas
 

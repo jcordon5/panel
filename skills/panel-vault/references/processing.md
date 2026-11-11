@@ -2,10 +2,12 @@
 
 Goal: after a day of meetings the user should not have to re-read notes, rewatch recordings or "make tasks to make tasks". You turn what they captured (quick notes, transcripts, emails, chats) into a summary, complete tasks and decisions, up-to-date people cards and reusable knowledge — then clean up the sources.
 
+`$P` is the skill script, as in SKILL.md (it finds the vault by itself).
+
 ## 1. See what is pending
 
 ```bash
-python3 scripts/panel_vault.py --vault PATH pending
+$P pending
 ```
 
 Process meetings oldest first. Sources attached to a meeting (`meeting:` field) are processed with that meeting; the rest on their own (step 4).
@@ -13,7 +15,7 @@ Process meetings oldest first. Sources attached to a meeting (`meeting:` field) 
 ## 2. For each meeting
 
 ```bash
-python3 scripts/panel_vault.py --vault PATH meeting REF
+$P meeting REF
 ```
 
 This prints the note, the attendees with their roles, attached sources, the previous session of the series with its open tasks, and what the attendees owe the user. Read the attached sources (they are Markdown files) and, if useful, the project README and `person NAME` of key attendees.
@@ -49,8 +51,8 @@ Don't create cards for one-off mentions.
 
 Finish with:
 ```bash
-python3 scripts/panel_vault.py --vault PATH mark-processed REF
-python3 scripts/panel_vault.py --vault PATH source-done sources/<each source used>.md
+$P mark-processed REF
+$P source-done sources/<each source used>.md
 ```
 
 ## 3. Quality bar

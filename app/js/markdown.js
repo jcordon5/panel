@@ -151,8 +151,23 @@ const renderer = {
   },
 };
 
+// Two or more blank lines before a list item end the list above: Markdown would merge both lists into one
+// (blank lines don't end a list), but people separate lists that way. prepare() marks the spot on the last
+// blank line (so line numbers don't change) and this block shows the space they left.
+const LIST_BREAK = "\uE000";
+const listBreak = {
+  name: "listBreak",
+  level: "block",
+  start(src) { const i = src.indexOf(LIST_BREAK); return i < 0 ? undefined : i; },
+  tokenizer(src) {
+    const m = /^\uE000(\d+)[^\n]*(?:\n|$)/.exec(src);
+    if (m) return { type: "listBreak", raw: m[0], blanks: +m[1] };
+  },
+  renderer() { return `<div class="md-gap" style="height:0.9em"></div>`; }, // more blank lines above add their own space
+};
+
 const md = new Marked({ gfm: true, breaks: true });
-md.use({ extensions: [wikilink, tag, highlight], renderer });
+md.use({ extensions: [wikilink, tag, highlight, listBreak], renderer });
 
 /** Line indexes (relative to src) of task items, in document order. */
 function taskLines(src) {
@@ -171,11 +186,22 @@ function taskLines(src) {
 
 /** " ^a1b2c3" block ids (links from day plans) are not shown, like in Obsidian. Same line count. */
 function prepare(src) {
-  let fence = null;
-  return src.split("\n").map((l) => {
+  let fence = null, inList = false, blanks = 0;
+  const lines = src.split("\n");
+  return lines.map((l, i) => {
     const f = /^\s*(```|~~~)/.exec(l);
-    if (f) { if (!fence) fence = f[1]; else if (f[1] === fence) fence = null; return l; }
+    if (f) { if (!fence) fence = f[1]; else if (f[1] === fence) fence = null; inList = false; blanks = 0; return l; }
     if (fence) return l;
+    if (!l.trim()) {
+      blanks++;
+      const next = lines[i + 1];
+      // the last of 2+ blank lines between a list and the next list item: a list break
+      if (inList && blanks >= 2 && next !== undefined && /^(\d+[.)]|[-*+])\s/.test(next)) return LIST_BREAK + blanks;
+      return l;
+    }
+    if (/^(\d+[.)]|[-*+])\s/.test(l)) inList = true;
+    else if (!/^\s/.test(l) || blanks) inList = inList && /^\s/.test(l);
+    blanks = 0;
     return l.includes("^") ? l.replace(BLOCK_ID_RE, "") : l;
   }).join("\n");
 }

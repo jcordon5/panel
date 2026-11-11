@@ -35,7 +35,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlparse
 
-VERSION = "3.1.3"
+VERSION = "3.1.4"
 APP_NAME = "panel"
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_DIR = os.path.join(ROOT_DIR, "app")
@@ -808,6 +808,20 @@ def load_config():
     return cfg
 
 
+def remember_vault(vault):
+    """Leave the vault's location where the AI skill can find it from any folder: ~/.panel/where.json."""
+    home = os.environ.get("PANEL_HOME") or os.path.join(os.path.expanduser("~"), ".panel")
+    try:
+        os.makedirs(home, exist_ok=True)
+        path = os.path.join(home, "where.json")
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"vault": vault, "app": ROOT_DIR, "updated": datetime.now().isoformat(timespec="seconds")}, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)
+    except OSError as e:
+        log("Warning: could not save the vault location for the AI skill (%s)" % e)
+
+
 def existing_panel(port):
     try:
         with urllib.request.urlopen("http://127.0.0.1:%d/api/info" % port, timeout=1.5) as r:
@@ -846,6 +860,8 @@ def main(argv=None):
 
     VAULT = os.path.realpath(os.path.expanduser(args.vault))
     os.makedirs(VAULT, exist_ok=True)
+    if not args.demo:
+        remember_vault(VAULT)
 
     server, port = None, args.port
     for candidate in range(args.port, args.port + 20):

@@ -115,7 +115,8 @@ and it syncs like any other document.
 Panel opens in your browser at `http://127.0.0.1:8765`. `python3 server.py --demo` starts it with sample data.
 
 **Connect your AI**: copy [`skills/panel-vault`](skills/panel-vault) to `~/.claude/skills/` (Claude Code, the VS Code extension too) or add
-it as a skill in the Claude app; point other agents to `skills/panel-vault/SKILL.md`. Then: "process my meetings".
+it as a skill in the Claude app; point other agents to `skills/panel-vault/SKILL.md`. Then: "process my meetings". It works from any folder or chat:
+Panel remembers where your vault is each time it starts (`~/.panel/where.json`).
 
 ## Your AI and your routines
 

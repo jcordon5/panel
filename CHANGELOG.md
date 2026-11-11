@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.4 — 2026-11-11
+
+- **The AI skill finds your vault from any folder or chat**: Panel saves where the vault is every time it starts
+  (`~/.panel/where.json`) and the skill's script reads it. If Panel hasn't run on that computer, the AI asks once and remembers it
+  (`set-vault PATH`); `where` shows the vault in use. Update the skill copy in `~/.claude/skills/` to get this.
+- **Separate lists stay separate**: two or more blank lines between lists start a new list (Markdown would merge them into one), with
+  the space you left, in reading mode.
+
 ## 3.1.3 — 2026-11-04
 
 - **Your AI plans, not just adds**: tasks go where they'd be done in the day — preparing a meeting right before it, follow-ups right
