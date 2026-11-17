@@ -3,8 +3,8 @@
 import { h, today, addDays } from "../util.js";
 import { icon } from "../icons.js";
 import { t, fmtDate, cap } from "../i18n.js";
-import { vault, dayItems, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue, waitingTasks } from "../model.js";
-import { taskList, run, quickAdd, meetingPill, eventPill, seriesPill } from "../tasks.js";
+import { vault, projectBySlug, dayItems, overdueTasks, meetingsOn, unplacedMeetings, pendingActions, isTask, seriesDue, waitingTasks } from "../model.js";
+import { taskList, run, quickAdd, meetingPill, eventPill, seriesPill, isScattered } from "../tasks.js";
 import { wantEvents, eventsOn } from "../events.js";
 import * as A from "../actions.js";
 import { pageHeader, section, btn, progress } from "./common.js";
@@ -55,7 +55,27 @@ export function render(root) {
 
   const main = h("div", { class: "today-main" });
   const aside = h("aside", { class: "today-aside" });
-  root.append(h("div", { class: "today-grid" }, main, aside));
+  const grid = h("div", { class: "today-grid" }, main, aside);
+  root.append(grid);
+
+  // focus on one project: only its tasks, nothing else of the day
+  const fp = focus && focus.date === d ? projectBySlug(focus.project) : null;
+  if (fp) {
+    const mine = items.filter((it) => it.type !== "divider" && A.itemProject(it) === fp.slug);
+    const slots = items.filter((it) => it.type === "task" || it.type === "ref");
+    const last = mine.length ? slots.indexOf(mine[mine.length - 1]) + 1 : Infinity;
+    const hidden = slots.length - mine.length + unplacedMeetings(d).length;
+    const open = mine.filter((x) => !(x.action || x).done).length;
+    grid.classList.add("is-focus");
+    main.append(focusBanner(fp));
+    main.append(section(fp.title, [
+      taskList(mine, { target: { kind: "day", date: d }, noDrop: true, hideProject: true, addTag: fp.slug, addIndex: last, placeholder: t("focus.addPh", { project: fp.title }) }),
+      !open && mine.length ? h("p", { class: "focus-done" }, icon("check", 14), t("focus.allDone", { project: fp.title })) : null,
+      hidden ? h("p", { class: "focus-hidden" }, t("focus.hidden", { n: hidden })) : null,
+    ], { icon: "target", count: open }));
+    return;
+  }
+  if (focus) setFocus(null);
 
   if (overdue.length) {
     main.append(section(t("today.overdue"), taskList(overdue, { showDate: true, draggable: true }), {
@@ -64,10 +84,12 @@ export function render(root) {
     }));
   }
 
+  const gather = isScattered(items) ? btn(t("group.gatherShort"), "layers", () => run(A.groupDayByProject(d), t("group.gathered")), "btn-sm btn-ghost") : null;
+  if (gather) gather.title = t("group.gatherHint");
   main.append(section(t("today.tasks"), [
     unplaced(d),
-    taskList(items, { target: { kind: "day", date: d }, placeholder: t("today.addPh"), empty: null }),
-  ], { icon: "sun", count: tasks.length - done, actions: [btn(t("meeting.new"), "users", () => newMeetingDialog({ date: d }), "btn-sm btn-ghost")] }));
+    taskList(items, { target: { kind: "day", date: d }, placeholder: t("today.addPh"), empty: null, groups: true, onFocus: (p) => setFocus({ date: d, project: p.slug, since: Date.now() }) }),
+  ], { icon: "sun", count: tasks.length - done, actions: [gather, btn(t("meeting.new"), "users", () => newMeetingDialog({ date: d }), "btn-sm btn-ghost")] }));
 
   // --- aside: short lists (5 each, "see all" expands in place)
   const waiting = waitingTasks().sort((a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")));
@@ -81,6 +103,35 @@ export function render(root) {
   if (!tasks.length && !overdue.length && !meetings.length && !v.docs.size) {
     main.append(emptyState("sparkles", t("today.emptyTitle"), t("today.emptyText")));
   }
+}
+
+/* ------------------------------------------------------------ focus */
+
+const FOCUS_KEY = "panel.focus";
+let focus = null;
+try { focus = JSON.parse(sessionStorage.getItem(FOCUS_KEY) || "null"); } catch (e) { /* ignore */ }
+
+function setFocus(f) {
+  focus = f;
+  try { f ? sessionStorage.setItem(FOCUS_KEY, JSON.stringify(f)) : sessionStorage.removeItem(FOCUS_KEY); } catch (e) { /* ignore */ }
+  state.render();
+}
+
+const elapsed = (ms) => {
+  const m = Math.max(0, Math.floor(ms / 60000));
+  return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") + " min";
+};
+
+function focusBanner(p) {
+  const time = h("span", { class: "focus-time" }, t("focus.elapsed", { time: elapsed(Date.now() - focus.since) }));
+  const timer = setInterval(() => {
+    if (!time.isConnected) { clearInterval(timer); return; }
+    time.textContent = t("focus.elapsed", { time: elapsed(Date.now() - focus.since) });
+  }, 20000);
+  return h("div", { class: "focus-banner", "data-color": p.color },
+    icon("target", 16),
+    h("div", { class: "focus-text" }, h("strong", {}, t("focus.on", { project: p.title })), time),
+    btn(t("focus.exit"), "x", () => setFocus(null), "btn-sm"));
 }
 
 const expanded = new Set();

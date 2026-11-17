@@ -56,6 +56,19 @@ export async function toggleTask(task, done) {
   }));
 }
 
+/** Mark several tasks done (or not) as one undoable change. */
+export async function toggleTasks(tasks, done) {
+  await transaction(t("undo.toggle"), async () => {
+    for (const task of tasks) await mutate(task.path, (text) => {
+      const lines = split(text);
+      const i = findTask(lines, task.line, task.raw);
+      if (i < 0) return null;
+      lines[i] = toggleLine(lines[i], done);
+      return touch(join(lines));
+    });
+  });
+}
+
 /** Toggle a checkbox rendered from Markdown (notes, meetings...). */
 export async function toggleLineAt(path, line, done) {
   const raw = split(content(path))[line];
@@ -172,6 +185,83 @@ export async function moveTasks(tasks, target) {
       await moveOne({ ...task, line: i }, target, Infinity);
     }
   });
+}
+
+/** The project a day item belongs to: its own #tag, or the task it plans (meeting action items). */
+export const itemProject = (it) => (it.type === "task" ? it.project : it.action ? it.action.project : null) || null;
+
+/** Where each item of a container is now (index among its tasks and links), by line. */
+function itemIndex(lines, target, path) {
+  const range = locate(lines, target, path);
+  if (!range) return [];
+  return containerItems(lines, range.start, range.end, {}, range.dividerMin).filter((i) => i.type === "task" || i.type === "ref");
+}
+
+/**
+ * Move several items of one container together, keeping their order, so they end up one after the other
+ * at `index` of `target` (e.g. every task of a project dragged as a block).
+ */
+export async function moveBlock(items, target, index = Infinity) {
+  if (!items.length) return;
+  await transaction(t("undo.move"), async () => {
+    const src = items[0].path;
+    const dst = targetPath(target);
+    let lines = split(content(src));
+    const at = items.map((it) => findTask(lines, it.line, it.raw));
+    if (at.some((i) => i < 0)) throw new TaskGone();
+    // where the block's own items were: the drop index counts them, they are leaving
+    let idx = index;
+    if (src === dst && index !== Infinity && items[0].kind === target.kind && (target.kind !== "day" || items[0].date === target.date)) {
+      const pos = itemIndex(lines, target, dst).map((x) => x.line);
+      idx = index - at.filter((l) => { const k = pos.indexOf(l); return k >= 0 && k < index; }).length;
+    }
+    const order = at.map((l, n) => [l, n]).sort((a, b) => b[0] - a[0]);
+    const blocks = new Array(items.length);
+    for (const [l, n] of order) {
+      const ex = extractBlock(lines, l);
+      lines = ex.lines;
+      blocks[n] = ex.block;
+    }
+    const block = blocks.flat();
+    if (src === dst) return mutate(dst, () => insertBlock(join(lines), target, dst, block, idx));
+    await mutate(dst, (cur) => insertBlock(cur, target, dst, block, idx));
+    await mutate(src, () => touch(join(lines)));
+  });
+}
+
+/**
+ * Bring the tasks of each project of a day together: a project's tasks go where its first one is, in
+ * their order; meetings and tasks without a project keep their place.
+ */
+export async function groupDayByProject(date) {
+  const target = { kind: "day", date };
+  const path = targetPath(target);
+  await transaction(t("undo.group"), () => mutate(path, (cur) => {
+    const lines = split(cur);
+    const items = itemIndex(lines, target, path);
+    // the vault knows each item's project (tags, codes, the task a link plans)
+    const known = new Map((vault().days.get(date)?.items || []).map((x) => [x.line + "\u0000" + x.raw, itemProject(x)]));
+    const proj = (it) => known.get(it.line + "\u0000" + it.raw) || null;
+    const keys = items.map(proj);
+    const order = [];
+    const seen = new Set();
+    items.forEach((it, n) => {
+      const k = keys[n];
+      if (!k) { order.push(n); return; }
+      if (seen.has(k)) return;
+      seen.add(k);
+      keys.forEach((kk, m) => { if (kk === k) order.push(m); });
+    });
+    if (order.every((n, i) => n === i)) return null;
+    // every slot (an item's lines) gets the block that goes there; from the bottom so lines stay valid
+    const text = items.map((it) => lines.slice(it.line, it.end));
+    let out = lines;
+    for (let s = items.length - 1; s >= 0; s--) {
+      const it = items[s];
+      out = [...out.slice(0, it.line), ...text[order[s]], ...out.slice(it.end)];
+    }
+    return touch(join(out));
+  }));
 }
 
 /* ------------------------------------------------------------ documents */

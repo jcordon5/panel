@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.2.0 — 2026-11-17
+
+- **Stats** (sidebar, or <kbd>E</kbd>): how loaded you are over the last 4, 12 or 26 weeks. Meetings and meeting hours per week against
+  your average (this week included, with what's already planned), tasks planned and done, load by weekday, when your meetings are, a
+  day-by-day map, your busiest days, where your time goes by project and who you meet most — plus plain-language conclusions: a week
+  heavier or lighter than usual, meetings taking too much of the week, planning more than fits in a day, days back to back, too few
+  days without meetings, your heaviest stretch. Meetings count for their `duration`/`end` properties, or 45 minutes; tasks, 30.
+- **Project blocks in a day**: consecutive tasks of the same project show as one block with its name and progress. Drag the block's
+  header to move them all together, or send the whole block to another day from its menu (or mark it all done). *Group by project*
+  brings each project's tasks of the day together, where its first one is (undoable).
+- **Focus on a project**: from a block in Today, *Focus* shows only that project's tasks and how long you've been at it; new tasks you
+  add there belong to the project and go into its block. The rest of the day comes back when you leave.
+- **Resizable table columns**: drag the edge of a table's header cell, in reading mode or in the editor. Widths are remembered on
+  this computer for that table; double-click the edge to go back to automatic widths.
+
 ## 3.1.4 — 2026-11-11
 
 - **The AI skill finds your vault from any folder or chat**: Panel saves where the vault is every time it starts

@@ -63,6 +63,11 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
 </table>
 
 - **Semana y plan del día** — una columna por día más la bandeja; arrastra tareas y reuniones; lo atrasado a hoy con un clic.
+- **Un proyecto cada vez** — las tareas de un mismo proyecto en un día se ven como un bloque que arrastras (o mandas a otro día) entero;
+  *Agrupar por proyecto* las junta, y *Foco* oculta el resto del día mientras trabajas en ese proyecto.
+- **Estadísticas** — cómo vas de carga: reuniones y horas de reunión por semana frente a tu media, tareas planificadas y hechas, tus días
+  y periodos más cargados, días sin reuniones, días de reuniones seguidas, a qué proyectos va tu tiempo y conclusiones en lenguaje
+  normal (una semana más cargada de lo habitual, reuniones que se comen la semana, planificar más de lo que cabe, margen de sobra).
 - **Reuniones recurrentes** — una daily, un seguimiento cada dos semanas, el primer lunes de mes… Con sus asistentes habituales. Cada
   sesión aparece sola en su día y su nota se crea al entrar, con lo que quedó sin comentar en la anterior.
 - **Reuniones** — su página muestra hora, asistentes (personas o equipos enteros) y adjuntos; mientras escribes, solo la nota, un botón
@@ -84,6 +89,7 @@ Todo son archivos `.md` normales en una carpeta tuya. Los lees tú, los ve Panel
 - **Sin aprender sintaxis** — proyecto, persona, etiquetas y hora de una tarea se eligen en un diálogo; quien prefiera escribir
   `09:30 @Ana enviar el presupuesto #proyecto` puede hacerlo igual.
 - **Editor como Obsidian** — formateado mientras escribes; el Markdown solo aparece donde está el cursor. También modo código y lectura.
+  Arrastra el borde de la cabecera de una tabla para cambiar el ancho de sus columnas (doble clic para volver al automático).
 - **Calendario** — tus reuniones de Outlook/Google/iCloud aparecen solas; un clic crea la nota.
 - **Proyectos, tablón de notas, búsqueda global** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **deshacer cualquier cosa**, atajos de
   teclado, claro/oscuro, español/inglés.

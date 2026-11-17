@@ -29,12 +29,13 @@ import * as welcome from "./views/welcome.js";
 import * as people from "./views/people.js";
 import * as knowledge from "./views/knowledge.js";
 import * as graph from "./views/graph.js";
+import * as stats from "./views/stats.js";
 import * as documents from "./views/docs.js";
 import { bindGlobalDrop } from "./views/capture.js";
 import { bindFileLinks } from "./documents.js";
 import { backend, setBackend, detectBackend } from "./backends.js";
 
-const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet: editor, documents, graph };
+const VIEWS = { today: today_, inbox, week, calendar, meetings, notes, projects, project, doc, edit: editor, people, knowledge, meet: editor, documents, graph, stats };
 
 let current = { key: null, view: null };
 
@@ -73,6 +74,7 @@ function renderSidebar(r) {
       navItem(route.meetings(), "users", t("nav.meetings"), 0, is("meetings") || is("meet") || (docPath && ["meeting", "series"].includes(v.docs.get(docPath)?.kind) && !v.docs.get(docPath)?.project)),
       navItem(route.people(), "user", t("nav.people"), 0, is("people") || docPath.startsWith("people/")),
       navItem(route.knowledge(), "book", t("nav.knowledge"), 0, is("knowledge") || docPath.startsWith("knowledge/")),
+      navItem(route.stats(), "stats", t("stats.title"), 0, is("stats")),
       navItem(route.graph(), "graph", t("graph.title"), 0, is("graph")),
       navItem(route.documents(), "folder", t("docs.title"), 0, is("documents")),
       navItem(route.notes(), "note", t("nav.notes"), 0, is("notes") || docPath.startsWith("notes/"))),
@@ -192,7 +194,7 @@ function bindGlobal() {
       n: () => quickAdd(), m: () => newMeetingDialog(), N: () => newNoteDialog(), "/": () => openPalette(),
       t: () => go(route.today()), i: () => go(route.inbox()), w: () => go(route.week()), c: () => go(route.calendar()),
       r: () => go(route.meetings()), b: () => go(route.notes()), p: () => go(route.projects()),
-      u: () => go(route.people()), k: () => go(route.knowledge()), d: () => go(route.documents()),
+      u: () => go(route.people()), k: () => go(route.knowledge()), d: () => go(route.documents()), e: () => go(route.stats()),
       "?": () => openSettings("shortcuts"),
     };
     if (actions[k] && !current.view?.keys?.[k]) { e.preventDefault(); actions[k](); return; }

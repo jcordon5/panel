@@ -504,3 +504,60 @@ test("task parts: time, person, project and tags out of the text and back", asyn
   assert.equal(compose({ text: "llamar", tags: ["Muy importante"] }), "llamar #Muy-importante");
   assert.deepEqual(decompose("revisar el informe"), { time: "", timeEnd: "", who: "", project: "", tags: [], text: "revisar el informe" });
 });
+
+test("blocks: a day's tasks are grouped by project and a block moves as one", async () => {
+  await reset({
+    "projects/alfa/README.md": "---\ntype: project\ntitle: Alfa\n---\n",
+    "projects/beta/README.md": "---\ntype: project\ntitle: Beta\ncode: BT1\n---\n",
+    "weeks/2026-W40.md": "---\ntype: week\nstart: 2026-09-28\n---\n\n# Semana 40\n\n## Lunes · 2026-09-28\n\n- [ ] a1 #alfa\n- [ ] b1 BT1\n- [ ] x\n- [ ] a2 #alfa\n  - detalle\n- [ ] b2 #beta\n\n## Martes · 2026-09-29\n\n- [ ] y\n",
+  });
+  const day = "2026-09-28";
+  await A.groupDayByProject(day);
+  assert.deepEqual(model.dayTasks(day).map((x) => x.text.split(" ")[0]), ["a1", "a2", "b1", "b2", "x"]);
+  assert.match(disk.get("weeks/2026-W40.md"), /- \[ \] a2 #alfa\n  - detalle\n- \[ \] b1 BT1\n/);
+  // drag Beta's block to the top of the same day
+  const beta = model.dayTasks(day).filter((x) => A.itemProject(x) === "beta");
+  await A.moveBlock(beta, { kind: "day", date: day }, 0);
+  assert.deepEqual(model.dayTasks(day).map((x) => x.text.split(" ")[0]), ["b1", "b2", "a1", "a2", "x"]);
+  // and Alfa's block to another day, between its tasks
+  const alfa = model.dayTasks(day).filter((x) => A.itemProject(x) === "alfa");
+  await A.moveBlock(alfa, { kind: "day", date: "2026-10-06" }, 0);
+  assert.deepEqual(model.dayTasks("2026-10-06").map((x) => x.text.split(" ")[0]), ["a1", "a2"]);
+  assert.match(disk.get("weeks/2026-W41.md"), /- \[ \] a1 #alfa\n- \[ \] a2 #alfa\n  - detalle\n/);
+  assert.deepEqual(model.dayTasks(day).map((x) => x.text.split(" ")[0]), ["b1", "b2", "x"]);
+  await store.undo();
+  assert.equal(model.dayTasks(day).length, 5);
+  // moving down within the day: the block's own rows don't count
+  const b = model.dayTasks(day).filter((x) => A.itemProject(x) === "beta");
+  await A.moveBlock(b, { kind: "day", date: day }, 5);
+  assert.deepEqual(model.dayTasks(day).map((x) => x.text.split(" ")[0]), ["a1", "a2", "x", "b1", "b2"]);
+  await A.toggleTasks(model.dayTasks(day).filter((x) => A.itemProject(x) === "beta"), true);
+  assert.equal(model.dayTasks(day).filter((x) => x.done).length, 2);
+});
+
+test("stats: meetings and tasks per week, load and what they say", async () => {
+  const S = await import("../app/js/stats.js");
+  const files = {};
+  // three weeks before the one of 2026-10-21 (W43): W40..W42, plus W43 itself
+  const weekFile = (id, start, days) => `---\ntype: week\nstart: ${start}\n---\n\n# S\n\n` + days.map(([d, tasks]) => `## Día · ${d}\n\n${tasks.join("\n")}\n`).join("\n");
+  files["weeks/2026-W40.md"] = weekFile("W40", "2026-09-28", [["2026-09-28", ["- [x] a", "- [ ] b"]], ["2026-09-29", ["- [x] c"]]]);
+  files["weeks/2026-W41.md"] = weekFile("W41", "2026-10-05", [["2026-10-05", ["- [x] a", "- [x] b"]]]);
+  files["weeks/2026-W42.md"] = weekFile("W42", "2026-10-12", [["2026-10-13", ["- [x] a", "- [x] b", "- [ ] c"]]]);
+  files["weeks/2026-W43.md"] = weekFile("W43", "2026-10-19", [["2026-10-22", ["- [ ] x"]]]);
+  files["meetings/2026-09-29-a.md"] = "---\ntype: meeting\ndate: 2026-09-29\ntime: \"09:00\"\nend: \"10:30\"\nattendees: [Ana, Luis]\n---\n";
+  files["meetings/2026-09-29-b.md"] = "---\ntype: meeting\ndate: 2026-09-29\ntime: \"10:30\"\nattendees: [Ana]\n---\n";
+  files["meetings/2026-10-13-a.md"] = "---\ntype: meeting\ndate: 2026-10-13\ntime: \"16:00\"\nduration: 30\n---\n";
+  await reset(files);
+  assert.equal(S.meetingMinutes(model.vault().meetings.find((m) => m.path.endsWith("09-29-a.md"))), 90);
+  const s = S.computeStats("2026-10-21", 3);
+  assert.equal(s.weekList.length, 4);
+  assert.equal(s.totals.weeksUsed, 3);
+  assert.equal(s.weekList[0].meetings, 2);
+  assert.equal(s.weekList[0].meetingH, (90 + S.DEFAULT_MEETING_MIN) / 60);
+  assert.equal(s.totals.completion, 6 / 8);
+  assert.equal(s.days.find((d) => d.date === "2026-09-29").b2b, 1); // the second starts when the first ends
+  assert.equal(s.hours[9], 1);
+  assert.equal(s.people[0].name, "Ana");
+  assert.ok(s.weekList[3].current && s.days.find((d) => d.date === "2026-10-22").future);
+  assert.ok(s.insights.length > 0);
+});

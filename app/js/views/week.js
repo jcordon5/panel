@@ -101,7 +101,7 @@ export function render(root, r) {
       meetings.length || events.length || due.length ? h("div", { class: "col-meetings" },
         due.map((sd) => seriesPill(sd, d, sd.project ? v.projects.get(sd.project)?.color : null)),
         meetings.map((m) => meetingPill(m, m.project ? v.projects.get(m.project)?.color : null)), events.map(eventPill)) : null,
-      h("div", { class: "col-body" }, taskList(items, { target: { kind: "day", date: d }, compact: true, placeholder: t("task.addShort") })),
+      h("div", { class: "col-body" }, taskList(items, { target: { kind: "day", date: d }, compact: true, groups: true, placeholder: t("task.addShort") })),
     ];
   };
   const stateCls = (d) => (d === tdy ? " is-today" : "") + (d < tdy ? " is-past" : "");

@@ -281,6 +281,15 @@ document.addEventListener("dragstart", (e) => {
     document.body.classList.add("is-dragging");
     return;
   }
+  const head = e.target.closest?.(".task-group[draggable=true]");
+  if (head && head._block) {
+    dragging = { block: head._block, el: head, rows: head._rows };
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", head.textContent);
+    setTimeout(() => { head.classList.add("dragging"); head._rows.forEach((r) => r.classList.add("dragging")); }, 0);
+    document.body.classList.add("is-dragging");
+    return;
+  }
   const el = e.target.closest?.(".task[draggable=true]");
   if (!el || !el._task) return;
   dragging = { task: el._task, el };
@@ -291,6 +300,7 @@ document.addEventListener("dragstart", (e) => {
 });
 document.addEventListener("dragend", () => {
   dragging?.el.classList.remove("dragging");
+  dragging?.rows?.forEach((r) => r.classList.remove("dragging"));
   dragging = null;
   clearDrop();
   document.body.classList.remove("is-dragging");
@@ -339,9 +349,14 @@ document.addEventListener("drop", (e) => {
   const target = list?._target || zone?._target;
   if (!target) return;
   e.preventDefault();
-  const { task, meeting } = dragging;
+  const { task, meeting, block } = dragging;
   const index = list ? dropIndex(list, e.clientY).i : Infinity;
   clearDrop();
+  if (block) {
+    const same = target.kind === block[0].kind && (target.kind !== "day" || target.date === block[0].date);
+    run(A.moveBlock(block, target, index), same ? null : t("group.moved", { n: block.length }));
+    return;
+  }
   if (plannable(task)) {
     run(A.planAction(task, target, index), planMsg(target));
     return;
@@ -451,24 +466,114 @@ export function eventPill(ev) {
  */
 export function taskList(items, opts = {}) {
   const list = h("div", { class: "task-list" + (opts.compact ? " compact" : "") });
-  if (opts.target) { list.setAttribute("data-drop", ""); list._target = opts.target; }
-  for (const it of items) {
-    if (it.type === "divider") list.append(h("div", { class: "task-divider" }, it.text));
-    else if (it.type === "ref") list.append(refRow(it, opts));
-    else list.append(taskRow(it, opts));
-  }
+  if (opts.target && !opts.noDrop) { list.setAttribute("data-drop", ""); list._target = opts.target; }
+  const runs = opts.groups ? projectRuns(items) : new Map();
+  let head = null;
+  items.forEach((it, n) => {
+    const r = runs.get(n);
+    if (r) {
+      head = groupHead(r.items, r.project, opts);
+      list.append(head);
+    }
+    let row;
+    const o = head && head._block.includes(it) ? { ...opts, hideProject: true } : opts; // the block's header names the project
+    if (it.type === "divider") row = h("div", { class: "task-divider" }, it.text);
+    else if (it.type === "ref") row = refRow(it, o);
+    else row = taskRow(it, o);
+    if (head && it.type !== "divider" && head._block.includes(it)) {
+      row.classList.add("in-group");
+      if (it === head._block[head._block.length - 1]) { row.classList.add("group-last"); head._rows.push(row); head = null; }
+      else head._rows.push(row);
+    }
+    list.append(row);
+  });
   if (!items.length && opts.empty) list.append(h("div", { class: "task-empty" }, opts.empty));
-  if (opts.target && opts.add !== false) list.append(addRow(opts.target, opts.placeholder));
+  if (opts.target && opts.add !== false) list.append(addRow(opts.target, opts.placeholder, { tag: opts.addTag, index: opts.addIndex }));
   return list;
 }
 
-export function addRow(target, placeholder) {
-  const key = "add:" + JSON.stringify(target);
+/* ------------------------------------------------------------ project blocks */
+
+/**
+ * Runs of 2+ consecutive items (tasks or planned action items) of the same project:
+ * Map(first index -> { project, items }).
+ */
+export function projectRuns(items) {
+  const out = new Map();
+  for (let i = 0; i < items.length;) {
+    const slug = items[i].type === "divider" ? null : A.itemProject(items[i]);
+    let j = i + 1;
+    if (slug) while (j < items.length && items[j].type !== "divider" && A.itemProject(items[j]) === slug) j++;
+    const proj = slug ? projectBySlug(slug) : null;
+    if (proj && j - i >= 2) out.set(i, { project: proj, items: items.slice(i, j) });
+    i = j;
+  }
+  return out;
+}
+
+/** True when some project's items of this list are split into separate places. */
+export function isScattered(items) {
+  const seen = new Set();
+  let prev = null;
+  for (const it of items) {
+    const k = it.type === "divider" ? null : A.itemProject(it);
+    if (k && k !== prev && seen.has(k)) return true;
+    if (k) seen.add(k);
+    prev = k;
+  }
+  return false;
+}
+
+/** The header of a project's block of tasks: drag it to move them all, or use its menu. */
+function groupHead(block, proj, opts) {
+  const subjects = block.map((x) => x.action || x);
+  const done = subjects.filter((x) => x.done).length;
+  const more = h("button", { class: "icon-btn task-group-more", type: "button", "aria-label": t("common.more"), onclick: (e) => { e.stopPropagation(); groupMenu(more, block, proj, opts); } }, icon("more", 15));
+  const el = h("div", {
+    class: "task-group" + (done === block.length ? " all-done" : ""), "data-color": proj.color,
+    draggable: opts.draggable !== false && block.every(movable) ? "true" : null, title: t("group.dragHint"),
+  },
+  icon("grip", 13, "task-group-grip"),
+  h("span", { class: "dot", "data-color": proj.color }),
+  h("a", { class: "task-group-name", href: route.project(proj.slug), draggable: "false", onclick: (e) => e.stopPropagation() }, proj.title),
+  h("span", { class: "task-group-count" }, t("group.count", { done, n: block.length })),
+  opts.onFocus && done < block.length ? h("button", { class: "btn btn-sm btn-ghost task-group-focus", type: "button", title: t("focus.startHint"), onclick: (e) => { e.stopPropagation(); opts.onFocus(proj); } }, icon("target", 13), h("span", {}, t("focus.start"))) : null,
+  more);
+  el._block = block;
+  el._rows = [];
+  el.addEventListener("contextmenu", (e) => { e.preventDefault(); groupMenu({ x: e.clientX, y: e.clientY }, block, proj, opts); });
+  return el;
+}
+
+function groupMenu(anchor, block, proj, opts) {
+  const subjects = block.map((x) => x.action || x);
+  const open = subjects.filter((x) => !x.done);
+  const send = (target) => run(A.moveBlock(block, target), t("group.moved", { n: block.length }));
+  const tdy = today();
+  const from = block[0];
+  const on = (d) => from.kind === "day" && from.date === d;
+  const items = [{ header: t("group.moveTo", { project: proj.title }) }];
+  if (!on(tdy)) items.push({ label: t("date.today"), icon: "sun", onClick: () => send({ kind: "day", date: tdy }) });
+  if (!on(addDays(tdy, 1))) items.push({ label: t("date.tomorrow"), icon: "arrow-right", onClick: () => send({ kind: "day", date: addDays(tdy, 1) }) });
+  items.push({ label: t("date.nextWeek"), icon: "week", hint: fmtDate(addDays(mondayOf(tdy), 7), "short"), onClick: () => send({ kind: "day", date: addDays(mondayOf(tdy), 7) }) });
+  items.push({ label: t("nav.inbox"), icon: "inbox", onClick: () => send({ kind: "inbox" }) });
+  items.push({ label: t("task.pickDate"), icon: "calendar", onClick: () => pickDate(from.date || tdy, (d) => send({ kind: "day", date: d })) });
+  items.push("-");
+  if (opts.onFocus && open.length) items.push({ label: t("focus.start"), icon: "target", hint: t("focus.startHint"), onClick: () => opts.onFocus(proj) });
+  if (open.length) items.push({ label: t("group.allDone"), icon: "check", onClick: () => run(A.toggleTasks(open, true), t("group.markedDone", { n: open.length })) });
+  items.push({ label: t("group.openProject"), icon: "folder", onClick: () => go(route.project(proj.slug)) });
+  menu(anchor, items, { align: "end" });
+}
+
+export function addRow(target, placeholder, extra = {}) {
+  const key = "add:" + JSON.stringify(target) + (extra.tag || "");
   const input = h("input", { class: "task-add-input", type: "text", placeholder: placeholder || t("task.add"), "data-focus-key": key, "aria-label": t("task.add"), enterkeyhint: "done" });
   const submit = async (texts) => {
     state.focusKey = key;
     input.value = "";
-    await run(A.addTask(target, texts));
+    // in a project's focus: new tasks belong to it and go with its block
+    if (extra.tag) texts = texts.map((l) => (decompose(l, isProjectTag).project ? l : l.trim() + " #" + extra.tag));
+    await run(A.addTask(target, texts, extra.index ?? Infinity));
   };
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.isComposing && input.value.trim()) { e.preventDefault(); submit([input.value]); }

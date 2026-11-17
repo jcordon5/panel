@@ -6,6 +6,7 @@ import { Marked } from "../vendor/marked.esm.js";
 import { esc, dirname, joinPath } from "./util.js";
 import { resolveLink, projectByTag, TASK_RE, BLOCK_ID_RE } from "./model.js";
 import { backend } from "./backends.js";
+import { tableKey, tableAttrs } from "./tablecols.js";
 
 const IMG_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
 const SAFE_HTML = /^<\/?(br|kbd|sub|sup|u|mark|s|small|b|i|em|strong|hr)\s*\/?>$/i;
@@ -139,15 +140,17 @@ const renderer = {
   },
   table(token) {
     // default table markup, wrapped to scroll horizontally on small screens
+    // every header cell gets a handle on its right edge to resize the column (see tablecols.js)
     let header = "";
-    for (const cell of token.header) header += this.tablecell(cell);
+    for (const cell of token.header) header += this.tablecell(cell).replace(/<\/th>\s*$/, '<span class="col-resize" aria-hidden="true"></span></th>');
+    const { attrs, colgroup } = tableAttrs(tableKey(token.header.map((c) => c.text)), token.header.length);
     let body = "";
     for (const row of token.rows) {
       let r = "";
       for (const cell of row) r += this.tablecell(cell);
       body += `<tr>${r}</tr>\n`;
     }
-    return `<div class="table-wrap"><table><thead><tr>${header}</tr></thead>${body ? `<tbody>${body}</tbody>` : ""}</table></div>\n`;
+    return `<div class="table-wrap"><table${attrs}>${colgroup}<thead><tr>${header}</tr></thead>${body ? `<tbody>${body}</tbody>` : ""}</table></div>\n`;
   },
 };
 

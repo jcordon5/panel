@@ -20,6 +20,7 @@ export const route = {
   knowledge: () => "#/knowledge",
   documents: () => "#/documents",
   graph: () => "#/graph",
+  stats: () => "#/stats",
 };
 
 export function go(hash) {

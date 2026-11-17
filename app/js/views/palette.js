@@ -25,6 +25,7 @@ function commands() {
     { label: t("nav.people"), icon: "user", hint: "U", run: () => go(route.people()) },
     { label: t("nav.knowledge"), icon: "book", hint: "K", run: () => go(route.knowledge()) },
     { label: t("docs.title"), icon: "folder", hint: "D", run: () => go(route.documents()) },
+    { label: t("stats.title"), icon: "stats", hint: "E", run: () => go(route.stats()) },
     { label: t("nav.today"), icon: "sun", hint: "T", run: () => go(route.today()) },
     { label: t("nav.inbox"), icon: "inbox", hint: "I", run: () => go(route.inbox()) },
     { label: t("nav.week"), icon: "week", hint: "W", run: () => go(route.week()) },

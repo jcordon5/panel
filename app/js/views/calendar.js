@@ -83,7 +83,7 @@ export function render(root, r) {
       h("div", { class: "cal-panel-head" },
         h("div", {}, h("div", { class: "eyebrow" }, relDay(sel)), h("h2", { class: "cal-panel-title" }, cap(fmtDate(sel, "full")))),
         h("a", { class: "btn btn-sm btn-ghost", href: route.week(sel) }, icon("week", 14), t("cal.openWeek"))),
-      section(t("cal.plan"), [unplaced(sel), taskList(dayItems(sel), { target: { kind: "day", date: sel }, placeholder: t("task.add") })], {
+      section(t("cal.plan"), [unplaced(sel), taskList(dayItems(sel), { target: { kind: "day", date: sel }, groups: true, placeholder: t("task.add") })], {
         icon: "check", actions: [btn(t("meeting.new"), "users", () => newMeetingDialog({ date: sel }), "btn-sm btn-ghost")],
       }));
   }

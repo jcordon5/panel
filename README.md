@@ -62,6 +62,11 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
 </table>
 
 - **Week and day plan** — one column per day plus the inbox; drag tasks and meetings around; bring overdue work to today in one click.
+- **Work one project at a time** — a day's tasks of the same project show as one block you drag (or send to another day) as a whole;
+  *Group by project* brings them together, and *Focus* hides everything else of the day while you work on that project.
+- **Stats** — how loaded you are: meetings and meeting hours per week against your average, tasks planned and done, your busiest
+  weekdays and stretches, days without meetings, back-to-back days, where your time goes by project, and plain-language conclusions
+  (an unusually heavy week, meetings eating the week, planning more than fits, room to spare).
 - **Recurring meetings** — a daily, a fortnightly sync, the first Monday of the month… with their usual attendees. Each session shows up
   on its day and its note is created when you join, with whatever was left to discuss last time.
 - **Meetings** — their page shows time, attendees (people or whole teams) and attachments; while you write, only the note, a button
@@ -83,6 +88,7 @@ Everything is plain `.md` files in a folder of yours. You can read them, Panel s
 - **No syntax to learn** — a task's project, person, tags and time can be picked in a dialog; if you prefer typing
   `09:30 @Ana send the quote #project`, that works too.
 - **An editor like Obsidian's** — formatted as you type; the Markdown only shows where the cursor is. Source and reading modes too.
+  Drag the edge of a table's header to resize its columns (double-click it to reset).
 - **Calendar** — your Outlook/Google/iCloud meetings show up on their own; one click creates the note.
 - **Projects, a notes board, search everything** (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>), **undo anything**, keyboard shortcuts,
   light/dark, English/Spanish.
